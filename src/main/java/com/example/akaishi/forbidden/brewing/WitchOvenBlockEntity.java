@@ -5,6 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.ContainerHelper;
@@ -227,14 +228,21 @@ public final class WitchOvenBlockEntity extends BlockEntity implements WorldlyCo
         burnTotal = Math.max(burnTime, tag.getInt("BurnTotal"));
         cookingTime = Math.max(0, Math.min(72000, tag.getInt("CookingTime")));
         progress = Math.max(0, Math.min(cookingTime, tag.getInt("Progress")));
-        activeId = tag.getString("Recipe");
-        activeInput = ItemStack.of(tag.getCompound("ActiveInput"));
-        activeSignature = tag.getCompound("RecipeSignature").copy();
+        boolean validActiveInput = tag.contains("ActiveInput", Tag.TAG_COMPOUND)
+                && tag.getCompound("ActiveInput").sizeInBytes() <= 65536;
+        boolean validRecipeSignature = tag.contains("RecipeSignature", Tag.TAG_COMPOUND)
+                && tag.getCompound("RecipeSignature").sizeInBytes() <= 65536;
+        String savedActiveId = tag.contains("Recipe", Tag.TAG_STRING) ? tag.getString("Recipe") : "";
+        boolean validActiveId = savedActiveId.length() <= 256;
+        activeId = validActiveId ? savedActiveId : "";
+        activeInput = validActiveInput ? ItemStack.of(tag.getCompound("ActiveInput")) : ItemStack.EMPTY;
+        activeSignature = validRecipeSignature ? tag.getCompound("RecipeSignature").copy() : new CompoundTag();
         profile = WitchOvenProfile.BASIC;
         boolean validProfile = !tag.contains("Upgrade");
-        if (tag.contains("Upgrade", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+        if (tag.contains("Upgrade", Tag.TAG_COMPOUND)) {
             CompoundTag upgrade = tag.getCompound("Upgrade");
-            if (upgrade.contains("Queues", net.minecraft.nbt.Tag.TAG_INT)
+            if (upgrade.sizeInBytes() <= 65536
+                    && upgrade.contains("Queues", Tag.TAG_INT)
                     && upgrade.contains("FumeBonus", net.minecraft.nbt.Tag.TAG_DOUBLE)
                     && upgrade.contains("ChanceCap", net.minecraft.nbt.Tag.TAG_DOUBLE)) {
                 try {
@@ -246,7 +254,8 @@ public final class WitchOvenBlockEntity extends BlockEntity implements WorldlyCo
             }
         }
         activeBatch = tag.getInt("ActiveBatch");
-        if (!validProfile || !tag.contains("ActiveBatch", net.minecraft.nbt.Tag.TAG_INT)
+        if (!validProfile || !validActiveId || !validActiveInput || !validRecipeSignature
+                || !tag.contains("ActiveBatch", Tag.TAG_INT)
                 || activeBatch < 1 || activeBatch > profile.queues() || activeBatch > items.get(INPUT).getCount()
                 || activeId.isEmpty() || activeInput.isEmpty() || activeSignature.isEmpty()
                 || !ItemStack.isSameItemSameTags(activeInput, items.get(INPUT))) {
