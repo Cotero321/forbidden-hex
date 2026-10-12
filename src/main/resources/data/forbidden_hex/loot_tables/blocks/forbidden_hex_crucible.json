@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:block",
+  "pools": [{
+    "rolls": 1,
+    "entries": [{ "type": "minecraft:item", "name": "forbidden_hex:forbidden_hex_crucible" }],
+    "conditions": [{ "condition": "minecraft:survives_explosion" }]
+  }]
+}

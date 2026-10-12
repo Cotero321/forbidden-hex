@@ -1,0 +1,45 @@
+# eclipse
+bin
+*.launch
+.settings
+.metadata
+.classpath
+.project
+
+# idea
+out
+*.ipr
+*.iws
+*.iml
+.idea
+
+# gradle
+build
+.gradle
+
+# other
+eclipse
+run
+run-data
+
+# AI IDE / assistant
+.codebuddy
+.codebuddy/
+.claude
+.cursor
+.aider*
+.cache
+
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# Files from Forge MDK
+forge*changelog.txt
+README.txt
+CREDITS.txt
+LICENSE.txt
+changelog.txt

@@ -1,0 +1,30 @@
+{
+  "name": "Altar of the Black Mother",
+  "icon": "forbidden_hex:forbidden_hex_mother_altar",
+  "category": "forbidden_hex:life_advanced",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "forbidden_hex:forbidden_hex_mother_altar",
+      "text": "$(bold)Purpose:$(reset) the Mother Altar is the $(reset)core block$(reset) of the Life line's multiblock shrine. A single altar can hold 1 offering; stacking many of them into the shrine is covered in $(l:forbidden_hex:goat_altar)Goat Altar (3 Tiers)$(/l).$(br2)$(bold)Interaction:$(reset)$(li)Single / unformed: right-click while holding an item to place 1 offering, it floats above the altar; right-click empty-handed to take it back$(li)$(reset)The formed center 2x2$(reset): right-click opens the merged altar screen (tier display + single-item slot)$(br2)$(bold)No whitelist:$(reset) there is $(reset)no allow/deny list - any item can be offered$(reset); this version retains offering display and retrieval; Life Fusion settlement is disabled."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Using a Single Altar",
+      "text": "$(bold)Offering slot:$(reset) every unformed Mother Altar carries one independent slot; placing and taking are both right-click only, with no screen. If a slot is occupied, take the offering back empty-handed before placing another.$(br2)$(bold)Once formed:$(reset) the four altars forming the center 2x2 of the $(l:forbidden_hex:goat_altar)Goat Altar (3 Tiers)$(/l) merge into a great altar and right-click opens the $(reset)merged altar screen$(reset) (current tier + a single-item offering slot); single-altar interaction gives way to the screen. The 8 outer altars are unaffected and still take offerings by right-click.$(br2)$(bold)No interference:$(reset) neighbouring altars and altar stones keep separate books and never affect each other.$(br2)$(bold)Orientation:$(reset) the altar has no facing, so any orientation is fine."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Standalone Version",
+      "text": "This version retains structure detection, tier display and offering placement/removal. Life Fusion Rituals are disabled; legacy crafting recipes requiring the base mod's life materials are paused."
+    },
+    {
+      "type": "patchouli:relations",
+      "entries": [
+        "forbidden_hex:goat_altar"
+      ],
+      "text": "See Goat Altar (3 Tiers) for structure construction and tier detection."
+    }
+  ]
+}

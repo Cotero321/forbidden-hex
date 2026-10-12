@@ -1,0 +1,22 @@
+{
+  "variants": {
+    "formed=false,red=false": {
+      "model": "forbidden_hex:block/forbidden_hex_mother_altar"
+    },
+    "formed=false,red=true": {
+      "model": "forbidden_hex:block/forbidden_hex_mother_altar_red"
+    },
+    "formed=true,corner=0": {
+      "model": "forbidden_hex:block/forbidden_hex_mother_altar_formed_0"
+    },
+    "formed=true,corner=1": {
+      "model": "forbidden_hex:block/forbidden_hex_mother_altar_formed_1"
+    },
+    "formed=true,corner=2": {
+      "model": "forbidden_hex:block/forbidden_hex_mother_altar_formed_2"
+    },
+    "formed=true,corner=3": {
+      "model": "forbidden_hex:block/forbidden_hex_mother_altar_formed_3"
+    }
+  }
+}

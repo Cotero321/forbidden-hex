@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "COC",
+    "OEO",
+    "COC"
+  ],
+  "key": {
+    "O": {
+      "item": "minecraft:obsidian"
+    },
+    "C": {
+      "item": "minecraft:crying_obsidian"
+    },
+    "E": {
+      "item": "forbidden_hex:forbidden_hex_life_essence_solid"
+    }
+  },
+  "result": {
+    "item": "forbidden_hex:forbidden_hex_altar_stone",
+    "count": 8
+  }
+}

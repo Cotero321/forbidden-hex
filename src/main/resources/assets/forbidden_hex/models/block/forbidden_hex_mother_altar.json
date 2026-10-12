@@ -1,0 +1,48 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "forbidden_hex:block/forbidden_hex_mother_altar_base",
+    "top": "forbidden_hex:block/forbidden_hex_mother_altar_top",
+    "side": "forbidden_hex:block/forbidden_hex_mother_altar_side",
+    "base": "forbidden_hex:block/forbidden_hex_mother_altar_base",
+    "bottom": "forbidden_hex:block/forbidden_hex_mother_altar_bottom"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to": [16, 3, 16],
+      "faces": {
+        "down": { "uv": [0, 0, 16, 16], "texture": "#bottom" },
+        "up": { "uv": [0, 0, 16, 16], "texture": "#bottom" },
+        "north": { "uv": [0, 0, 16, 16], "texture": "#base" },
+        "south": { "uv": [0, 0, 16, 16], "texture": "#base" },
+        "west": { "uv": [0, 0, 16, 16], "texture": "#base" },
+        "east": { "uv": [0, 0, 16, 16], "texture": "#base" }
+      }
+    },
+    {
+      "from": [3, 3, 3],
+      "to": [13, 13, 13],
+      "faces": {
+        "down": { "uv": [0, 0, 16, 16], "texture": "#bottom" },
+        "up": { "uv": [0, 0, 16, 16], "texture": "#top" },
+        "north": { "uv": [0, 0, 16, 16], "texture": "#side" },
+        "south": { "uv": [0, 0, 16, 16], "texture": "#side" },
+        "west": { "uv": [0, 0, 16, 16], "texture": "#side" },
+        "east": { "uv": [0, 0, 16, 16], "texture": "#side" }
+      }
+    },
+    {
+      "from": [1, 13.01, 1],
+      "to": [15, 14.01, 15],
+      "faces": {
+        "down": { "uv": [0, 0, 16, 16], "texture": "#bottom" },
+        "up": { "uv": [0, 0, 16, 16], "texture": "#top" },
+        "north": { "uv": [0, 0, 16, 16], "texture": "#base" },
+        "south": { "uv": [0, 0, 16, 16], "texture": "#base" },
+        "west": { "uv": [0, 0, 16, 16], "texture": "#base" },
+        "east": { "uv": [0, 0, 16, 16], "texture": "#base" }
+      }
+    }
+  ]
+}

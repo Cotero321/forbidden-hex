@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SSS",
+    "SES",
+    "SSS"
+  ],
+  "key": {
+    "S": {
+      "item": "forbidden_hex:forbidden_hex_altar_stone"
+    },
+    "E": {
+      "item": "forbidden_hex:forbidden_hex_life_essence_solid"
+    }
+  },
+  "result": {
+    "item": "forbidden_hex:forbidden_hex_mother_altar",
+    "count": 1
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "values": [
+    "forbidden_hex:altar_drain",
+    "forbidden_hex:true_damage",
+    "forbidden_hex:scythe_sweep",
+    "forbidden_hex:heavy_strike",
+    "forbidden_hex:doom",
+    "forbidden_hex:triple_throw",
+    "forbidden_hex:psychic"
+  ]
+}

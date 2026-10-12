@@ -1,0 +1,61 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "forbidden_hex:block/forbidden_hex_mother_altar_red_base",
+    "top": "forbidden_hex:block/forbidden_hex_mother_altar_red_top",
+    "side": "forbidden_hex:block/forbidden_hex_mother_altar_red_side",
+    "base": "forbidden_hex:block/forbidden_hex_mother_altar_red_base",
+    "bottom": "forbidden_hex:block/forbidden_hex_mother_altar_red_bottom",
+    "carpet": "forbidden_hex:block/forbidden_hex_altar_carpet"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to": [16, 6, 16],
+      "faces": {
+        "down": { "uv": [0, 0, 16, 16], "texture": "#bottom" },
+        "up": { "uv": [0, 0, 16, 16], "texture": "#base" },
+        "north": { "uv": [0, 0, 16, 16], "texture": "#base" },
+        "south": { "uv": [0, 0, 16, 16], "texture": "#base" },
+        "west": { "uv": [0, 0, 16, 16], "texture": "#base" },
+        "east": { "uv": [0, 0, 16, 16], "texture": "#base" }
+      }
+    },
+    {
+      "from": [0, 6, 6],
+      "to": [10, 26, 16],
+      "faces": {
+        "down": { "uv": [0, 0, 16, 16], "texture": "#bottom" },
+        "up": { "uv": [0, 0, 16, 16], "texture": "#top" },
+        "north": { "uv": [0, 0, 16, 16], "texture": "#side" },
+        "south": { "uv": [0, 0, 16, 16], "texture": "#side" },
+        "west": { "uv": [0, 0, 16, 16], "texture": "#side" },
+        "east": { "uv": [0, 0, 16, 16], "texture": "#side" }
+      }
+    },
+    {
+      "from": [0, 26, 2],
+      "to": [14, 28, 16],
+      "faces": {
+        "down": { "uv": [0, 0, 16, 16], "texture": "#bottom" },
+        "up": { "uv": [0, 0, 16, 16], "texture": "#top" },
+        "north": { "uv": [0, 0, 16, 16], "texture": "#base" },
+        "south": { "uv": [0, 0, 16, 16], "texture": "#base" },
+        "west": { "uv": [0, 0, 16, 16], "texture": "#base" },
+        "east": { "uv": [0, 0, 16, 16], "texture": "#base" }
+      }
+    },
+    {
+      "from": [0, 28, 4],
+      "to": [12, 29, 16],
+      "faces": {
+        "down": { "uv": [0, 0, 16, 16], "texture": "#carpet" },
+        "up": { "uv": [0, 0, 16, 16], "texture": "#carpet" },
+        "north": { "uv": [0, 0, 16, 16], "texture": "#carpet" },
+        "south": { "uv": [0, 0, 16, 16], "texture": "#carpet" },
+        "west": { "uv": [0, 0, 16, 16], "texture": "#carpet" },
+        "east": { "uv": [0, 0, 16, 16], "texture": "#carpet" }
+      }
+    }
+  ]
+}

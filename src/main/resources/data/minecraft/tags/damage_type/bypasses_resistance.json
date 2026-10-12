@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "forbidden_hex:true_damage",
+    "forbidden_hex:doom",
+    "forbidden_hex:psychic"
+  ]
+}

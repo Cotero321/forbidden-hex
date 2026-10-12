@@ -1,0 +1,127 @@
+{
+  "name": "Black Goat Altar (Three Tiers)",
+  "icon": "forbidden_hex:forbidden_hex_mother_altar",
+  "category": "forbidden_hex:life_advanced",
+  "sortnum": 6,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "forbidden_hex:forbidden_hex_mother_altar",
+      "text": "$(bold)Purpose: $(reset)the complete form of the Altar of the Black Mother — a 2×2 core of mother altars acts as the anchor, with three tiers stacked downward.$(br2)$(bold)Tiers: $(reset)$(li)$(reset)Tier 1$(reset): top altar layer + the layer beneath it$(li)$(reset)Tier 2$(reset): tier 1 + the next layer down$(li)$(reset)Tier 3$(reset): tier 2 + the bottom layer (including the beacon structure)$(br2)Any core mother altar re-checks itself every 20 ticks and reports the $(reset)highest contiguous tier$(reset); the tier is stored on all four altars and synced to the client."
+    },
+    {
+      "type": "patchouli:multiblock",
+      "name": "Black Goat Altar (16×16×4)",
+      "multiblock": {
+        "pattern": [
+          [
+            "                ",
+            "                ",
+            "                ",
+            "                ",
+            "      C  C      ",
+            "                ",
+            "    C      C    ",
+            "       0C       ",
+            "       CC       ",
+            "    C      C    ",
+            "                ",
+            "      C  C      ",
+            "                ",
+            "                ",
+            "                ",
+            "                "
+          ],
+          [
+            "                ",
+            "                ",
+            "  D          D  ",
+            "                ",
+            "     AEBBEA     ",
+            "    AABHHBAA    ",
+            "    EBBHHBBE    ",
+            "    BHHEEHHB    ",
+            "    BHHEEHHB    ",
+            "    EBBHHBBE    ",
+            "    AABHHBAA    ",
+            "     AEBBEA     ",
+            "                ",
+            "  D          D  ",
+            "                ",
+            "                "
+          ],
+          [
+            "                ",
+            " III        III ",
+            " III        III ",
+            " III AEBBEA III ",
+            "    A      A    ",
+            "   A        A   ",
+            "   E        E   ",
+            "   B        B   ",
+            "   B        B   ",
+            "   E        E   ",
+            "   A        A   ",
+            "    A      A    ",
+            " III AEBBEA III ",
+            " III        III ",
+            " III        III ",
+            "                "
+          ],
+          [
+            "HHHHH      HHHHH",
+            "HAAAH      HAAAH",
+            "HAAAHHHHHHHHAAAH",
+            "HAAAH      HAAAH",
+            "HHHH        HHHH",
+            "  H          H  ",
+            "  H          H  ",
+            "  H          H  ",
+            "  H          H  ",
+            "  H          H  ",
+            "  H          H  ",
+            "HHHH        HHHH",
+            "HAAAH      HAAAH",
+            "HAAAHHHHHHHHAAAH",
+            "HAAAH      HAAAH",
+            "HHHHH      HHHHH"
+          ]
+        ],
+        "mapping": {
+          "A": "forbidden_hex:forbidden_hex_altar_stone",
+          "B": "forbidden_hex:forbidden_hex_essence_block",
+          "C": "forbidden_hex:forbidden_hex_mother_altar",
+          "H": "minecraft:crying_obsidian",
+          "I": "minecraft:iron_block",
+          "E": "minecraft:bone_block",
+          "D": "minecraft:beacon",
+          "0": "forbidden_hex:forbidden_hex_mother_altar"
+        },
+        "symmetrical": true
+      },
+      "text": "$(bold)Layers (top to bottom, 4 total): $(reset)$(li)y=-57 top: C=mother altar (red 0 is the anchor)$(li)y=-58 bedding: A=altar stone, B=essence block, E=bone block, H=crying obsidian, D=beacon$(li)y=-59 middle: I=beacon base squares + E/B/A ring steps$(li)y=-60 bottom: H=crying obsidian frame, A=altar stone$(br2)$(reset)The beacon structure belongs to tier 3 only$(reset): at tiers 1/2 the D (beacon) and I (base) cells are ignored, so any block may occupy them. Tier 3 requires real beacons, and any base block that $(reset)can power a beacon$(reset) works - iron, gold, diamond, emerald or netherite blocks. The whole structure is 90°-rotation symmetric, so $(reset)any facing works$(reset)."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Tier Detection",
+      "text": "$(bold)Rule: $(reset)validation starts at tier 1 and climbs layer by layer; the count of contiguous layers is the tier. One missing solid block falls back to the previous tier, down to 0 (incomplete). $(bold)Air cells: $(reset)blank cells accept any block and never affect detection.$(br2)$(bold)Anchor: $(reset)any of the four core mother altars $(reset)can trigger the scan$(reset); each reports the same tier independently.$(br2)$(bold)Current stage: $(reset)structure detection, tier sync, formation (merging at tier 1+) and offering display are retained. Life Fusion Rituals are disabled."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Offering Display",
+      "text": "The mother altar and outer sub-altars can hold and display offerings. Right-click a single altar to place an item and right-click empty-handed to retrieve it. Once formed, the four center altars share the merged altar screen's single-item offering slot. Any item can be offered. Life Fusion recipes, charging and settlement are disabled."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "After Formation",
+      "text": "$(bold)Trigger: $(reset)a tier of $(reset)1 or higher$(reset) forms the shrine; dropping to 0 (core block broken) dissolves it and $(reset)reverts everything$(reset).$(br2)$(bold)Merged altar: $(reset)the four core altars each render a quarter of the great-altar model, $(reset)seamlessly joined$(reset), topped by a $(reset)red blanket$(reset).$(br2)$(bold)Right-click: $(reset)once formed, right-click any of the four core altars to open the $(reset)merged altar screen$(reset) - it shows the $(reset)current tier$(reset) and one offering slot ($(reset)single item$(reset) only, any item accepted).$(br2)$(bold)Crimson veins: $(reset)once formed, $(reset)crying obsidian$(reset) turns red by tier - the $(reset)y=-58 bedding is always crimson$(reset), while the $(reset)y=-60 bottom layer is crimson at tier 3 only$(reset); purple veins become flowing red ones. $(reset)Obsidian added later$(reset) converts automatically within seconds.$(br2)$(bold)Eight red glows: $(reset)the 8 outer sub-altars shift from purple to a $(reset)red glow$(reset) (visual only; they still take offerings).$(br2)$(bold)Reverting: $(reset)breaking a required block of layer 1 (y=-57 top / y=-58 bedding) drops the tier to 0 - crimson reverts to crying obsidian, red glows go out and the four altars split back to single form (offerings are $(reset)ejected and returned$(reset) altar by altar when merging).$(br2)$(bold)Downgrading: $(reset)breaking only deeper layers (y=-59 / y=-60) does not dissolve the shrine; it downgrades to the remaining tier - crimson beyond that tier reverts to plain crying obsidian, and turns red again once restored."
+    },
+    {
+      "type": "patchouli:relations",
+      "entries": [
+        "forbidden_hex:mother_altar"
+      ],
+      "text": "Prerequisite: read \"Altar of the Black Mother\" first for the single-altar offering interaction."
+    }
+  ]
+}

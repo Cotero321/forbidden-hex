@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.example.akaishi.forbidden.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "forbidden_hex.refmap.json",
+  "mixins": [
+    "PlayerFoodExhaustionMixin"
+  ],
+  "client": [
+    "PostPassMixin",
+    "MagicCoreItemRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

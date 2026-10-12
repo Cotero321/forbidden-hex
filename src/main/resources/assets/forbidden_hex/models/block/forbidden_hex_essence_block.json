@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "forbidden_hex:block/forbidden_hex_essence_block"
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "parent": "forbidden_hex:block/forbidden_hex_witch_oven",
+  "textures": { "front": "minecraft:block/furnace_front_on" }
+}

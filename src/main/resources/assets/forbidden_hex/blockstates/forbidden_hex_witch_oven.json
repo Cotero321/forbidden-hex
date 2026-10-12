@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "facing=north,lit=false": { "model": "forbidden_hex:block/forbidden_hex_witch_oven" },
+    "facing=east,lit=false": { "model": "forbidden_hex:block/forbidden_hex_witch_oven", "y": 90 },
+    "facing=south,lit=false": { "model": "forbidden_hex:block/forbidden_hex_witch_oven", "y": 180 },
+    "facing=west,lit=false": { "model": "forbidden_hex:block/forbidden_hex_witch_oven", "y": 270 },
+    "facing=north,lit=true": { "model": "forbidden_hex:block/forbidden_hex_witch_oven_on" },
+    "facing=east,lit=true": { "model": "forbidden_hex:block/forbidden_hex_witch_oven_on", "y": 90 },
+    "facing=south,lit=true": { "model": "forbidden_hex:block/forbidden_hex_witch_oven_on", "y": 180 },
+    "facing=west,lit=true": { "model": "forbidden_hex:block/forbidden_hex_witch_oven_on", "y": 270 }
+  }
+}

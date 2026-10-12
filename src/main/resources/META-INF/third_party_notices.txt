@@ -1,0 +1,94 @@
+Forbidden Hex — third-party assets notice
+=======================================================
+
+Bundled particle / VFX textures are derived from:
+
+  Iron-Elden-Ring-Particle-library
+  Author: shuimo0413
+  Source: https://github.com/shuimo0413/Iron-Elden-Ring-Particle-library
+  License: MIT (reproduced below)
+
+Import processing: all textures were desaturated to white (original
+luminance preserved as brightness, alpha preserved) so they can be
+tinted per-instance at runtime.
+
+Files (assets/forbidden_hex/textures/):
+  particle/spell_mote_san.png     <- ash_mote.png
+  particle/spell_mote_life.png    <- nature_sparkle.png
+  particle/spell_mote_dark.png    <- void_mote_1.png
+  particle/spell_mote_white.png   <- holy_sparkle.png
+  -- 粒子形态：4 源（兜底）+ 11 墨 × 6 载体 = 66 组合 --
+  -- 载体序：beam / orb / mark / field / after(残影) / salvo --
+  particle/spell_mote_chi_beam.png    <- ember_trail.png            particle/spell_mote_chi_orb.png     <- ember_mote_1.png
+  particle/spell_mote_chi_mark.png    <- flame_shard.png            particle/spell_mote_chi_field.png   <- ember_glow.png
+  particle/spell_mote_chi_after.png   <- ember_wisp.png             particle/spell_mote_chi_salvo.png   <- ember_spark.png
+  particle/spell_mote_rang_beam.png   <- gravity_streak.png         particle/spell_mote_rang_orb.png    <- twin_dust.png
+  particle/spell_mote_rang_mark.png   <- carian_crystal.png         particle/spell_mote_rang_field.png  <- gravity_ring.png
+  particle/spell_mote_rang_after.png  <- gravity_mist.png           particle/spell_mote_rang_salvo.png  <- gravity_mote_2.png
+  particle/spell_mote_ju_beam.png     <- comet_azur_jet_stream.png  particle/spell_mote_ju_orb.png      <- comet_azur_head.png
+  particle/spell_mote_ju_mark.png     <- comet_azur_lens.png        particle/spell_mote_ju_field.png    <- comet_azur_vortex_field.png
+  particle/spell_mote_ju_after.png    <- comet_azur_mist.png        particle/spell_mote_ju_salvo.png    <- comet_azur_mote_2.png
+  particle/spell_mote_man_beam.png    <- nature_leaf_small.png      particle/spell_mote_man_orb.png     <- nature_bloom.png
+  particle/spell_mote_man_mark.png    <- nature_flower.png          particle/spell_mote_man_field.png   <- nature_pollen.png
+  particle/spell_mote_man_after.png   <- nature_glow.png            particle/spell_mote_man_salvo.png   <- nature_mote_2.png
+  particle/spell_mote_shi_beam.png    <- carian_crescent.png        particle/spell_mote_shi_orb.png     <- carian_crystal.png
+  particle/spell_mote_shi_mark.png    <- carian_shard.png           particle/spell_mote_shi_field.png   <- carian_ripple_2.png
+  particle/spell_mote_shi_after.png   <- carian_mist.png            particle/spell_mote_shi_salvo.png   <- violet_shard.png
+  particle/spell_mote_xu_beam.png     <- carian_streak.png          particle/spell_mote_xu_orb.png      <- carian_binary.png
+  particle/spell_mote_xu_mark.png     <- carian_cross.png           particle/spell_mote_xu_field.png    <- pulse_ring.png
+  particle/spell_mote_xu_after.png    <- carian_lens.png            particle/spell_mote_xu_salvo.png    <- carian_spark.png
+  particle/spell_mote_hun_beam.png    <- carian_spiral.png          particle/spell_mote_hun_orb.png     <- carian_vortex.png
+  particle/spell_mote_hun_mark.png    <- carian_glint.png           particle/spell_mote_hun_field.png   <- carian_bloom.png
+  particle/spell_mote_hun_after.png   <- glintstone_mist.png        particle/spell_mote_hun_salvo.png   <- carian_dust.png
+  particle/spell_mote_yuan_beam.png   <- gravity_filament.png       particle/spell_mote_yuan_orb.png    <- void_core.png
+  particle/spell_mote_yuan_mark.png   <- carian_eclipse.png         particle/spell_mote_yuan_field.png  <- gravity_eclipse.png
+  particle/spell_mote_yuan_after.png  <- void_mote_2.png            particle/spell_mote_yuan_salvo.png  <- gravity_spark.png
+  particle/spell_mote_yao_beam.png    <- holy_stardust.png          particle/spell_mote_yao_orb.png     <- holy_orb.png
+  particle/spell_mote_yao_mark.png    <- holy_crystal.png           particle/spell_mote_yao_field.png   <- holy_halo.png
+  particle/spell_mote_yao_after.png   <- holy_glow.png              particle/spell_mote_yao_salvo.png   <- holy_mote_2.png
+  particle/spell_mote_an_beam.png     <- dark_filament.png          particle/spell_mote_an_orb.png      <- void_mote_1.png
+  particle/spell_mote_an_mark.png     <- carian_rune.png            particle/spell_mote_an_field.png    <- eclipse_ring.png
+  particle/spell_mote_an_after.png    <- carian_veil.png            particle/spell_mote_an_salvo.png    <- abyss_flare.png
+  particle/spell_mote_xing_beam.png   <- star_streak.png            particle/spell_mote_xing_orb.png    <- nova_star.png
+  particle/spell_mote_xing_mark.png   <- binary_star.png            particle/spell_mote_xing_field.png  <- star_river_ripple_1.png
+  particle/spell_mote_xing_after.png  <- star_river_mist.png        particle/spell_mote_xing_salvo.png  <- star_river_spray.png
+  magic/vfx_ring.png               <- carian_ring.png          (法阵底纹)
+  magic/vfx_ring_pulse.png         <- pulse_ring.png           (命中冲击环 / 法阵脉动)
+  magic/vfx_nova.png               <- carian_nova.png          (命中放射星芒)
+  magic/vfx_halo.png               <- carian_halo.png          (通用柔光)
+  magic/vfx_glow.png               <- carian_glow.png          (次级柔光)
+  magic/vfx_comet.png              <- carian_comet.png         (投射物彗头)
+  magic/vfx_streak.png             <- carian_streak.png        (尾带 / 束流光带)
+  magic/vfx_filament.png           <- carian_filament.png      (束流丝缕)
+  magic/vfx_rune.png               <- carian_rune.png          (命中符圈 / 法阵符环)
+  magic/vfx_sigil.png              <- carian_sigil.png         (附着印记)
+  magic/vfx_wisp.png               <- carian_wisp.png          (回响残影)
+  magic/vfx_spray.png              <- carian_spray.png         (连发散射)
+  magic/vfx_shard.png              <- carian_shard.png         (破防碎片)
+  magic/vfx_spark.png              <- carian_spark.png         (束端光晕)
+  magic/vfx_flare_san.png          <- carian_dust.png          (灰源命中闪光)
+  magic/vfx_flare_life.png         <- nature_bloom.png         (绿源命中闪光)
+  magic/vfx_flare_dark.png         <- abyss_flare.png          (暗源命中闪光)
+  magic/vfx_flare_white.png        <- holy_flare.png           (白源命中闪光)
+
+MIT License
+
+Copyright (c) 2026 shuimo0413
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

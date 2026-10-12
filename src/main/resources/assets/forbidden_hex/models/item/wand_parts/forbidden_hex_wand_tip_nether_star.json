@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "layer0":  "forbidden_hex:item/wand_parts/forbidden_hex_wand_tip_nether_star"
+                 },
+    "parent":  "forbidden_hex:item/wand_parts/tip_base"
+}

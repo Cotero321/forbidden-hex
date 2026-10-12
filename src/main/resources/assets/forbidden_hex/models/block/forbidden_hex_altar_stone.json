@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "forbidden_hex:block/forbidden_hex_altar_stone_top",
+    "bottom": "forbidden_hex:block/forbidden_hex_altar_stone_top",
+    "side": "forbidden_hex:block/forbidden_hex_altar_stone_side"
+  }
+}

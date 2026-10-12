@@ -1,0 +1,1 @@
+{"variants":{"facing=north":{"model":"forbidden_hex:block/forbidden_hex_inscription_table"},"facing=south":{"model":"forbidden_hex:block/forbidden_hex_inscription_table","y":180},"facing=west":{"model":"forbidden_hex:block/forbidden_hex_inscription_table","y":270},"facing=east":{"model":"forbidden_hex:block/forbidden_hex_inscription_table","y":90}}}

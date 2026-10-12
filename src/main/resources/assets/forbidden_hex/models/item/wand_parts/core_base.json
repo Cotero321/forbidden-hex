@@ -1,0 +1,76 @@
+{
+  "elements": [
+    {
+      "from": [6.5, 12.35, 6.5],
+      "to": [9.5, 12.7, 9.5],
+      "faces": {
+        "down": { "texture": "#layer0" },
+        "up": { "texture": "#layer0" },
+        "north": { "texture": "#layer0" },
+        "south": { "texture": "#layer0" },
+        "west": { "texture": "#layer0" },
+        "east": { "texture": "#layer0" }
+      }
+    },
+    {
+      "from": [6.9, 12.7, 6.9],
+      "to": [9.1, 12.95, 9.1],
+      "faces": {
+        "down": { "texture": "#layer0" },
+        "up": { "texture": "#layer0" },
+        "north": { "texture": "#layer0" },
+        "south": { "texture": "#layer0" },
+        "west": { "texture": "#layer0" },
+        "east": { "texture": "#layer0" }
+      }
+    },
+    {
+      "from": [7.2, 12.95, 7.2],
+      "to": [8.8, 13.4, 8.8],
+      "faces": {
+        "down": { "texture": "#layer0" },
+        "up": { "texture": "#layer0" },
+        "north": { "texture": "#layer0" },
+        "south": { "texture": "#layer0" },
+        "west": { "texture": "#layer0" },
+        "east": { "texture": "#layer0" }
+      }
+    },
+    {
+      "from": [6.8, 13.4, 6.8],
+      "to": [9.2, 15.1, 9.2],
+      "faces": {
+        "down": { "texture": "#layer0" },
+        "up": { "texture": "#layer0" },
+        "north": { "texture": "#layer0" },
+        "south": { "texture": "#layer0" },
+        "west": { "texture": "#layer0" },
+        "east": { "texture": "#layer0" }
+      }
+    },
+    {
+      "from": [7.1, 15.1, 7.1],
+      "to": [8.9, 15.55, 8.9],
+      "faces": {
+        "down": { "texture": "#layer0" },
+        "up": { "texture": "#layer0" },
+        "north": { "texture": "#layer0" },
+        "south": { "texture": "#layer0" },
+        "west": { "texture": "#layer0" },
+        "east": { "texture": "#layer0" }
+      }
+    },
+    {
+      "from": [7.5, 15.55, 7.5],
+      "to": [8.5, 15.85, 8.5],
+      "faces": {
+        "down": { "texture": "#layer0" },
+        "up": { "texture": "#layer0" },
+        "north": { "texture": "#layer0" },
+        "south": { "texture": "#layer0" },
+        "west": { "texture": "#layer0" },
+        "east": { "texture": "#layer0" }
+      }
+    }
+  ]
+}

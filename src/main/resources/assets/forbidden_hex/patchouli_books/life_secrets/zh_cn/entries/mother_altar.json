@@ -1,0 +1,30 @@
+{
+  "name": "黑山羊之母祭坛",
+  "icon": "forbidden_hex:forbidden_hex_mother_altar",
+  "category": "forbidden_hex:life_advanced",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "forbidden_hex:forbidden_hex_mother_altar",
+      "text": "$(bold)用途：$(reset)母祭坛是生命线多方块圣坛的$(reset)核心方块$(reset)：单座即可供奉 1 件生命造物；多座按规则堆叠成坛后的结构识别与等级，见「$(l:forbidden_hex:goat_altar)黑山羊三级祭坛$(/l)」。$(br2)$(bold)交互：$(reset)$(li)单座 / 未成型：手持物品右键放入 1 件，供品悬浮于祭坛上方；空手右键取回$(li)$(reset)结构成型后的中心 2×2$(reset)：右键打开合并祭坛界面（等级展示 + 单物品供奉槽）$(br2)$(bold)供奉无限制：$(reset)祭坛$(reset)不设黑白名单，任意物品均可放入$(reset)；本版本保留供品展示与取回，生命融合结算暂未启用。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "单座祭坛用法",
+      "text": "$(bold)供奉槽：$(reset)未成型的母祭坛各带 1 个独立供品槽，放入与取回都靠右键、无界面；槽内已有供品时需先空手取回才能再放。$(br2)$(bold)成型后：$(reset)摆成三级祭坛中心 2×2 的四座会合并为巨坛，右键改为打开$(reset)合并祭坛界面$(reset)（显示当前等级 + 仅容 1 件的供奉槽），单座供奉逻辑让位给界面；外圈 8 座不受影响，仍按单座右键供奉。$(br2)$(bold)互不干扰：$(reset)相邻的母祭坛还是其它祭坛石，各座单独记账，不会互相影响；只有摆成「黑山羊三级祭坛」中心 2×2 的那四座才参与等级识别，外圈同类祭坛只作装饰。$(br2)$(bold)朝向：$(reset)母祭坛无方向限制，任意朝向摆放均可。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "独立版本",
+      "text": "本版本保留祭坛结构识别、等级展示与供品放入/取回。生命融合仪式暂未启用；依赖本体生命材料的旧合成配方已暂停。"
+    },
+    {
+      "type": "patchouli:relations",
+      "entries": [
+        "forbidden_hex:goat_altar"
+      ],
+      "text": "结构搭建与分级判定见「黑山羊三级祭坛」。"
+    }
+  ]
+}

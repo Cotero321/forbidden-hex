@@ -1,0 +1,127 @@
+{
+  "name": "黑山羊三级祭坛",
+  "icon": "forbidden_hex:forbidden_hex_mother_altar",
+  "category": "forbidden_hex:life_advanced",
+  "sortnum": 6,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "forbidden_hex:forbidden_hex_mother_altar",
+      "text": "$(bold)用途：$(reset)黑山羊之母祭坛的完整形态——中心 2×2 母祭坛为锚点，向下逐层堆叠出三级结构。$(br2)$(bold)层级：$(reset)$(li)$(reset)1 级$(reset)：顶层祭坛 + 其下垫层$(li)$(reset)2 级$(reset)：1 级 + 再下一层$(li)$(reset)3 级$(reset)：2 级 + 最底层（含信标结构）$(br2)任意一座中心母祭坛每 20 tick 自检一次，取可识别到的$(reset)最高连续等级$(reset)；等级写入四座祭坛并同步客户端。"
+    },
+    {
+      "type": "patchouli:multiblock",
+      "name": "黑山羊三级祭坛（16×16×4）",
+      "multiblock": {
+        "pattern": [
+          [
+            "                ",
+            "                ",
+            "                ",
+            "                ",
+            "      C  C      ",
+            "                ",
+            "    C      C    ",
+            "       0C       ",
+            "       CC       ",
+            "    C      C    ",
+            "                ",
+            "      C  C      ",
+            "                ",
+            "                ",
+            "                ",
+            "                "
+          ],
+          [
+            "                ",
+            "                ",
+            "  D          D  ",
+            "                ",
+            "     AEBBEA     ",
+            "    AABHHBAA    ",
+            "    EBBHHBBE    ",
+            "    BHHEEHHB    ",
+            "    BHHEEHHB    ",
+            "    EBBHHBBE    ",
+            "    AABHHBAA    ",
+            "     AEBBEA     ",
+            "                ",
+            "  D          D  ",
+            "                ",
+            "                "
+          ],
+          [
+            "                ",
+            " III        III ",
+            " III        III ",
+            " III AEBBEA III ",
+            "    A      A    ",
+            "   A        A   ",
+            "   E        E   ",
+            "   B        B   ",
+            "   B        B   ",
+            "   E        E   ",
+            "   A        A   ",
+            "    A      A    ",
+            " III AEBBEA III ",
+            " III        III ",
+            " III        III ",
+            "                "
+          ],
+          [
+            "HHHHH      HHHHH",
+            "HAAAH      HAAAH",
+            "HAAAHHHHHHHHAAAH",
+            "HAAAH      HAAAH",
+            "HHHH        HHHH",
+            "  H          H  ",
+            "  H          H  ",
+            "  H          H  ",
+            "  H          H  ",
+            "  H          H  ",
+            "  H          H  ",
+            "HHHH        HHHH",
+            "HAAAH      HAAAH",
+            "HAAAHHHHHHHHAAAH",
+            "HAAAH      HAAAH",
+            "HHHHH      HHHHH"
+          ]
+        ],
+        "mapping": {
+          "A": "forbidden_hex:forbidden_hex_altar_stone",
+          "B": "forbidden_hex:forbidden_hex_essence_block",
+          "C": "forbidden_hex:forbidden_hex_mother_altar",
+          "H": "minecraft:crying_obsidian",
+          "I": "minecraft:iron_block",
+          "E": "minecraft:bone_block",
+          "D": "minecraft:beacon",
+          "0": "forbidden_hex:forbidden_hex_mother_altar"
+        },
+        "symmetrical": true
+      },
+      "text": "$(bold)分层（自顶向下，共 4 层）：$(reset)$(li)y=-57 顶层：C=黑山羊之母祭坛（红色 0 为锚点）$(li)y=-58 垫层：A=母神祭坛石、B=生命精华块、E=骨块、H=哭泣黑曜石、D=信标$(li)y=-59 中层：I=信标基座方阵 + E/B/A 阶梯环$(li)y=-60 底层：H=哭泣黑曜石外框、A=母神祭坛石$(br2)$(reset)信标结构只属于 3 级$(reset)：1/2 级校验时 D（信标）与 I（基座）格忽略，任意方块均不影响判定；3 级必须实放信标，且基座方块$(reset)只要能激活信标即可$(reset)——铁块、金块、钻石块、绿宝石块、下界合金块任选。整座结构 90° 旋转对称，$(reset)任意朝向均可$(reset)。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "分级判定",
+      "text": "$(bold)判定规则：$(reset)从 1 级向上逐层校验，能连到第几层就算几级；缺任意一格实体方块即回落到上一层，最差为 0（未成型）。$(bold)空位不算：$(reset)图中留空的格可放置任意方块，不影响识别。$(br2)$(bold)锚点：$(reset)中心 2×2 的四座母祭坛$(reset)任一座均可触发$(reset)，四座各自独立扫描并写入同一等级。$(br2)$(bold)当前阶段：$(reset)保留结构识别、等级同步、成型（≥1 级合并巨坛）与供品展示；生命融合仪式暂未启用。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "供品展示",
+      "text": "母坛与外圈子祭坛可放置并展示供品。单座祭坛通过右键放入、空手右键取回；成型后的中心四座通过合并祭坛界面管理单物品供奉槽。任意物品均可供奉。生命融合配方、注能及产物结算暂未启用。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "成型之后",
+      "text": "$(bold)成型条件：$(reset)结构达到 $(reset)≥ 1 级$(reset) 即成型；等级归零（核心方块被破坏）即解散还原，$(reset)全部回退$(reset)。$(br2)$(bold)巨坛合并：$(reset)中心 2×2 四座各自渲染四分之一的巨坛模型，$(reset)无缝拼成一座$(reset)，坛顶覆一层$(reset)红毯$(reset)。$(br2)$(bold)右键交互：$(reset)成型后右键中心四座任意一座，打开$(reset)合并祭坛界面$(reset)——显示$(reset)当前结构等级$(reset)，并提供一个供奉槽（$(reset)仅能放 1 件$(reset)，任意物品皆可）。$(br2)$(bold)红纹替换：$(reset)成型后结构内$(reset)哭泣黑曜石$(reset)按等级转红——$(reset)y=-58 垫层随成型常驻红纹$(reset)，$(reset)y=-60 底层仅 3 级为红纹$(reset)，紫色纹路化为红色流动纹路；$(reset)事后补放$(reset)的普通哭泣黑曜石会在数秒内自动转红。$(br2)$(bold)八座红光：$(reset)外圈 8 座子祭坛由紫光$(reset)转为红光$(reset)（纯视觉，仍可单座供奉）。$(br2)$(bold)还原：$(reset)破坏第 1 层（y=-57 顶层 / y=-58 垫层）的必需方块致等级归零，则红纹换回哭泣黑曜石、红光熄灭、四座解散，恢复单座形态（合并时四座旧供品会$(reset)逐座弹出归还$(reset)）。$(br2)$(bold)降级：$(reset)只破坏深层（y=-59 / y=-60）不会解散整座，而是按剩余等级降级——超出当前等级那一层的红纹自动还原为普通哭泣黑曜石，补回后再度转红。"
+    },
+    {
+      "type": "patchouli:relations",
+      "entries": [
+        "forbidden_hex:mother_altar"
+      ],
+      "text": "前置：建议先阅读「黑山羊之母祭坛」，了解单座祭坛的供奉交互。"
+    }
+  ]
+}
