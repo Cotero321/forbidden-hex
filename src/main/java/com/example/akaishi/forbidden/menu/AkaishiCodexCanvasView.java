@@ -194,6 +194,11 @@ final class AkaishiCodexCanvasView {
         }
     }
 
+    void invalidateLayout() {
+        savePan();
+        scopeSet = false;
+    }
+
     /** 内容包围盒：横向含徽记与徽记名，纵向含徽记名（下）与图版留白（上） */
     private void recompute(@Nullable Font font) {
         int minX = Integer.MAX_VALUE;

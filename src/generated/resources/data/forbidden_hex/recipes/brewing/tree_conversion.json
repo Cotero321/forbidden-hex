@@ -1,0 +1,49 @@
+{
+  "type": "forbidden_hex:crucible",
+  "heat": "fire",
+  "kind": "transformation",
+  "results": [
+    {
+      "count": 1,
+      "item": "forbidden_hex:forbidden_hex_hawthorn_sapling"
+    },
+    {
+      "count": 1,
+      "item": "forbidden_hex:forbidden_hex_rowan_sapling"
+    },
+    {
+      "count": 1,
+      "item": "forbidden_hex:forbidden_hex_alder_sapling"
+    },
+    {
+      "count": 1,
+      "item": "forbidden_hex:forbidden_hex_elder_sapling"
+    },
+    {
+      "count": 1,
+      "item": "forbidden_hex:forbidden_hex_willow_sapling"
+    }
+  ],
+  "steps": [
+    {
+      "ingredient": {
+        "tag": "minecraft:saplings"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:egg"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "forbidden_hex:forbidden_hex_fume"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "forbidden_hex:forbidden_hex_transmutation_dust"
+      }
+    }
+  ]
+}

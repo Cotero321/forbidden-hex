@@ -11,6 +11,8 @@ import net.minecraft.world.phys.HitResult;
 import java.util.Optional;
 
 public class BrewingPotionProjectile extends ThrowableItemProjectile {
+    public static final byte SHATTER_EVENT = 3;
+
     public BrewingPotionProjectile(EntityType<? extends BrewingPotionProjectile> type, Level level) {
         super(type, level);
     }
@@ -29,6 +31,19 @@ public class BrewingPotionProjectile extends ThrowableItemProjectile {
         Optional<BrewingPotionData> properties = BrewingPotionData.read(getItem());
         if (properties.isPresent() && properties.get().delivery() != BrewingPotionData.Delivery.DRINK) {
             BrewingPotionData data = properties.get();
+            if (!data.hideParticles()) level().broadcastEntityEvent(this, SHATTER_EVENT);
+            if (data.triggerPressurePlates() && hit instanceof net.minecraft.world.phys.BlockHitResult blockHit) {
+                net.minecraft.core.BlockPos platePos = blockHit.getBlockPos();
+                var state = level().getBlockState(platePos);
+                if (!(state.getBlock() instanceof net.minecraft.world.level.block.BasePressurePlateBlock)) {
+                    platePos = platePos.above();
+                    state = level().getBlockState(platePos);
+                }
+                if (state.getBlock() instanceof net.minecraft.world.level.block.BasePressurePlateBlock) {
+                    setPos(blockHit.getLocation().x, Math.max(blockHit.getLocation().y, platePos.getY() + 0.0625), blockHit.getLocation().z);
+                    state.entityInside(level(), platePos, this);
+                }
+            }
             if (data.delivery() == BrewingPotionData.Delivery.LINGERING) {
                 BrewingEffectCloud cloud = BrewingEntities.CLOUD.get().create(level());
                 if (cloud == null) { discard(); return; }

@@ -52,13 +52,13 @@ public final class AkaishiForbiddenCreativeTabs {
 
     private static void addForbiddenItems(CreativeModeTab.Output output) {
         accept(output, AkaishiCodexItems.forbiddenCodex);
+        accept(output, AkaishiCodexItems.knowledgeTest);
         accept(output, AkaishiForbiddenBlocks.INSCRIPTION_TABLE);
         accept(output, com.example.akaishi.forbidden.brewing.BrewingBlocks.OVEN);
         accept(output, com.example.akaishi.forbidden.brewing.BrewingBlocks.CRUCIBLE);
         accept(output, com.example.akaishi.forbidden.brewing.BrewingItems.WOOD_ASH);
         accept(output, com.example.akaishi.forbidden.brewing.BrewingItems.GRASS_ASH);
-        accept(output, com.example.akaishi.forbidden.brewing.BrewingItems.FUME);
-        accept(output, com.example.akaishi.forbidden.brewing.BrewingItems.POTION);
+        com.example.akaishi.forbidden.brewing.BrewingItems.addCreativeItems(output);
         // 母神祭坛体系（P3d 自本体「生命科技」栏改列本禁忌栏）：母神祭坛 / 祭坛石 / 猩红哭泣黑曜石
         accept(output, AkaishiMotherAltarBlocks.CHISHI_MOTHER_ALTAR);
         accept(output, AkaishiMotherAltarBlocks.CHISHI_ALTAR_STONE);

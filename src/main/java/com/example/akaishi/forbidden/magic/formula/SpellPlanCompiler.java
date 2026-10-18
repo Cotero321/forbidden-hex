@@ -97,7 +97,7 @@ public final class SpellPlanCompiler {
         float pricing = channel ? seconds : shots;
         int segments = channel ? Math.max(1, Math.round(seconds)) : shots;
         SchedulePlan schedule = new SchedulePlan(segments, channel ? 1f : volley ? 0.1f : 0f,
-                seconds, shots, words.contains(MagicWord.TOU) && words.contains(MagicWord.BENG) ? 1 : 0,
+                seconds, shots, hasFollowup(words) ? 1 : 0,
                 delivery.continuous());
         boolean starInk = inks.contains(MagicIds.Ink.XING);
         List<EffectOperation> operations = operations(words, slots, overlays, source, validation, starInk);
@@ -179,7 +179,7 @@ public final class SpellPlanCompiler {
                 traits.add("attached_dot_1hz");
             if (MagicIds.Effect.DAMAGE.equals(id)) {
                 if (words.contains(MagicWord.JIAN) || words.contains(MagicWord.ZHEN)) traits.add("piercing");
-                if (words.contains(MagicWord.TOU) && words.contains(MagicWord.BENG)) traits.add("followup_hit");
+                if (hasFollowup(words)) traits.add("followup_hit");
             }
             if (MagicIds.Effect.BREAK_TERMINATE.equals(id)) {
                 if (words.contains(MagicWord.JING)) traits.add("purify_negative");
@@ -190,6 +190,11 @@ public final class SpellPlanCompiler {
                     hp ? magnitude : 0f, magnitude, duration, radius, traits));
         }
         return result;
+    }
+
+    private static boolean hasFollowup(List<MagicWord> words) {
+        return words.contains(MagicWord.BENG)
+                && (words.contains(MagicWord.TOU) || words.contains(MagicWord.LIU));
     }
 
     private static String resolveDelivery(List<MagicWord> words, List<CompileDiagnostic> diagnostics) {

@@ -24,9 +24,12 @@ public record SpellVisual(
         float duration,
         int wordCount,
         List<String> wordIds,
-        String glyphs) {
+        String glyphs,
+        List<String> slotWords,
+        List<String> slotInks) {
 
     private static final int MAX_WORDS = 16;
+    private static final int SLOT_COUNT = 8;
     private static final int MAX_ID_LENGTH = 48;
     private static final int MAX_GLYPHS = 128;
 
@@ -38,15 +41,41 @@ public record SpellVisual(
         List<String> safeWords = new ArrayList<>();
         if (wordIds != null) {
             for (String wordId : wordIds) {
-                if (safeWords.size() >= MAX_WORDS || wordId == null || wordId.length() > MAX_ID_LENGTH) {
-                    break;
-                }
+                if (safeWords.size() >= MAX_WORDS) break;
+                if (wordId == null || wordId.isEmpty() || wordId.length() > MAX_ID_LENGTH) continue;
                 safeWords.add(wordId);
             }
         }
         wordIds = Collections.unmodifiableList(safeWords);
         wordCount = safeWords.size();
         glyphs = glyphs == null ? "" : glyphs.substring(0, Math.min(glyphs.length(), MAX_GLYPHS));
+        slotWords = normalizeSlots(slotWords, safeWords);
+        slotInks = normalizeSlots(slotInks, java.util.Collections.nCopies(SLOT_COUNT, inkId));
+    }
+
+    public SpellVisual(String effectId, String deliveryId, String sourceId, String inkId,
+            int inkRgb, int sourceRgb, float power, float radius, float duration,
+            int wordCount, List<String> wordIds, String glyphs) {
+        this(effectId, deliveryId, sourceId, inkId, inkRgb, sourceRgb, power, radius, duration,
+                wordCount, wordIds, glyphs, wordIds, java.util.Collections.nCopies(SLOT_COUNT, inkId));
+    }
+
+    public SpellVisual(String effectId, String deliveryId, String sourceId, String inkId,
+            int inkRgb, int sourceRgb, float power, float radius, float duration,
+            int wordCount, List<String> wordIds, String glyphs, List<String> slotWords) {
+        this(effectId, deliveryId, sourceId, inkId, inkRgb, sourceRgb, power, radius, duration,
+                wordCount, wordIds, glyphs, slotWords, java.util.Collections.nCopies(SLOT_COUNT, inkId));
+    }
+
+    private static List<String> normalizeSlots(List<String> values, List<String> fallback) {
+        List<String> source = values != null && !values.isEmpty() ? values : fallback;
+        List<String> normalized = new ArrayList<>(SLOT_COUNT);
+        for (int i = 0; i < SLOT_COUNT; i++) {
+            String value = source != null && i < source.size() ? source.get(i) : "";
+            normalized.add(value == null || value.length() > MAX_ID_LENGTH
+                    || value.indexOf((char) 1) >= 0 ? "" : value);
+        }
+        return Collections.unmodifiableList(normalized);
     }
 
     private static String bounded(String value) {
@@ -91,6 +120,13 @@ public record SpellVisual(
 
     public static SpellVisual assemble(String coreWordId, String deliveryId, String mainInkId,
             String sourceId, float power, float radius, float duration, List<String> wordIds) {
+        return assemble(coreWordId, deliveryId, mainInkId, sourceId, power, radius, duration,
+                wordIds, wordIds, java.util.Collections.nCopies(SLOT_COUNT, mainInkId));
+    }
+
+    public static SpellVisual assemble(String coreWordId, String deliveryId, String mainInkId,
+            String sourceId, float power, float radius, float duration, List<String> wordIds,
+            List<String> slotWords, List<String> slotInks) {
         MagicWord core = MagicWord.byId(coreWordId);
         String effectId = core == null ? MagicIds.Effect.DAMAGE : core.effect();
         MagicInkDef ink = MagicInkTable.get(mainInkId);
@@ -104,14 +140,15 @@ public record SpellVisual(
         }
         return new SpellVisual(effectId, deliveryId == null ? MagicIds.Delivery.INSTANT : deliveryId,
                 source.id(), ink == null ? "" : ink.id(), inkRgb, source.rgb(), power, radius, duration,
-                safeWords.size(), safeWords, glyphs.toString());
+                safeWords.size(), safeWords, glyphs.toString(), slotWords, slotInks);
     }
 
     public static SpellVisual from(com.example.akaishi.forbidden.api.magic.exec.MagicContext context) {
         if (context == null || context.snapshot() == null) return null;
         var snapshot = context.snapshot();
         return assemble(snapshot.coreWordId(), snapshot.deliveryId(), context.mainInkId(), context.sourceId(),
-                snapshot.power(), snapshot.radius(), snapshot.durationSeconds(), context.words());
+                snapshot.power(), snapshot.radius(), snapshot.durationSeconds(), context.words(),
+                context.slotWords(), context.slotInks());
     }
 
     public void write(FriendlyByteBuf buf) {
@@ -127,6 +164,8 @@ public record SpellVisual(
         buf.writeVarInt(wordIds.size());
         for (String wordId : wordIds) buf.writeUtf(wordId, MAX_ID_LENGTH);
         buf.writeUtf(glyphs, MAX_GLYPHS);
+        for (String slotWord : slotWords) buf.writeUtf(slotWord, MAX_ID_LENGTH);
+        for (String slotInk : slotInks) buf.writeUtf(slotInk, MAX_ID_LENGTH);
     }
 
     public static SpellVisual read(FriendlyByteBuf buf) {
@@ -144,8 +183,16 @@ public record SpellVisual(
         List<String> wordIds = new ArrayList<>(count);
         for (int i = 0; i < count; i++) wordIds.add(buf.readUtf(MAX_ID_LENGTH));
         String glyphs = buf.readUtf(MAX_GLYPHS);
+        List<String> slotWords = new ArrayList<>(SLOT_COUNT);
+        List<String> slotInks = new ArrayList<>(SLOT_COUNT);
+        for (int i = 0; i < SLOT_COUNT; i++) slotWords.add(buf.readUtf(MAX_ID_LENGTH));
+        for (int i = 0; i < SLOT_COUNT; i++) slotInks.add(buf.readUtf(MAX_ID_LENGTH));
         return new SpellVisual(effectId, deliveryId, sourceId, inkId, inkRgb, sourceRgb,
-                power, radius, duration, wordIds.size(), wordIds, glyphs);
+                power, radius, duration, wordIds.size(), wordIds, glyphs, slotWords, slotInks);
+    }
+
+    public SpellCircleLayers circleLayers() {
+        return SpellCircleLayers.from(this, slotWords, slotInks);
     }
 
     public float baseSize() {

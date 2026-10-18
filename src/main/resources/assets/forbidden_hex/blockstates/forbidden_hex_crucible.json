@@ -1,8 +1,8 @@
 {
   "variants": {
-    "level=0": { "model": "minecraft:block/cauldron" },
-    "level=1": { "model": "minecraft:block/water_cauldron_level1" },
-    "level=2": { "model": "minecraft:block/water_cauldron_level2" },
-    "level=3": { "model": "minecraft:block/water_cauldron_full" }
+    "level=0": { "model": "forbidden_hex:block/forbidden_hex_crucible_textured_0" },
+    "level=1": { "model": "forbidden_hex:block/forbidden_hex_crucible_textured_1" },
+    "level=2": { "model": "forbidden_hex:block/forbidden_hex_crucible_textured_2" },
+    "level=3": { "model": "forbidden_hex:block/forbidden_hex_crucible_textured_3" }
   }
 }

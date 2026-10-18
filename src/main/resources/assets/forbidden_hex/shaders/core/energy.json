@@ -1,0 +1,28 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "one",
+    "srcalpha": "one",
+    "dstalpha": "one"
+  },
+  "vertex": "forbidden_hex:energy",
+  "fragment": "forbidden_hex:energy",
+  "attributes": ["Position", "Color", "UV0", "UV1", "UV2", "Normal"],
+  "samplers": [{"name": "Sampler0"}],
+  "uniforms": [
+    {"name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]},
+    {"name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]},
+    {"name": "ColorModulator", "type": "float", "count": 4, "values": [1, 1, 1, 1]},
+    {"name": "FogStart", "type": "float", "count": 1, "values": [0]},
+    {"name": "FogEnd", "type": "float", "count": 1, "values": [1]},
+    {"name": "FogShape", "type": "int", "count": 1, "values": [0]},
+    {"name": "VisualTime", "type": "float", "count": 1, "values": [0]},
+    {"name": "GlowStrength", "type": "float", "count": 1, "values": [1.15]},
+    {"name": "FlowSpeed", "type": "float", "count": 1, "values": [0]},
+    {"name": "PulseStrength", "type": "float", "count": 1, "values": [0]},
+    {"name": "PulseSpeed", "type": "float", "count": 1, "values": [1.5]},
+    {"name": "EdgeSoftness", "type": "float", "count": 1, "values": [0]},
+    {"name": "AlphaCutoff", "type": "float", "count": 1, "values": [0.003]}
+  ]
+}

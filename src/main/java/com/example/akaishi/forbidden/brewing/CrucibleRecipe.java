@@ -12,6 +12,7 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
+import net.minecraft.util.RandomSource;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -19,35 +20,66 @@ import java.util.List;
 import java.util.Locale;
 
 public record CrucibleRecipe(ResourceLocation id, List<BrewingIngredient> steps, BrewingHeat heat,
-                             ItemStack result, boolean potion, List<BrewingModifier> modifiers) implements Recipe<Container> {
+                             ItemStack result, boolean potion, List<BrewingModifier> modifiers,
+                             List<ItemStack> resultPool) implements Recipe<Container> {
     public CrucibleRecipe {
-        if (steps == null || steps.isEmpty() || steps.size() > CrucibleBlockEntity.MAX_STEPS || heat == BrewingHeat.NONE
-                || result == null || result.isEmpty() || result.getCount() < 1 || result.getCount() > result.getMaxStackSize()
-                || modifiers == null || modifiers.size() > 64) {
+        if (id == null || steps == null || steps.isEmpty() || steps.size() > CrucibleBlockEntity.MAX_STEPS
+                || heat == null || heat == BrewingHeat.NONE || result == null || result.isEmpty()
+                || result.getCount() < 1 || result.getCount() > result.getMaxStackSize()
+                || modifiers == null || modifiers.size() > 64 || resultPool == null || resultPool.isEmpty()
+                || resultPool.size() > 64) {
             throw new IllegalArgumentException("Invalid crucible recipe");
         }
-        if (potion && (result.getCount() != 1 || !result.is(BrewingItems.POTION.get())
-                || BrewingPotionData.read(result).isEmpty())) throw new IllegalArgumentException("Invalid crucible potion");
-        if (!potion && !modifiers.isEmpty()) throw new IllegalArgumentException("Invalid crucible modifiers");
-        if (potion) {
-            BrewingPotionData base = BrewingPotionData.read(result).orElseThrow();
-            for (BrewingModifier modifier : modifiers) modifier.apply(base);
+        for (ItemStack candidate : resultPool) {
+            if (candidate == null || candidate.isEmpty() || candidate.getCount() < 1
+                    || candidate.getCount() > candidate.getMaxStackSize()) {
+                throw new IllegalArgumentException("Invalid crucible result pool");
+            }
         }
+        if (potion && (result.getCount() != 1 || resultPool.size() != 1
+                || !result.is(BrewingItems.POTION.get()) || BrewingPotionData.read(result).isEmpty())) {
+            throw new IllegalArgumentException("Invalid crucible potion");
+        }
+        if (!potion && !modifiers.isEmpty()) throw new IllegalArgumentException("Invalid crucible modifiers");
         steps = List.copyOf(steps);
         modifiers = List.copyOf(modifiers);
         result = result.copy();
+        resultPool = resultPool.stream().map(ItemStack::copy).toList();
+        if (potion) {
+            int effectCount = BrewingPotionData.read(result).orElseThrow().effects().size();
+            for (BrewingModifier modifier : modifiers) {
+                if (modifier.kind() == BrewingModifier.Kind.STRENGTH && !modifier.amplifiers().isEmpty()
+                        && modifier.amplifiers().size() != effectCount) {
+                    throw new IllegalArgumentException("Strength amplifiers must match the effect list");
+                }
+            }
+        }
     }
 
-    public CrucibleRecipe(ResourceLocation id, List<BrewingIngredient> steps, BrewingHeat heat, ItemStack result, boolean potion) {
-        this(id, steps, heat, result, potion, List.of());
+    public CrucibleRecipe(ResourceLocation id, List<BrewingIngredient> steps, BrewingHeat heat,
+                          ItemStack result, boolean potion, List<BrewingModifier> modifiers) {
+        this(id, steps, heat, result, potion, modifiers, List.of(result));
+    }
+
+    public CrucibleRecipe(ResourceLocation id, List<BrewingIngredient> steps, BrewingHeat heat,
+                          ItemStack result, boolean potion) {
+        this(id, steps, heat, result, potion, List.of(), List.of(result));
     }
 
     @Override public ItemStack result() { return result.copy(); }
+    @Override public List<ItemStack> resultPool() { return resultPool.stream().map(ItemStack::copy).toList(); }
+    public ItemStack randomResult(RandomSource random) {
+        return resultPool.get(resultPool.size() == 1 ? 0 : random.nextInt(resultPool.size())).copy();
+    }
     public record Evaluation(boolean valid, int baseSteps, ItemStack result) { }
 
     public Evaluation evaluate(List<ItemStack> history) {
         int baseSteps = 0;
+        int capacityTier = 0;
         EnumSet<BrewingModifier.Kind> applied = EnumSet.noneOf(BrewingModifier.Kind.class);
+        java.util.Set<BrewingModifier> used = new java.util.HashSet<>();
+        List<BrewingModifier> available = new ArrayList<>(modifiers);
+        if (potion) available.addAll(BrewingModifiers.defaults());
         BrewingPotionData properties = potion ? BrewingPotionData.read(result).orElseThrow() : null;
         for (ItemStack input : history) {
             if (baseSteps < steps.size() && steps.get(baseSteps).test(input)) {
@@ -55,7 +87,17 @@ public record CrucibleRecipe(ResourceLocation id, List<BrewingIngredient> steps,
                 continue;
             }
             List<BrewingModifier> choices = modifiers.stream().filter(modifier -> modifier.ingredient().test(input)).toList();
-            if (choices.size() != 1 || !applied.add(choices.get(0).kind()) || properties == null) {
+            if (choices.isEmpty()) choices = available.stream().filter(modifier -> modifier.ingredient().test(input)).toList();
+            if (choices.size() != 1 || properties == null) return new Evaluation(false, baseSteps, ItemStack.EMPTY);
+            BrewingModifier modifier = choices.get(0);
+            if (modifier.kind() == BrewingModifier.Kind.CAPACITY) {
+                if (modifier.value() < capacityTier) return new Evaluation(false, baseSteps, ItemStack.EMPTY);
+                capacityTier = modifier.value();
+            }
+            boolean staircase = modifier.kind() == BrewingModifier.Kind.CAPACITY
+                    || modifier.kind() == BrewingModifier.Kind.STRENGTH || modifier.kind() == BrewingModifier.Kind.DURATION
+                    || modifier.kind() == BrewingModifier.Kind.DELIVERY;
+            if (!used.add(modifier) || !staircase && !applied.add(modifier.kind())) {
                 return new Evaluation(false, baseSteps, ItemStack.EMPTY);
             }
             try {
@@ -71,7 +113,8 @@ public record CrucibleRecipe(ResourceLocation id, List<BrewingIngredient> steps,
 
     public boolean acceptsIngredient(ItemStack input) {
         return steps.stream().anyMatch(ingredient -> ingredient.test(input))
-                || modifiers.stream().anyMatch(modifier -> modifier.ingredient().test(input));
+                || modifiers.stream().anyMatch(modifier -> modifier.ingredient().test(input))
+                || potion && BrewingModifiers.defaults().stream().anyMatch(modifier -> modifier.ingredient().test(input));
     }
 
     public boolean prefix(List<ItemStack> history) { return evaluate(history).valid(); }
@@ -80,18 +123,21 @@ public record CrucibleRecipe(ResourceLocation id, List<BrewingIngredient> steps,
         Evaluation evaluation = evaluate(history);
         return currentHeat == heat && evaluation.valid() && evaluation.baseSteps() == steps.size();
     }
+
     @Override public boolean matches(Container container, Level level) {
         List<ItemStack> history = new ArrayList<>();
         for (int i = 0; i < container.getContainerSize(); i++) if (!container.getItem(i).isEmpty()) history.add(container.getItem(i));
         Evaluation evaluation = evaluate(history);
         return evaluation.valid() && evaluation.baseSteps() == steps.size();
     }
+
     @Override public ItemStack assemble(Container container, RegistryAccess access) {
         List<ItemStack> history = new ArrayList<>();
         for (int i = 0; i < container.getContainerSize(); i++) if (!container.getItem(i).isEmpty()) history.add(container.getItem(i));
         Evaluation evaluation = evaluate(history);
         return evaluation.valid() && evaluation.baseSteps() == steps.size() ? evaluation.result() : ItemStack.EMPTY;
     }
+
     @Override public boolean canCraftInDimensions(int width, int height) { return true; }
     @Override public ItemStack getResultItem(RegistryAccess access) { return result(); }
     @Override public ResourceLocation getId() { return id; }
@@ -115,18 +161,35 @@ public record CrucibleRecipe(ResourceLocation id, List<BrewingIngredient> steps,
             if (!kind.equals("potion") && !kind.equals("transformation")) throw new JsonSyntaxException("Unknown crucible recipe kind");
             boolean potion = kind.equals("potion");
             ItemStack result;
+            List<ItemStack> resultPool;
             if (potion) {
                 result = new ItemStack(BrewingItems.POTION.get());
                 BrewingRecipeIO.potion(GsonHelper.getAsJsonObject(json, "result")).write(result);
-            } else result = BrewingRecipeIO.stack(GsonHelper.getAsJsonObject(json, "result"));
+                resultPool = List.of(result);
+            } else if (json.has("results")) {
+                if (GsonHelper.getAsJsonArray(json, "results").size() > 64) throw new JsonSyntaxException("Too many crucible results");
+                resultPool = new ArrayList<>();
+                for (var entry : GsonHelper.getAsJsonArray(json, "results")) resultPool.add(BrewingRecipeIO.stack(entry.getAsJsonObject()));
+                if (resultPool.isEmpty()) throw new JsonSyntaxException("Empty crucible result pool");
+                result = resultPool.get(0);
+            } else {
+                result = BrewingRecipeIO.stack(GsonHelper.getAsJsonObject(json, "result"));
+                resultPool = List.of(result);
+            }
             List<BrewingModifier> modifiers = new ArrayList<>();
             if (json.has("modifiers")) for (var entry : GsonHelper.getAsJsonArray(json, "modifiers")) {
                 if (modifiers.size() >= 64) throw new JsonSyntaxException("Too many crucible modifiers");
                 modifiers.add(BrewingModifier.fromJson(entry.getAsJsonObject()));
             }
-            return new CrucibleRecipe(id, steps,
-                    BrewingHeat.valueOf(GsonHelper.getAsString(json, "heat", "fire").toUpperCase(Locale.ROOT)), result, potion, modifiers);
+            try {
+                return new CrucibleRecipe(id, steps,
+                        BrewingHeat.valueOf(GsonHelper.getAsString(json, "heat", "fire").toUpperCase(Locale.ROOT)),
+                        result, potion, modifiers, resultPool);
+            } catch (IllegalArgumentException exception) {
+                throw new JsonSyntaxException("Invalid crucible recipe", exception);
+            }
         }
+
         @Override public CrucibleRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             int count = buffer.readVarInt();
             if (count < 1 || count > CrucibleBlockEntity.MAX_STEPS) throw new IllegalArgumentException("Invalid crucible step count");
@@ -139,13 +202,30 @@ public record CrucibleRecipe(ResourceLocation id, List<BrewingIngredient> steps,
             if (modifierCount < 0 || modifierCount > 64) throw new IllegalArgumentException("Invalid crucible modifier count");
             List<BrewingModifier> modifiers = new ArrayList<>();
             for (int i = 0; i < modifierCount; i++) modifiers.add(BrewingModifier.fromNetwork(buffer));
-            return new CrucibleRecipe(id, steps, heat, result, potion, modifiers);
+            List<ItemStack> resultPool = new ArrayList<>();
+            String poolKey = "forbidden_hex_crucible_results";
+            if (result.hasTag() && result.getTag().contains(poolKey)) {
+                if (!(result.getTag().get(poolKey) instanceof net.minecraft.nbt.ListTag pool)
+                        || pool.isEmpty() || pool.size() > 64 || pool.getElementType() != net.minecraft.nbt.Tag.TAG_COMPOUND) {
+                    throw new IllegalArgumentException("Invalid crucible result pool");
+                }
+                for (int i = 0; i < pool.size(); i++) resultPool.add(ItemStack.of(pool.getCompound(i)));
+                result.removeTagKey(poolKey);
+            } else resultPool.add(result);
+            return new CrucibleRecipe(id, steps, heat, result, potion, modifiers, resultPool);
         }
+
         @Override public void toNetwork(FriendlyByteBuf buffer, CrucibleRecipe recipe) {
             buffer.writeVarInt(recipe.steps.size());
             for (BrewingIngredient step : recipe.steps) step.toNetwork(buffer);
             buffer.writeEnum(recipe.heat);
-            buffer.writeItem(recipe.result);
+            ItemStack networkResult = recipe.result();
+            if (recipe.resultPool.size() > 1) {
+                net.minecraft.nbt.ListTag pool = new net.minecraft.nbt.ListTag();
+                for (ItemStack result : recipe.resultPool) pool.add(result.save(new net.minecraft.nbt.CompoundTag()));
+                networkResult.getOrCreateTag().put("forbidden_hex_crucible_results", pool);
+            }
+            buffer.writeItem(networkResult);
             buffer.writeBoolean(recipe.potion);
             buffer.writeVarInt(recipe.modifiers.size());
             for (BrewingModifier modifier : recipe.modifiers) modifier.toNetwork(buffer);

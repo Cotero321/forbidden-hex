@@ -1,0 +1,664 @@
+{
+  "spell.source.san.charge": {
+    "subtitle": "subtitles.forbidden_hex.spell.source.san.charge",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/source/san/charge",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.source.san.sustain": {
+    "subtitle": "subtitles.forbidden_hex.spell.source.san.sustain",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/source/san/sustain",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.source.san.release": {
+    "subtitle": "subtitles.forbidden_hex.spell.source.san.release",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/source/san/release",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.source.life.charge": {
+    "subtitle": "subtitles.forbidden_hex.spell.source.life.charge",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/source/life/charge",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.source.life.sustain": {
+    "subtitle": "subtitles.forbidden_hex.spell.source.life.sustain",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/source/life/sustain",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.source.life.release": {
+    "subtitle": "subtitles.forbidden_hex.spell.source.life.release",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/source/life/release",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.source.dark.charge": {
+    "subtitle": "subtitles.forbidden_hex.spell.source.dark.charge",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/source/dark/charge",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.source.dark.sustain": {
+    "subtitle": "subtitles.forbidden_hex.spell.source.dark.sustain",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/source/dark/sustain",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.source.dark.release": {
+    "subtitle": "subtitles.forbidden_hex.spell.source.dark.release",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/source/dark/release",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.source.white.charge": {
+    "subtitle": "subtitles.forbidden_hex.spell.source.white.charge",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/source/white/charge",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.source.white.sustain": {
+    "subtitle": "subtitles.forbidden_hex.spell.source.white.sustain",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/source/white/sustain",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.source.white.release": {
+    "subtitle": "subtitles.forbidden_hex.spell.source.white.release",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/source/white/release",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.effect.damage": {
+    "subtitle": "subtitles.forbidden_hex.spell.effect.damage",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/effect/damage_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/effect/damage_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.effect.break_unlock": {
+    "subtitle": "subtitles.forbidden_hex.spell.effect.break_unlock",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/effect/break_unlock_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/effect/break_unlock_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.effect.break_terminate": {
+    "subtitle": "subtitles.forbidden_hex.spell.effect.break_terminate",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/effect/break_terminate_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/effect/break_terminate_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.effect.break_shield": {
+    "subtitle": "subtitles.forbidden_hex.spell.effect.break_shield",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/effect/break_shield_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/effect/break_shield_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.effect.move": {
+    "subtitle": "subtitles.forbidden_hex.spell.effect.move",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/effect/move_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/effect/move_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.effect.teleport": {
+    "subtitle": "subtitles.forbidden_hex.spell.effect.teleport",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/effect/teleport_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/effect/teleport_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.effect.bind": {
+    "subtitle": "subtitles.forbidden_hex.spell.effect.bind",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/effect/bind_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/effect/bind_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.effect.weaken": {
+    "subtitle": "subtitles.forbidden_hex.spell.effect.weaken",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/effect/weaken_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/effect/weaken_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.effect.boost": {
+    "subtitle": "subtitles.forbidden_hex.spell.effect.boost",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/effect/boost_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/effect/boost_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.effect.mind": {
+    "subtitle": "subtitles.forbidden_hex.spell.effect.mind",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/effect/mind_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/effect/mind_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.effect.sense": {
+    "subtitle": "subtitles.forbidden_hex.spell.effect.sense",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/effect/sense_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/effect/sense_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.effect.conceal": {
+    "subtitle": "subtitles.forbidden_hex.spell.effect.conceal",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/effect/conceal_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/effect/conceal_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.effect.summon": {
+    "subtitle": "subtitles.forbidden_hex.spell.effect.summon",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/effect/summon_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/effect/summon_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.effect.field": {
+    "subtitle": "subtitles.forbidden_hex.spell.effect.field",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/effect/field_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/effect/field_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.effect.gather": {
+    "subtitle": "subtitles.forbidden_hex.spell.effect.gather",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/effect/gather_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/effect/gather_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.effect.link": {
+    "subtitle": "subtitles.forbidden_hex.spell.effect.link",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/effect/link_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/effect/link_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.effect.temporal": {
+    "subtitle": "subtitles.forbidden_hex.spell.effect.temporal",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/effect/temporal_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/effect/temporal_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.effect.vessel": {
+    "subtitle": "subtitles.forbidden_hex.spell.effect.vessel",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/effect/vessel_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/effect/vessel_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.effect.toll": {
+    "subtitle": "subtitles.forbidden_hex.spell.effect.toll",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/effect/toll_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/effect/toll_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.effect.ward": {
+    "subtitle": "subtitles.forbidden_hex.spell.effect.ward",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/effect/ward_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/effect/ward_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.chi": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.chi",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/chi_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/ink/chi_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.yuan": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.yuan",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/yuan_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/ink/yuan_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.man": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.man",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/man_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/ink/man_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.rang": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.rang",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/rang_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/ink/rang_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.shi": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.shi",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/shi_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/ink/shi_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.xu": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.xu",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/xu_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/ink/xu_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.hun": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.hun",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/hun_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/ink/hun_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.xing": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.xing",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/xing_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/ink/xing_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.yao": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.yao",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/yao_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/ink/yao_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.an": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.an",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/an_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/ink/an_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.ju": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.ju",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/ju_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/ink/ju_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.carrier.instant": {
+    "subtitle": "subtitles.forbidden_hex.spell.carrier.instant",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/carrier/instant_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/carrier/instant_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.carrier.projectile": {
+    "subtitle": "subtitles.forbidden_hex.spell.carrier.projectile",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/carrier/projectile_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/carrier/projectile_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.carrier.channel": {
+    "subtitle": "subtitles.forbidden_hex.spell.carrier.channel",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/carrier/channel_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/carrier/channel_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.carrier.attach": {
+    "subtitle": "subtitles.forbidden_hex.spell.carrier.attach",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/carrier/attach_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/carrier/attach_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.carrier.place": {
+    "subtitle": "subtitles.forbidden_hex.spell.carrier.place",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/carrier/place_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/carrier/place_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.carrier.echo": {
+    "subtitle": "subtitles.forbidden_hex.spell.carrier.echo",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/carrier/echo_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/carrier/echo_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.carrier.volley": {
+    "subtitle": "subtitles.forbidden_hex.spell.carrier.volley",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/carrier/volley_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/carrier/volley_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.end": {
+    "subtitle": "subtitles.forbidden_hex.spell.end",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/end_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/end_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.interrupt": {
+    "subtitle": "subtitles.forbidden_hex.spell.interrupt",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/interrupt_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/interrupt_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.shatter": {
+    "subtitle": "subtitles.forbidden_hex.spell.shatter",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/shatter_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/shatter_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.pulse": {
+    "subtitle": "subtitles.forbidden_hex.spell.pulse",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/pulse_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "forbidden_hex:spell/pulse_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "agaitolos_theme": {
+    "sounds": [
+      {
+        "name": "forbidden_hex:agaitolos_theme",
+        "stream": true
+      }
+    ]
+  }
+}

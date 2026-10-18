@@ -7,13 +7,13 @@ import net.minecraft.world.effect.MobEffectInstance;
 /**
  * 「不可名状」客户端表现强度（仅客户端调用）。
  * <p>
- * 每帧读取本地玩家身上的效果等级并换算为目标强度（I 级 0.6、II 级及以上拉满），
+ * 每客户端 tick 读取效果等级并换算为目标强度（I 级 0.6、II 级及以上拉满），
  * 再按指数衰减趋近目标，使画面表现随效果生效/消退平滑过渡，而非瞬间开关。
  */
 public final class UnnameableClientAmbience {
 
-    /** 每帧向目标趋近比例（越大过渡越快） */
-    private static final float LERP = 0.10f;
+    /** 每 tick 向目标趋近比例，近似原先 60 FPS 下的过渡速度。 */
+    private static final float LERP = 0.27f;
     /** I 级时的基础强度，等级越高越强（每级 +0.4，上限 1） */
     private static final float BASE_LEVEL = 0.6f;
 
@@ -23,8 +23,8 @@ public final class UnnameableClientAmbience {
     private UnnameableClientAmbience() {
     }
 
-    /** 渲染线程调用：刷新目标强度并返回平滑后的当前强度（0~1） */
-    public static float level() {
+    /** 由后处理调度器每 tick 更新一次，所有表现层只读取结果。 */
+    public static void update() {
         target = resolveTarget();
         float diff = target - current;
         if (diff * diff < 1e-6f) {
@@ -32,7 +32,15 @@ public final class UnnameableClientAmbience {
         } else {
             current += diff * LERP;
         }
+    }
+
+    public static float level() {
         return current;
+    }
+
+    public static void reset() {
+        target = 0f;
+        current = 0f;
     }
 
     /** 只读取当前强度、不推进过渡：供同一帧内的其他表现层复用，避免重复推进 */

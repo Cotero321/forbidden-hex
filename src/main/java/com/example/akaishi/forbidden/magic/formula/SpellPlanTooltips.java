@@ -3,6 +3,7 @@ package com.example.akaishi.forbidden.magic.formula;
 import com.example.akaishi.forbidden.api.magic.*;
 import com.example.akaishi.forbidden.magic.cast.PaymentPlan;
 import com.example.akaishi.forbidden.magic.table.*;
+import com.example.akaishi.forbidden.visual.ItemTooltipMode;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import java.util.List;
@@ -43,6 +44,31 @@ public final class SpellPlanTooltips {
         if (plan.features().contains("star_exclusive")) lines.add(key("star"));
         lines.add(key("baseline"));
     }
+    public static void append(List<Component> lines, SpellPlan plan, ItemTooltipMode mode, float extra) {
+        if (mode == ItemTooltipMode.TECHNICAL) {
+            lines.add(key("delivery", Component.translatable("item.forbidden_hex.magic_core.delivery." + plan.delivery().deliveryId())));
+            lines.add(key("target_shape", Component.translatable("item.forbidden_hex.magic_core.target." + plan.target().shape())));
+            append(lines, plan, true, extra);
+            lines.add(key("quote_only"));
+            return;
+        }
+        if (mode == ItemTooltipMode.USAGE) {
+            for (var operation : plan.operations()) {
+                lines.add(key("usage_effect", Component.translatable("item.forbidden_hex.magic_core.op." + operation.effectId())));
+            }
+            lines.add(key("delivery", Component.translatable("item.forbidden_hex.magic_core.delivery." + plan.delivery().deliveryId())));
+            lines.add(key("target_shape", Component.translatable("item.forbidden_hex.magic_core.target." + plan.target().shape())));
+            lines.add(key(plan.target().requireLineOfSight() ? "visibility_required" : "visibility_ignored"));
+            if (MagicIds.Delivery.CHANNEL.equals(plan.delivery().deliveryId())) lines.add(key("sustain"));
+            lines.add(key("friendly"));
+            return;
+        }
+        for (var operation : plan.operations()) {
+            lines.add(key("brief", Component.translatable("item.forbidden_hex.magic_core.op." + operation.effectId()), value(operation)));
+        }
+        lines.add(key("cost", fmt(plan.cost().total()), fmt(plan.cost().segmentCost())));
+    }
+
     public static String briefValue(EffectOperation operation) { return value(operation); }
 
     private static String value(EffectOperation op) {

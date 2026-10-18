@@ -40,7 +40,14 @@ public final class MagicCastStateS2C {
         NetworkManager.registerReceiver(NetworkManager.Side.S2C, CHANNEL, (buf, context) -> {
             int ordinal = buf.readVarInt();
             // 网络线程只搬运，落地调度到客户端主线程（与渲染线程互斥，避免半帧状态）
-            Minecraft.getInstance().execute(() -> ClientCastState.set(ordinal));
+            Minecraft.getInstance().execute(() -> {
+                ClientCastState.set(ordinal);
+                var player = Minecraft.getInstance().player;
+                if (player != null && !ClientCastState.casting() && player.isUsingItem()
+                        && player.getUseItem().getItem() instanceof com.example.akaishi.forbidden.wand.WandItem) {
+                    player.stopUsingItem();
+                }
+            });
         });
     }
 }

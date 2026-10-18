@@ -55,11 +55,38 @@ public final class SpellVisualPainter {
      */
     public static void paint(PoseStack poseStack, MultiBufferSource buffers, SpellVisual visual,
             float time, float alphaMul) {
+        paint(poseStack, buffers, visual, time, alphaMul, currentDetail(poseStack));
+    }
+
+    private static float currentDetail(PoseStack poseStack) {
+        var matrix = poseStack.last().pose();
+        double distanceSquared = matrix.m30() * matrix.m30() + matrix.m31() * matrix.m31()
+                + matrix.m32() * matrix.m32();
+        return com.example.akaishi.forbidden.forge.client.visual.ClientVisualBudget.detailScale(distanceSquared);
+    }
+
+    private static int detailCount(int count, float detail, int minimum) {
+        return Math.max(minimum, Math.round(count * detail));
+    }
+
+    public static void paintOnPlane(PoseStack poseStack, MultiBufferSource buffers, SpellVisual visual,
+            float time, float alphaMul) {
+        paint(poseStack, buffers, visual, time, alphaMul, currentDetail(poseStack), true);
+    }
+
+    private static void paint(PoseStack poseStack, MultiBufferSource buffers, SpellVisual visual,
+            float time, float alphaMul, float detail) {
+        paint(poseStack, buffers, visual, time, alphaMul, detail, false);
+    }
+
+    private static void paint(PoseStack poseStack, MultiBufferSource buffers, SpellVisual visual,
+            float time, float alphaMul, float detail, boolean upright) {
+        if (detail <= 0f) return;
         SpellVisualSpecs.Form base = visual.form();
         SpellVisualSpecs.Modifier modifier = visual.modifier();
         SpellVisualSpecs.Form form = new SpellVisualSpecs.Form(base.kind(),
-                Math.max(1, base.layers() + modifier.extraLayers()), base.spin() * modifier.spinMul(),
-                base.pulse(), base.expand(), Math.max(0, base.detail() + modifier.extraDetail()), base.inverted());
+                detailCount(base.layers() + modifier.extraLayers(), detail, 1), base.spin() * modifier.spinMul(),
+                base.pulse(), base.expand(), detailCount(base.detail() + modifier.extraDetail(), detail, 0), base.inverted());
         SpellVisualSpecs.Carrier carrier = visual.carrierSpec();
         SpellVisualSpecs.Source body = visual.body();
 
@@ -77,20 +104,26 @@ public final class SpellVisualPainter {
 
         poseStack.pushPose();
         // ① 载体定朝向：场域是"铺在地上的一块"，其余是"悬在空中的一团"
-        if (carrier.form() == SpellCarrierForm.FIELD) {
+        if (!upright && carrier.form() == SpellCarrierForm.FIELD) {
             poseStack.mulPose(Axis.XP.rotationDegrees(-90f));
         }
         // ② 源色光晕（外层）：更大更淡，负责"能量体质"
-        SpellGeometry.disc(consumer, poseStack.last().pose(), size * AURA_SCALE, 20,
+        SpellGeometry.disc(consumer, poseStack.last().pose(), size * AURA_SCALE, detailCount(20, detail, 10),
                 alpha * 0.30f * bright, 0f, red(aura), green(aura), blue(aura));
         // ③ 墨色主体（内层）：形态由 E 决定，负责"这是什么法术"
-        paintForm(consumer, poseStack, visual.effectId(), form, time, size, alpha * bright, complexity, pulseRate, accent);
+        paintForm(consumer, poseStack, visual.effectId(), form, time, size, alpha * bright, complexity, pulseRate, accent, detail);
         poseStack.popPose();
     }
 
     /** 按 X 载体组装端点束流与 E 主体，端点位置由调用方预先放置。 */
     public static void paintCarrier(PoseStack poseStack, MultiBufferSource buffers, SpellVisual visual,
             Vec3 line, float time, float alphaMul, Quaternionf billboard) {
+        paintCarrier(poseStack, buffers, visual, line, time, alphaMul, billboard, currentDetail(poseStack));
+    }
+
+    public static void paintCarrier(PoseStack poseStack, MultiBufferSource buffers, SpellVisual visual,
+            Vec3 line, float time, float alphaMul, Quaternionf billboard, float detail) {
+        if (detail <= 0f) return;
         SpellVisualSpecs.Carrier carrier = visual.carrierSpec();
         VertexConsumer consumer = buffers.getBuffer(SpellGeometry.energyType());
         float r = red(visual.inkRgb());
@@ -100,8 +133,8 @@ public final class SpellVisualPainter {
         float length = (float) line.length();
         boolean beam = carrier.form() == SpellCarrierForm.BEAM || carrier.form() == SpellCarrierForm.SALVO;
         if (beam) {
-            int strands = carrier.sustained() ? 2 : carrier.staggered() ? 3 : 1;
-            int beads = carrier.staggered() ? 6 : carrier.sustained() ? 12 : 8;
+            int strands = detail > 0.72f ? (carrier.sustained() ? 2 : carrier.staggered() ? 3 : 1) : 1;
+            int beads = detailCount(carrier.staggered() ? 6 : carrier.sustained() ? 12 : 8, detail, 4);
             float radius = carrier.staggered() ? 0.045f : carrier.sustained() ? 0.075f : 0.055f;
             for (int strand = 0; strand < strands; strand++) {
                 poseStack.pushPose();
@@ -114,7 +147,8 @@ public final class SpellVisualPainter {
             }
             // 光丝缀饰：沿线铺几片光带贴图，给串珠"丝缕"质感（纹样交给贴图，走向仍由串珠承担）
             VertexConsumer filament = buffers.getBuffer(SpellGeometry.textureType(SpellVfx.FILAMENT));
-            int filaments = Math.min(24, Math.max(2, Math.round(length / 0.9f)));
+            int filaments = detail <= 0.5f ? 0 : detailCount(
+                    Math.min(24, Math.max(2, Math.round(length / 0.9f))), detail, 1);
             for (int i = 0; i < filaments; i++) {
                 float t = (i + 0.5f) / filaments;
                 poseStack.pushPose();
@@ -129,12 +163,14 @@ public final class SpellVisualPainter {
                 poseStack.pushPose();
                 poseStack.translate(0f, 0.12f * (float) Math.sin(time * 8f), 0f);
                 poseStack.mulPose(billboard);
-                paint(poseStack, buffers, visual, time + length * 0.04f, alphaMul * 0.8f);
+                paint(poseStack, buffers, visual, time + length * 0.04f, alphaMul * 0.8f, detail);
                 poseStack.popPose();
             }
             // 词模块挂载到束流：每个词在时间轴上占一个节点，连发会形成错开的词符脉冲。
-            paintWordModules(buffers.getBuffer(SpellGeometry.energyType()), poseStack, visual, line,
-                    time, alpha, carrier.staggered(), billboard);
+            if (detail > 0.72f) {
+                paintWordModules(buffers.getBuffer(SpellGeometry.energyType()), poseStack, visual, line,
+                        time, alpha, carrier.staggered(), billboard);
+            }
         }
         // 载体专属贴图层：给"用什么把法术送出去"一个可见的纹样（顶点色几何画不出纹样）
         paintCarrierLayers(poseStack, buffers, visual, line, time, alpha, billboard);
@@ -150,9 +186,9 @@ public final class SpellVisualPainter {
         }
         // 投射物的"飞行体"由实体渲染器画过了，事件层再画一遍就成了两个球 —— 故 ORB 只出收束与冲击
         if (carrier.form() != SpellCarrierForm.ORB) {
-            paint(poseStack, buffers, visual, time, alphaMul);
+            paint(poseStack, buffers, visual, time, alphaMul, detail);
         }
-        if (!beam && !visual.glyphs().isEmpty()) {
+        if (!beam && detail > 0.72f && !visual.glyphs().isEmpty()) {
             // X4 附着 / X6 回响 / X2 投射物：词符围绕载体中心显示。
             SpellGeometry.runeRing(buffers.getBuffer(SpellGeometry.energyType()), poseStack.last().pose(), visual.glyphs(),
                     Math.max(0.12f, visual.baseSize() * 0.55f),
@@ -309,7 +345,7 @@ public final class SpellVisualPainter {
         float fr = red(rgb);
         float fg = green(rgb);
         float fb = blue(rgb);
-        VertexConsumer consumer = buffers.getBuffer(SpellGeometry.textureType(texture));
+        VertexConsumer consumer = buffers.getBuffer(SpellRenderTypes.flow(texture));
         poseStack.pushPose();
         poseStack.translate(line.x * 0.5d, line.y * 0.5d, line.z * 0.5d);
         Matrix4f matrix = poseStack.last().pose();
@@ -362,7 +398,7 @@ public final class SpellVisualPainter {
      * 零件的实现全在 {@link SpellGeometry}，因此这里永远不会长成"一堆画法"。
      */
     private static void paintForm(VertexConsumer consumer, PoseStack poseStack, String effectId, SpellVisualSpecs.Form form,
-            float time, float size, float alpha, float complexity, float pulseRate, int color) {
+            float time, float size, float alpha, float complexity, float pulseRate, int color, float geometryDetail) {
         float r = red(color);
         float g = green(color);
         float b = blue(color);
@@ -373,6 +409,7 @@ public final class SpellVisualPainter {
         float expand = clamp(form.expand() * time, -0.6f * size, 1.5f * size);
         int layers = Math.max(1, Math.round(form.layers() * complexity));
         int detail = Math.max(2, Math.round(form.detail() * complexity));
+        int segments = detailCount(RING_SEGMENTS, geometryDetail, 12);
 
         switch (form.kind()) {
             case GLOW_DISC -> SpellGeometry.disc(consumer, poseStack.last().pose(), size, 24, a, 0f, r, g, b);
@@ -385,11 +422,11 @@ public final class SpellVisualPainter {
                     if (i % 2 == 0) {
                         // 整圈：稳定、像"法阵底座"
                         SpellGeometry.ringBand(consumer, poseStack.last().pose(),
-                                radius - thickness, radius, RING_SEGMENTS, 0f, 360f, a, a * 0.35f, r, g, b);
+                                radius - thickness, radius, segments, 0f, 360f, a, a * 0.35f, r, g, b);
                     } else {
                         // 缺口圈：自转时肉眼可见（整圈转了等于没转）
                         SpellGeometry.ringBand(consumer, poseStack.last().pose(),
-                                radius - thickness, radius, RING_SEGMENTS, spin * (i + 1), 280f, a, a * 0.35f, r, g, b);
+                                radius - thickness, radius, segments, spin * (i + 1), 280f, a, a * 0.35f, r, g, b);
                     }
                 }
             }
@@ -428,9 +465,9 @@ public final class SpellVisualPainter {
             case ARC -> {
                 // 两道对着的弧：像"一刀斩过"留下的两半，而不是一整圈
                 SpellGeometry.ringBand(consumer, poseStack.last().pose(),
-                        size * 0.55f, size + expand * 0.5f, RING_SEGMENTS, spin, 130f, a * 0.2f, a, r, g, b);
+                        size * 0.55f, size + expand * 0.5f, segments, spin, 130f, a * 0.2f, a, r, g, b);
                 SpellGeometry.ringBand(consumer, poseStack.last().pose(),
-                        size * 0.55f, size + expand * 0.5f, RING_SEGMENTS, spin + 180f, 130f, a * 0.2f, a, r, g, b);
+                        size * 0.55f, size + expand * 0.5f, segments, spin + 180f, 130f, a * 0.2f, a, r, g, b);
             }
 
             case PILLAR -> {
@@ -442,7 +479,7 @@ public final class SpellVisualPainter {
 
             case SIGIL -> {
                 SpellGeometry.ringBand(consumer, poseStack.last().pose(),
-                        size * 0.85f, size, RING_SEGMENTS, spin, 360f, a * 0.5f, a, r, g, b);
+                        size * 0.85f, size, segments, spin, 360f, a * 0.5f, a, r, g, b);
                 for (int i = 0; i < detail; i++) {
                     float deg = spin + 360f / detail * i;
                     double rad = Math.toRadians(deg);
@@ -490,7 +527,7 @@ public final class SpellVisualPainter {
                     float radius = size * (0.35f + 0.95f * phase) + expand * 0.3f;
                     float ringAlpha = a * (1f - phase) * 0.9f;
                     SpellGeometry.ringBand(consumer, poseStack.last().pose(),
-                            radius - size * 0.05f, radius, RING_SEGMENTS, spin, 360f,
+                            radius - size * 0.05f, radius, segments, spin, 360f,
                             ringAlpha * 0.3f, ringAlpha, r, g, b);
                 }
             }
@@ -501,17 +538,17 @@ public final class SpellVisualPainter {
 
     /** 取 0xRRGGBB 的红分量（0~1）—— 供渲染器画覆盖圈等附属几何时复用 */
     public static float red(int rgb) {
-        return (rgb >> 16 & 0xFF) / 255f;
+        return com.example.akaishi.forbidden.visual.VisualColor.red(rgb);
     }
 
     /** 取 0xRRGGBB 的绿分量（0~1） */
     public static float green(int rgb) {
-        return (rgb >> 8 & 0xFF) / 255f;
+        return com.example.akaishi.forbidden.visual.VisualColor.green(rgb);
     }
 
     /** 取 0xRRGGBB 的蓝分量（0~1） */
     public static float blue(int rgb) {
-        return (rgb & 0xFF) / 255f;
+        return com.example.akaishi.forbidden.visual.VisualColor.blue(rgb);
     }
 
     private static float clamp(float value, float min, float max) {

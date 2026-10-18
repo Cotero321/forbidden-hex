@@ -1,0 +1,15 @@
+{
+  "type": "forbidden_hex:witch_oven",
+  "cooking_time": 200,
+  "fume": {
+    "item": "forbidden_hex:forbidden_hex_fume",
+    "nbt": "{forbidden_hex_fume:'forbidden_hex:heat_breath'}"
+  },
+  "fume_chance": 0.3,
+  "ingredient": {
+    "item": "forbidden_hex:forbidden_hex_ember_moss"
+  },
+  "result": {
+    "item": "forbidden_hex:forbidden_hex_grass_ash"
+  }
+}

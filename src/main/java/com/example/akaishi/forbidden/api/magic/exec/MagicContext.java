@@ -28,6 +28,8 @@ import java.util.List;
  * @param words    句内全部词 id（按四段顺序拼接，已由判定层确认成立）
  * @param casterLevel 施法者等级（1~6；影响阶位专属能力，§23.4）
  * @param snapshot 本次施法的数值快照（P4 结算结果）
+ * @param slotWords 咒核八个物理槽位的词 id，空槽保留空字符串
+ * @param slotInks 咒核八个物理槽位的墨 id，与 slotWords 逐槽对应
  */
 public record MagicContext(
         Entity caster,
@@ -39,23 +41,45 @@ public record MagicContext(
         List<String> words,
         int casterLevel,
         SpellSnapshot snapshot,
+        List<String> slotWords,
+        List<String> slotInks,
         Entity hitEntity,
         Vec3 impactDirection) {
 
     public MagicContext(Entity caster, Level level, Vec3 origin, String sourceId, String mainInkId,
             List<String> inks, List<String> words, int casterLevel, SpellSnapshot snapshot) {
-        this(caster, level, origin, sourceId, mainInkId, inks, words, casterLevel, snapshot, null, null);
+        this(caster, level, origin, sourceId, mainInkId, inks, words, casterLevel, snapshot,
+                null, null, null, null);
+    }
+
+    public MagicContext(Entity caster, Level level, Vec3 origin, String sourceId, String mainInkId,
+            List<String> inks, List<String> words, int casterLevel, SpellSnapshot snapshot,
+            Entity hitEntity, Vec3 impactDirection) {
+        this(caster, level, origin, sourceId, mainInkId, inks, words, casterLevel, snapshot,
+                null, null, hitEntity, impactDirection);
     }
 
     public MagicContext withImpact(Entity hit, Vec3 at, Vec3 direction) {
         return new MagicContext(caster, level, at, sourceId, mainInkId, inks, words,
-                casterLevel, snapshot, hit, direction);
+                casterLevel, snapshot, slotWords, slotInks, hit, direction);
     }
 
     /** 紧凑构造：列表一律不可变拷贝，防止执行期被外部改写 */
     public MagicContext {
         inks = inks == null ? List.of() : List.copyOf(inks);
         words = words == null ? List.of() : List.copyOf(words);
+        slotWords = normalizeSlots(slotWords, words);
+        slotInks = normalizeSlots(slotInks, inks);
+    }
+
+    private static List<String> normalizeSlots(List<String> slots, List<String> fallback) {
+        List<String> source = slots != null && !slots.isEmpty() ? slots : fallback;
+        java.util.ArrayList<String> normalized = new java.util.ArrayList<>(8);
+        for (int i = 0; i < 8; i++) {
+            String value = source != null && i < source.size() ? source.get(i) : "";
+            normalized.add(value == null ? "" : value);
+        }
+        return List.copyOf(normalized);
     }
 
     /** 词数（= {@link SpellSnapshot#wordCount()}，便捷） */
@@ -81,6 +105,6 @@ public record MagicContext(
     /** 换原点（投射物飞行中推进原点用） */
     public MagicContext withOrigin(Vec3 value) {
         return new MagicContext(caster, level, value, sourceId, mainInkId, inks, words,
-                casterLevel, snapshot, hitEntity, impactDirection);
+                casterLevel, snapshot, slotWords, slotInks, hitEntity, impactDirection);
     }
 }

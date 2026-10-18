@@ -18,20 +18,12 @@ import org.joml.Matrix4f;
 /**
  * 法阵渲染器（设计记忆 §36.2 / §7）。
  *
- * <p><b>它画三层，每层的来源不同</b> —— 这正是"模块化组装"在载体侧的体现：
- * <ol>
- *   <li><b>主体</b>：交给 {@link SpellVisualPainter} —— 形态由 E 决定、配色由源与墨决定、
- *       尺度由数值决定、朝向由载体（FIELD ⇒ 放平）决定。渲染器自己<b>不认识任何一条 E</b>；</li>
- *   <li><b>覆盖圈</b>：按实体的作用半径画的一整圈 —— 让玩家看得见"这一块到底盖到哪"。
- *       没有它，§36.1 的"区域上限 8"对玩家就是不可见的天书；</li>
- *   <li><b>词符环</b>：本句<b>每个词</b>一枚符，缓慢自转
- *       （由字符码推出形状，见 {@link SpellGeometry#runeRing}）——
- *       于是"同一句法阵"两次画出来一样、<b>不同句子必然不同</b>。</li>
- * </ol>
+ * <p>主体为四个固定槽位层：槽位 0..1、2..3、4..5、6..7 分别映射外到内四层，
+ * 空槽保留轮廓，各层使用缓存的墨色与词符，由内向外错峰展开。
  *
- * <p><b>为什么不再用服务端撒粒子围圈</b>：粒子无法表达几何形态与自转，
- * 也就无法承载"20 条 E 各不相同"这件事。粒子留着做点缀（见各形态内部的雾/涟漪），
- * 但主体必须是真几何。
+ * <p>跟随法阵按施法者插值朝向竖立，细线术式与真实词符保留立体深度；
+ * 放置法阵沿地面向上叠成立体四层，使用正深度与限幅微倾斜，并以实际作用半径绘制覆盖边界。
+ * 全部几何共享距离细节预算、连续动画时钟与淡出收束。
  */
 public class SpellCircleRenderer extends EntityRenderer<SpellCircleEntity> {
 
@@ -48,7 +40,12 @@ public class SpellCircleRenderer extends EntityRenderer<SpellCircleEntity> {
     @Override
     public boolean shouldRender(SpellCircleEntity entity, Frustum frustum,
             double camX, double camY, double camZ) {
-        float radius = Math.max(0.5f, entity.effectRadius());
+        if (com.example.akaishi.forbidden.forge.client.visual.ClientVisualBudget.detailScale(
+                entity.distanceToSqr(camX, camY, camZ)) <= 0f) return false;
+        SpellVisual visual = entity.visual();
+        float bodyRadius = visual.baseSize() * visual.carrierSpec().sizeMul()
+                * visual.body().sizeMul() * visual.modifier().sizeMul() * 3f;
+        float radius = Math.max(bodyRadius, Math.max(0.7f, entity.effectRadius()) * 1.2f);
         return frustum.isVisible(entity.getBoundingBox().inflate(radius));
     }
 
@@ -59,41 +56,65 @@ public class SpellCircleRenderer extends EntityRenderer<SpellCircleEntity> {
         if (visual == null) {
             return;
         }
-        float time = (entity.tickCount + partialTick) / 20f;
-        float fade = entity.fadeAlpha();
+        float detail = com.example.akaishi.forbidden.forge.client.visual.ClientVisualBudget.detailScale(
+                entity.distanceToSqr(net.minecraft.client.Minecraft.getInstance()
+                        .gameRenderer.getMainCamera().getPosition()));
+        if (detail <= 0f) return;
+        float time = entity.animationTime(partialTick);
+        float fade = entity.fadeAlpha(partialTick);
+        boolean upright = entity.followsCaster();
+        float progress = entity.introProgress(partialTick);
+        float charge = entity.chargeProgress(partialTick);
+        float overallAlpha = fade * progress * (upright ? 0.55f + 0.45f * charge : 1f);
+        float contraction = 0.65f + 0.35f * fade;
 
-        // ① 主体：形态(E) × 载体(FIELD) × 配色(源×墨) × 尺度(数值)
         poseStack.pushPose();
+        if (upright) {
+            poseStack.mulPose(Axis.YP.rotationDegrees(-entity.yaw(partialTick)));
+            poseStack.translate(0d, 0d, -0.03d);
+            poseStack.scale(contraction, contraction, contraction);
+            float baseRadius = Math.max(0.7f, visual.baseSize() * 0.82f);
+            com.example.akaishi.forbidden.forge.magic.visual.SpellCircleLayerPainter.paint(
+                    poseStack, buffers, visual, entity.layers(), time, fade, progress, detail, false, baseRadius);
+            float radius = baseRadius * 0.27f;
+            VertexConsumer consumer = buffers.getBuffer(SpellGeometry.energyType());
+            SpellGeometry.ringBand(consumer, poseStack.last().pose(), radius * 0.91f, radius,
+                    Math.max(16, Math.round(40 * detail)), 90f, 360f * charge,
+                    overallAlpha * 0.28f, overallAlpha * 0.82f,
+                    SpellVisualPainter.red(visual.inkRgb()), SpellVisualPainter.green(visual.inkRgb()),
+                    SpellVisualPainter.blue(visual.inkRgb()));
+            poseStack.popPose();
+            return;
+        }
+
+        // PLACE uses the same four fixed layers, rotated flat onto the hit surface.
         poseStack.translate(0d, GROUND_LIFT, 0d);
-        SpellVisualPainter.paint(poseStack, buffers, visual, time, fade);
+        poseStack.mulPose(Axis.XP.rotationDegrees(-90f));
+        poseStack.scale(contraction, contraction, contraction);
+        com.example.akaishi.forbidden.forge.magic.visual.SpellCircleLayerPainter.paint(
+                poseStack, buffers, visual, entity.layers(), time, fade, progress, detail, true,
+                entity.effectRadius());
         poseStack.popPose();
 
-        // ② + ③ 铺在地上的两个圈
-        VertexConsumer consumer = buffers.getBuffer(SpellGeometry.energyType());
         int ink = visual.inkRgb();
         float r = SpellVisualPainter.red(ink);
         float g = SpellVisualPainter.green(ink);
         float b = SpellVisualPainter.blue(ink);
-        float radius = entity.effectRadius();
-        float alpha = fade * 0.9f;
+        float boundaryProgress = com.example.akaishi.forbidden.magic.visual.SpellCircleAnimation.layerProgress(0, progress);
+        float radius = entity.effectRadius() * (0.65f + 0.35f * boundaryProgress);
+        float alpha = fade * boundaryProgress * 0.9f;
 
         poseStack.pushPose();
         poseStack.translate(0d, GROUND_LIFT - 0.01d, 0d);
         poseStack.mulPose(Axis.XP.rotationDegrees(-90f));
-        // ②底纹（外）：实线环纹给法阵一个稳定的边界（缓慢自转保持活性）
-        flatTexture(buffers, poseStack, SpellVfx.RING, radius * 1.08f, fade * 0.85f, r, g, b, time * 4f);
-        // ③脉动（中）：虚线断环反向缓转 + 呼吸 —— 读作"这一块正在运作"
-        flatTexture(buffers, poseStack, SpellVfx.RING_PULSE, radius * 1.16f,
-                fade * (0.34f + 0.26f * (float) Math.sin(time * 3.4d)), r, g, b, -time * 7f);
-        // ④符文（内）：符环反向慢转，与本句词符环同心 —— "这是一句被写下来的法阵"
-        flatTexture(buffers, poseStack, SpellVfx.RUNE, radius * 0.78f, fade * 0.55f, r, g, b, time * 2.5f);
+        if (detail > 0.72f) {
+            flatTexture(buffers, poseStack, SpellVfx.RING, radius, alpha * 0.25f, r, g, b, time * 4f);
+        }
+        VertexConsumer consumer = buffers.getBuffer(SpellGeometry.energyType());
         Matrix4f matrix = poseStack.last().pose();
-        // 覆盖圈（外）：内缘淡、外缘实，像一道"围栏"
-        SpellGeometry.ringBand(consumer, matrix, Math.max(0.1f, radius - 0.08f), radius,
-                BOUNDARY_SEGMENTS, 0f, 360f, alpha * 0.2f, alpha, r, g, b);
-        // 词符环（内）：本句每个词一枚，缓慢自转
-        SpellGeometry.runeRing(consumer, matrix, visual.glyphs(), radius * 0.62f,
-                Math.max(0.06f, radius * 0.11f), time * 18f, alpha * 0.9f, r, g, b);
+        SpellGeometry.ringBand(consumer, matrix, Math.max(0.01f, radius - 0.08f), radius,
+                Math.max(16, Math.round(BOUNDARY_SEGMENTS * detail)),
+                0f, 360f, alpha * 0.2f, alpha, r, g, b);
         poseStack.popPose();
     }
 

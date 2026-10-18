@@ -152,7 +152,8 @@ public final class MagicServiceImpl implements IMagicService {
         CastOutcome outcome = decide(state, now, wordIds, mainInkId, overlayInks,
                 channelSeconds, volleyShots, availableSan, busy, null, null);
         if (outcome.ok()) {
-            return beginPaid(player, state, buildContext(player, state, wordIds, mainInkId, outcome.snapshot()), outcome);
+            return beginPaid(player, state, buildContext(player, state, wordIds, mainInkId,
+                    outcome.snapshot(), null, null), outcome);
         }
         return outcome;
     }
@@ -165,6 +166,11 @@ public final class MagicServiceImpl implements IMagicService {
      */
     public CastOutcome castWithWand(Player player, List<String> wordIds, String mainInkId,
             CastAdjustments adjustments) {
+        return castWithWand(player, wordIds, mainInkId, adjustments, null, null);
+    }
+
+    public CastOutcome castWithWand(Player player, List<String> wordIds, String mainInkId,
+            CastAdjustments adjustments, List<String> slotWords, List<String> slotInks) {
 
         MagicState state = MagicStates.state(player);
         if (state == null) return CastOutcome.rejected(CastResult.SERVICE_UNAVAILABLE);
@@ -177,7 +183,8 @@ public final class MagicServiceImpl implements IMagicService {
                 adjustments.source(), adjustments);
         if (outcome.ok()) {
             return beginPaid(player, state, buildContext(player, state, wordIds,
-                    adjustments.source().id(), mainInkId, adjustments.wordInks(), outcome.snapshot()), outcome);
+                    adjustments.source().id(), mainInkId, adjustments.wordInks(), outcome.snapshot(),
+                    slotWords, slotInks), outcome);
         }
         return outcome;
     }
@@ -185,19 +192,19 @@ public final class MagicServiceImpl implements IMagicService {
     /**
      * 组装执行上下文（§20.9 的参数面）：词 / 墨 / 源 / 等级 / 数值快照。
      *
-     * <p>词按<b>四段顺序</b>拼接（{@link ParsedSpell#allWords()}）而非玩家的书写顺序 ——
-     * 执行层要用它做"有没有某个词"的措辞与豁免判断，段序与书写序对它等价，
-     * 但段序与法阵显示顺序一致，未来做界面时不必再排一次。
+     * <p>执行层使用非空词序做措辞与豁免判断；法阵另存八个物理槽位的词与墨，
+     * 保留空槽和书写位置，避免执行词序与视觉分层相互影响。
      */
     private static MagicContext buildContext(Player player, MagicState state, List<String> wordIds,
-            String mainInkId, SpellSnapshot snapshot) {
+            String mainInkId, SpellSnapshot snapshot, List<String> slotWords, List<String> slotInks) {
         return buildContext(player, state, wordIds, snapshot.sourceId(), mainInkId,
-                List.of(mainInkId), snapshot);
+                List.of(mainInkId), snapshot, slotWords, slotInks);
     }
 
     /** 法杖路径的组装重载：源与墨集合由载体给定（墨集合含逐词墨 —— 墨协同与墨轴判定按全量） */
     private static MagicContext buildContext(Player player, MagicState state, List<String> wordIds,
-            String sourceId, String mainInkId, List<String> inkIds, SpellSnapshot snapshot) {
+            String sourceId, String mainInkId, List<String> inkIds, SpellSnapshot snapshot,
+            List<String> slotWords, List<String> slotInks) {
         List<String> words = List.copyOf(wordIds);
         return new MagicContext(
                 player,
@@ -208,7 +215,11 @@ public final class MagicServiceImpl implements IMagicService {
                 inkIds,
                 words,
                 state.level(),
-                snapshot);
+                snapshot,
+                slotWords,
+                slotInks,
+                null,
+                null);
     }
 
     /**

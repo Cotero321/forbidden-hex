@@ -1,0 +1,18 @@
+{
+  "replace": false,
+  "values": [
+    "forbidden_hex:forbidden_hex_mandrake_seeds",
+    "forbidden_hex:forbidden_hex_henbane_seeds",
+    "forbidden_hex:forbidden_hex_belladonna_seeds",
+    "forbidden_hex:forbidden_hex_datura_seeds",
+    "forbidden_hex:forbidden_hex_aconite_seeds",
+    "forbidden_hex:forbidden_hex_foxglove_seeds",
+    "forbidden_hex:forbidden_hex_hellroot_seeds",
+    "forbidden_hex:forbidden_hex_colchicum_seeds",
+    "forbidden_hex:forbidden_hex_yew_seeds",
+    "forbidden_hex:forbidden_hex_ergot_seeds",
+    "forbidden_hex:forbidden_hex_parasitic_vine_seeds",
+    "forbidden_hex:forbidden_hex_ember_moss_seeds",
+    "forbidden_hex:forbidden_hex_glint_weed_seeds"
+  ]
+}

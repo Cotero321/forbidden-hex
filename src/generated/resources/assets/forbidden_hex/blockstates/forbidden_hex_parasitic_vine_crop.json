@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "age=0": {
+      "model": "forbidden_hex:block/forbidden_hex_parasitic_vine_crop_0"
+    },
+    "age=1": {
+      "model": "forbidden_hex:block/forbidden_hex_parasitic_vine_crop_0"
+    },
+    "age=2": {
+      "model": "forbidden_hex:block/forbidden_hex_parasitic_vine_crop_1"
+    },
+    "age=3": {
+      "model": "forbidden_hex:block/forbidden_hex_parasitic_vine_crop_1"
+    },
+    "age=4": {
+      "model": "forbidden_hex:block/forbidden_hex_parasitic_vine_crop_2"
+    },
+    "age=5": {
+      "model": "forbidden_hex:block/forbidden_hex_parasitic_vine_crop_2"
+    },
+    "age=6": {
+      "model": "forbidden_hex:block/forbidden_hex_parasitic_vine_crop_3"
+    },
+    "age=7": {
+      "model": "forbidden_hex:block/forbidden_hex_parasitic_vine_crop_3"
+    }
+  }
+}

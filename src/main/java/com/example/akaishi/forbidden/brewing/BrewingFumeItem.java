@@ -18,15 +18,21 @@ public final class BrewingFumeItem extends Item {
     }
 
     public static ItemStack create(ResourceLocation kind) {
+        if (!BrewingFumes.isAllowed(kind)) throw new IllegalArgumentException("Unknown fume kind " + kind);
         ItemStack stack = new ItemStack(BrewingItems.FUME.get());
         stack.getOrCreateTag().putString(FUME_ID, kind.toString());
         return stack;
     }
 
+    public static ResourceLocation kind(ItemStack stack) {
+        return stack.hasTag() && stack.getTag().contains(FUME_ID, net.minecraft.nbt.Tag.TAG_STRING)
+                ? ResourceLocation.tryParse(stack.getTag().getString(FUME_ID)) : null;
+    }
+
     @Override
     public Component getName(ItemStack stack) {
-        ResourceLocation kind = stack.hasTag() ? ResourceLocation.tryParse(stack.getTag().getString(FUME_ID)) : null;
-        return kind == null ? super.getName(stack)
+        ResourceLocation kind = kind(stack);
+        return !BrewingFumes.isAllowed(kind) ? super.getName(stack)
                 : Component.translatable("fume." + kind.getNamespace() + "." + kind.getPath().replace('/', '.'));
     }
 

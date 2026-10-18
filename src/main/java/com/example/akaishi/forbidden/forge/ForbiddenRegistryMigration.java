@@ -19,6 +19,11 @@ public final class ForbiddenRegistryMigration {
 
     @SubscribeEvent
     public static void missingMappings(MissingMappingsEvent event) {
+        for (MissingMappingsEvent.Mapping<net.minecraft.world.item.Item> mapping : event.getAllMappings(Registries.ITEM)) {
+            if (mapping.getKey().equals(new ResourceLocation(AkaishiMod.MOD_ID, "forbidden_hex_ender_crystal"))) {
+                mapping.remap(net.minecraft.world.item.Items.END_CRYSTAL);
+            }
+        }
         remap(event, Registries.ITEM, ForgeRegistries.ITEMS);
         remap(event, Registries.BLOCK, ForgeRegistries.BLOCKS);
         remap(event, Registries.BLOCK_ENTITY_TYPE, ForgeRegistries.BLOCK_ENTITY_TYPES);

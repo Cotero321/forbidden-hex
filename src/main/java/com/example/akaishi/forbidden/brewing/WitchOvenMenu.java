@@ -9,6 +9,7 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 public final class WitchOvenMenu extends AbstractContainerMenu {
     private final Container oven;
@@ -31,13 +32,16 @@ public final class WitchOvenMenu extends AbstractContainerMenu {
         });
         addSlot(new Slot(oven, 2, 111, 29) { @Override public boolean mayPlace(ItemStack stack) { return false; } });
         addSlot(new Slot(oven, 3, 137, 29) { @Override public boolean mayPlace(ItemStack stack) { return false; } });
+        addSlot(new Slot(oven, 4, 62, 57) {
+            @Override public boolean mayPlace(ItemStack stack) { return stack.is(Items.GLASS_BOTTLE); }
+        });
         for (int row = 0; row < 3; row++) for (int column = 0; column < 9; column++) {
             addSlot(new Slot(playerInventory, 9 + row * 9 + column, 8 + column * 18, 94 + row * 18));
         }
         for (int column = 0; column < 9; column++) addSlot(new Slot(playerInventory, column, 8 + column * 18, 152));
         addDataSlots(data);
     }
-    public static WitchOvenMenu empty(int id, Inventory inventory) { return new WitchOvenMenu(id, inventory, new SimpleContainer(4), new SimpleContainerData(10)); }
+    public static WitchOvenMenu empty(int id, Inventory inventory) { return new WitchOvenMenu(id, inventory, new SimpleContainer(5), new SimpleContainerData(10)); }
     private int time(int index) { return (data.get(index * 2) & 0xFFFF) | ((data.get(index * 2 + 1) & 0xFFFF) << 16); }
     public int burn() { return time(0); }
     public int burnTotal() { return time(1); }
@@ -52,15 +56,17 @@ public final class WitchOvenMenu extends AbstractContainerMenu {
         if (!slot.hasItem()) return ItemStack.EMPTY;
         ItemStack stack = slot.getItem();
         ItemStack original = stack.copy();
-        if (index < 4) {
-            if (!moveItemStackTo(stack, 4, slots.size(), true)) return ItemStack.EMPTY;
-        } else if (slots.get(0).mayPlace(stack)) {
-            if (!moveItemStackTo(stack, 0, 1, false)) return ItemStack.EMPTY;
-        } else if (slots.get(1).mayPlace(stack)) {
-            if (!moveItemStackTo(stack, 1, 2, false)) return ItemStack.EMPTY;
-        } else if (index < 31) {
-            if (!moveItemStackTo(stack, 31, 40, false)) return ItemStack.EMPTY;
-        } else if (!moveItemStackTo(stack, 4, 31, false)) return ItemStack.EMPTY;
+        if (index < WitchOvenBlockEntity.SLOTS) {
+            if (!moveItemStackTo(stack, WitchOvenBlockEntity.SLOTS, slots.size(), true)) return ItemStack.EMPTY;
+        } else if (slots.get(WitchOvenBlockEntity.INPUT).mayPlace(stack)) {
+            if (!moveItemStackTo(stack, WitchOvenBlockEntity.INPUT, WitchOvenBlockEntity.INPUT + 1, false)) return ItemStack.EMPTY;
+        } else if (slots.get(WitchOvenBlockEntity.FUEL).mayPlace(stack)) {
+            if (!moveItemStackTo(stack, WitchOvenBlockEntity.FUEL, WitchOvenBlockEntity.FUEL + 1, false)) return ItemStack.EMPTY;
+        } else if (slots.get(WitchOvenBlockEntity.BOTTLE).mayPlace(stack)) {
+            if (!moveItemStackTo(stack, WitchOvenBlockEntity.BOTTLE, WitchOvenBlockEntity.BOTTLE + 1, false)) return ItemStack.EMPTY;
+        } else if (index < 32) {
+            if (!moveItemStackTo(stack, 32, 41, false)) return ItemStack.EMPTY;
+        } else if (!moveItemStackTo(stack, WitchOvenBlockEntity.SLOTS, 32, false)) return ItemStack.EMPTY;
         if (stack.getCount() == original.getCount()) return ItemStack.EMPTY;
         if (stack.isEmpty()) slot.set(ItemStack.EMPTY); else slot.setChanged();
         slot.onTake(player, stack);

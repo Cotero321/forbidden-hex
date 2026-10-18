@@ -55,14 +55,22 @@ public final class MagicCastSession {
     /** 上次记录的施法者血量（用于"受击打断"的落差判定，§21.1） */
     private float lastHealth;
     private PaymentReceipt firstPayment;
+    private net.minecraft.world.InteractionHand carrierHand;
+    private com.example.akaishi.forbidden.magic.circle.SpellCircleEntity circle;
     private final java.util.ArrayList<PaymentReceipt> successfulPayments = new java.util.ArrayList<>();
+    private final java.util.UUID soundInstance = java.util.UUID.randomUUID();
 
+    public java.util.UUID soundInstance() { return soundInstance; }
     public PaymentReceipt firstPayment() { return firstPayment; }
     public void setFirstPayment(PaymentReceipt payment) { this.firstPayment = payment; }
+    public net.minecraft.world.InteractionHand carrierHand() { return carrierHand; }
+    public void setCarrierHand(net.minecraft.world.InteractionHand hand) { this.carrierHand = hand; }
     public List<PaymentReceipt> successfulPayments() { return List.copyOf(successfulPayments); }
     public void recordSuccessfulPayment(PaymentReceipt payment) {
         if (payment != null) successfulPayments.add(payment);
     }
+    public com.example.akaishi.forbidden.magic.circle.SpellCircleEntity circle() { return circle; }
+    public void setCircle(com.example.akaishi.forbidden.magic.circle.SpellCircleEntity value) { circle = value; }
 
     public MagicCastSession(MagicContext context, ResourceKey<Level> dimension, long chargeEndTick,
             int segments, float segmentCost, int segmentIntervalTicks,

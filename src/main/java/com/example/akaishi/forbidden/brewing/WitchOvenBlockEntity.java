@@ -15,6 +15,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -22,7 +23,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 public final class WitchOvenBlockEntity extends BlockEntity implements WorldlyContainer, ExtendedMenuProvider {
-    public static final int INPUT = 0, FUEL = 1, RESULT = 2, FUME = 3, SLOTS = 4;
+    public static final int INPUT = 0, FUEL = 1, RESULT = 2, FUME = 3, BOTTLE = 4, SLOTS = 5;
     private final NonNullList<ItemStack> items = NonNullList.withSize(SLOTS, ItemStack.EMPTY);
     private int burnTime, burnTotal, progress, cookingTime, activeBatch;
     private WitchOvenProfile profile = WitchOvenProfile.BASIC;
@@ -81,7 +82,7 @@ public final class WitchOvenBlockEntity extends BlockEntity implements WorldlyCo
         boolean wasBurning = oven.burnTime > 0;
         boolean changed = false;
         if (wasBurning) { oven.burnTime--; changed = true; }
-        WitchOvenRecipe recipe = level.getRecipeManager().getRecipeFor(BrewingRecipes.OVEN.get(), oven, level).orElse(null);
+        WitchOvenRecipe recipe = WitchOvenRecipe.find(oven, level).orElse(null);
         if (recipe == null) {
             changed |= oven.progress != 0 || oven.cookingTime != 0 || !oven.activeId.isEmpty();
             oven.progress = 0;
@@ -141,10 +142,15 @@ public final class WitchOvenBlockEntity extends BlockEntity implements WorldlyCo
                 oven.progress++;
                 changed = true;
                 if (oven.progress >= oven.cookingTime) {
+                    int fumeCount = recipe.fume().getCount();
                     for (int i = 0; i < oven.activeBatch; i++) {
-                        boolean hasFume = level.random.nextDouble() < chance;
+                        boolean hasFume = oven.items.get(BOTTLE).getCount() >= fumeCount
+                                && level.random.nextDouble() < chance;
                         add(oven.items, RESULT, recipe.result());
-                        if (hasFume) add(oven.items, FUME, recipe.fume());
+                        if (hasFume) {
+                            add(oven.items, FUME, recipe.fume());
+                            oven.items.get(BOTTLE).shrink(fumeCount);
+                        }
                     }
                     oven.items.get(INPUT).shrink(oven.activeBatch);
                     oven.progress = 0;
@@ -191,10 +197,14 @@ public final class WitchOvenBlockEntity extends BlockEntity implements WorldlyCo
     }
     @Override public boolean canPlaceItem(int slot, ItemStack stack) {
         if (slot == FUEL) return fuelTime(stack) > 0;
-        return slot == INPUT && level != null && level.getRecipeManager().getAllRecipesFor(BrewingRecipes.OVEN.get())
-                .stream().anyMatch(recipe -> recipe.input().test(stack));
+        if (slot == BOTTLE) return stack.is(Items.GLASS_BOTTLE);
+        return slot == INPUT && level != null
+                && WitchOvenRecipe.find(new net.minecraft.world.SimpleContainer(stack), level).isPresent();
     }
-    @Override public int[] getSlotsForFace(Direction face) { return face == Direction.DOWN ? new int[]{RESULT, FUME, FUEL} : face == Direction.UP ? new int[]{INPUT} : new int[]{FUEL}; }
+    @Override public int[] getSlotsForFace(Direction face) {
+        return face == Direction.DOWN ? new int[]{RESULT, FUME, FUEL}
+                : face == Direction.UP ? new int[]{INPUT, BOTTLE} : new int[]{FUEL};
+    }
     @Override public boolean canPlaceItemThroughFace(int slot, ItemStack stack, @Nullable Direction face) { return canPlaceItem(slot, stack); }
     @Override public boolean canTakeItemThroughFace(int slot, ItemStack stack, Direction face) {
         return slot == RESULT || slot == FUME || slot == FUEL && fuelTime(stack) == 0;

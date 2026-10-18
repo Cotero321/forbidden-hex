@@ -43,7 +43,8 @@ public final class MagicPipeline {
         if (!compiled.ok()) return null;
         return new MagicContext(context.caster(), context.level(), context.origin(), context.sourceId(),
                 context.mainInkId(), context.inks(), context.words(), context.casterLevel(),
-                SpellPlanAdapter.snapshot(compiled.plan()), context.hitEntity(), context.impactDirection());
+                SpellPlanAdapter.snapshot(compiled.plan()), context.slotWords(), context.slotInks(),
+                context.hitEntity(), context.impactDirection());
     }
 
     public static ExecutionResult castResult(MagicContext context) { return castResult(context, count -> {}); }
@@ -85,7 +86,8 @@ public final class MagicPipeline {
         for (var operation : plan.operations()) {
             var view = new MagicContext(context.caster(), context.level(), at, context.sourceId(),
                     context.mainInkId(), context.inks(), context.words(), context.casterLevel(),
-                    SpellPlanAdapter.snapshot(plan, operation), context.hitEntity(), context.impactDirection());
+                    SpellPlanAdapter.snapshot(plan, operation), context.slotWords(), context.slotInks(),
+                    context.hitEntity(), context.impactDirection());
             applyOperation(view, at, successes, operation.effectId());
         }
     }

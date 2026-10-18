@@ -35,8 +35,23 @@ public final class SpellPlanSelfCheck {
                 && link.plan().target().shape().equals("CHAIN"), "link ripple", failures);
         rejected(compile("chi", "life", "tou", "zhao_cover"), "delivery_conflict", failures);
         rejected(compile("chi", "life", "si", "ji_trace"), "target_conflict", failures);
-        rejected(compile("chi", "life", "tou", "ceng"), "unsupported_word", failures);
-        rejected(compile("chi", "life", "tou", "yuan"), "unsupported_word", failures);
+        for (var entry : List.of(List.of("ceng", "sense"), List.of("yuan", "boost"))) {
+            String word = entry.get(0), effect = entry.get(1);
+            var standalone = compile("chi", "life", word);
+            check(standalone.ok() && standalone.plan().operations().size() == 1
+                    && standalone.plan().operations().get(0).effectId().equals(effect)
+                    && standalone.plan().delivery().deliveryId().equals("instant"),
+                    "migrated standalone word " + word, failures);
+            var combined = compile("chi", "life", "tou", word);
+            check(combined.ok() && combined.plan().operations().size() == 2
+                    && combined.plan().delivery().deliveryId().equals("projectile")
+                    && combined.plan().operations().stream().anyMatch(op -> op.effectId().equals("damage") && op.power() > 0f)
+                    && combined.plan().operations().stream().anyMatch(op -> op.effectId().equals(effect)
+                            && op.power() == 0f && op.magnitude() > 0f && op.durationSeconds() > 0f
+                            && op.slots().equals(List.of(1))),
+                    "migrated mixed units " + word, failures);
+        }
+        rejected(compile("chi", "life", "tou", "unknown_word"), "unknown_word", failures);
         rejected(compile("chi", "life", "duan", "si"), "conflict_word_axis", failures);
         rejected(compile("xing", "life", "tou"), "star_requires_san", failures);
         var star = compile("xing", "san", "tou");
@@ -50,8 +65,17 @@ public final class SpellPlanSelfCheck {
         var guidedVolley = compile("chi", "life", "liu", "beng");
         check(guidedVolley.ok() && guidedVolley.plan().delivery().deliveryId().equals("channel")
                 && guidedVolley.plan().schedule().segments() == 6
+                && guidedVolley.plan().schedule().followupHits() == 1
                 && guidedVolley.plan().operations().get(0).traits().contains("followup_hit"),
                 "guided volley", failures);
+        for (var words : List.of(List.of("liu", "beng"), List.of("beng", "liu"),
+                List.of("tou", "beng"), List.of("beng", "tou"), List.of("liu"), List.of("tou"), List.of("beng"))) {
+            var result = compile("chi", "life", words.toArray(String[]::new));
+            boolean followup = words.size() == 2;
+            check(result.ok() && result.plan().schedule().followupHits() == (followup ? 1 : 0)
+                    && result.plan().operations().stream().allMatch(op -> op.traits().contains("followup_hit") == followup),
+                    "followup schedule/trait alignment " + words, failures);
+        }
         check(compile("chi", "life", "liu").plan().schedule().segments() == 6, "default channel segments", failures);
         check(compile("chi", "life", "beng").plan().schedule().segments() == 5, "default volley segments", failures);
         var reversed = compile("chi", "life", "beng", "jian", "tou");

@@ -1,6 +1,8 @@
 package com.example.akaishi.forbidden.forge.magic.visual;
 
 import com.example.akaishi.forbidden.forge.magic.particle.SpellParticleBursts;
+import com.example.akaishi.forbidden.forge.client.visual.ClientVisualBudget;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import com.example.akaishi.forbidden.magic.table.MagicIds;
 import com.example.akaishi.forbidden.magic.particle.AkaishiMagicParticles;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -52,24 +54,43 @@ public final class SpellVisualEventHandler {
     private SpellVisualEventHandler() { }
 
     public void register() {
+        AkaishiMagicParticles.setLocalParticleGate(ClientVisualBudget::reserveLocalSpell);
         LinkVisualEvents.registerClient(this::acceptLink);
-        SpellVisualEvents.registerClient(event -> {
-            ClientLevel level = Minecraft.getInstance().level;
-            if (level == null) return;
-            if (world != level) { active.clear(); impacts.clear(); links.clear(); world = level; }
-            long now = level.getGameTime();
-            addBounded(active, new Active(event, now));
-            addBounded(impacts, new Impact(event, now));
-            // 命中即刻的粒子爆发（形取墨 = "是什么魔法打上来的"）
-            SpellParticleBursts.onEvent(level, event);
-        });
+        SpellVisualEvents.registerClient(this::accept);
+    }
+
+    public void accept(SpellVisualEvent event) {
+        ClientLevel level = Minecraft.getInstance().level;
+        if (level == null) return;
+        syncWorld(level);
+        long now = level.getGameTime();
+        addBounded(active, new Active(event, now));
+        addBounded(impacts, new Impact(event, now));
+        SpellParticleBursts.onEvent(level, event);
+        com.example.akaishi.forbidden.forge.magic.sound.SpellSoundHandler.INSTANCE.visual(event);
     }
 
     private void acceptLink(LinkVisualEvent event) {
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null) return;
-        if (world != level) { active.clear(); impacts.clear(); links.clear(); world = level; }
+        syncWorld(level);
         addBounded(links, new LinkPulse(event, level.getGameTime()));
+        com.example.akaishi.forbidden.forge.magic.sound.SpellSoundHandler.INSTANCE.link(event);
+    }
+
+    private void syncWorld(ClientLevel level) {
+        if (world == level) return;
+        active.clear();
+        impacts.clear();
+        links.clear();
+        charge.clear();
+        ClientVisualBudget.beginTick(level);
+        world = level;
+    }
+
+    @SubscribeEvent
+    public void logout(ClientPlayerNetworkEvent.LoggingOut event) {
+        syncWorld(null);
     }
 
     private static <T> void addBounded(List<T> list, T value) {
@@ -83,8 +104,9 @@ public final class SpellVisualEventHandler {
     public void tick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         ClientLevel level = Minecraft.getInstance().level;
-        if (level != world) { active.clear(); impacts.clear(); links.clear(); world = level; }
+        syncWorld(level);
         if (level == null || Minecraft.getInstance().isPaused()) return;
+        ClientVisualBudget.beginTick(level);
         charge.tick(level);
         long now = level.getGameTime();
         active.removeIf(value -> now - value.started() >= value.event().lifeTicks());
@@ -98,7 +120,8 @@ public final class SpellVisualEventHandler {
 
     @SubscribeEvent
     public void render(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || world == null) return;
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || world == null
+                || world != Minecraft.getInstance().level) return;
         var pose = event.getPoseStack();
         var buffers = visualBuffers;
         Vec3 camera = event.getCamera().getPosition();
@@ -111,13 +134,18 @@ public final class SpellVisualEventHandler {
         for (Active value : active) {
             SpellVisualEvent spell = value.event();
             Vec3 to = anchor(world, spell);
-            if (camera.distanceToSqr(to) > 128d * 128d) continue;
+            var carrier = spell.visual().carrier();
+            boolean beam = carrier == com.example.akaishi.forbidden.magic.visual.SpellCarrierForm.BEAM
+                    || carrier == com.example.akaishi.forbidden.magic.visual.SpellCarrierForm.SALVO;
+            Vec3 nearest = beam ? nearestPoint(camera, spell.from(), to) : to;
+            float detail = ClientVisualBudget.detailScale(world, nearest);
+            if (detail <= 0f) continue;
             float age = world.getGameTime() - value.started() + event.getPartialTick();
             float alpha = Math.max(0, 1 - age / spell.lifeTicks());
             pose.pushPose();
             pose.translate(to.x - camera.x, to.y - camera.y, to.z - camera.z);
             SpellVisualPainter.paintCarrier(pose, buffers, spell.visual(), spell.from().subtract(to),
-                    age / 20f, alpha, rotation);
+                    age / 20f, alpha, rotation, detail);
             pose.popPose();
         }
 
@@ -131,11 +159,12 @@ public final class SpellVisualEventHandler {
         for (Impact value : impacts) {
             SpellVisualEvent spell = value.event();
             Vec3 to = anchor(world, spell);
-            if (camera.distanceToSqr(to) > 128d * 128d) continue;
+            float detail = ClientVisualBudget.detailScale(world, to);
+            if (detail <= 0f) continue;
             float age = world.getGameTime() - value.started() + event.getPartialTick();
             pose.pushPose();
             pose.translate(to.x - camera.x, to.y - camera.y, to.z - camera.z);
-            SpellImpactVfx.paint(pose, buffers, spell.visual(), age / 20f, rotation);
+            SpellImpactVfx.paint(pose, buffers, spell.visual(), age / 20f, rotation, detail);
             pose.popPose();
         }
 
@@ -148,9 +177,9 @@ public final class SpellVisualEventHandler {
         Vec3 b = linkAnchor(level, link.toId(), link.to(), partialTick);
         Vec3 a = link.fromId() < 0 ? b : linkAnchor(level, link.fromId(), link.from(), partialTick);
         Vec3 d = b.subtract(a);
-        Vec3 closest = d.lengthSqr() < 1.0e-6d ? b
-                : a.add(d.scale(Math.max(0d, Math.min(1d, camera.subtract(a).dot(d) / d.lengthSqr()))));
-        if (camera.distanceToSqr(closest) > 128d * 128d) return;
+        Vec3 closest = nearestPoint(camera, a, b);
+        float detail = ClientVisualBudget.detailScale(level, closest);
+        if (detail <= 0f) return;
         float alpha = Math.max(0f, 1f - age / LinkVisualEvent.LIFE_TICKS);
         if (link.fromId() < 0 || d.lengthSqr() < 1.0e-6d) {
             pose.pushPose();
@@ -166,7 +195,7 @@ public final class SpellVisualEventHandler {
         Vec3 axis = d.normalize();
         Vec3 side = axis.cross(Math.abs(axis.y) > 0.9d ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0)).normalize();
         Vec3 up = axis.cross(side).normalize();
-        int steps = Math.max(4, Math.min(16, (int) Math.ceil(d.length() * 2d)));
+        int steps = Math.max(4, Math.round(Math.min(16, (int) Math.ceil(d.length() * 2d)) * detail));
         double spread = Math.min(0.45d, d.length() * 0.09d);
         var random = new java.util.Random(31L * link.fromId() + link.toId() * 17L + (int) age);
         Vec3 last = a;
@@ -177,6 +206,14 @@ public final class SpellVisualEventHandler {
             paintBoltSegment(pose, buffers, camera, last, next, link, alpha);
             last = next;
         }
+    }
+
+    private static Vec3 nearestPoint(Vec3 camera, Vec3 from, Vec3 to) {
+        Vec3 direction = to.subtract(from);
+        double lengthSquared = direction.lengthSqr();
+        if (lengthSquared < 1.0e-6d) return to;
+        double t = Math.max(0d, Math.min(1d, camera.subtract(from).dot(direction) / lengthSquared));
+        return from.add(direction.scale(t));
     }
 
     private static Vec3 linkAnchor(ClientLevel level, int id, Vec3 fallback, float partialTick) {

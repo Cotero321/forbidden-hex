@@ -28,6 +28,7 @@ public final class WitchOvenScreen extends AbstractContainerScreen<WitchOvenMenu
                 Component.translatable("gui.forbidden_hex.brewing.profile", menu.queues(), menu.fumeChancePercent()), mouseX, mouseY);
         gui.drawString(font, Component.translatable("gui.forbidden_hex.brewing.result"), x + 108, y + 19, 0xFF493C52, false);
         gui.drawString(font, Component.translatable("gui.forbidden_hex.brewing.fume"), x + 138, y + 19, 0xFF493C52, false);
+        gui.drawString(font, Component.translatable("gui.forbidden_hex.brewing.bottle"), x + 61, y + 47, 0xFF493C52, false);
     }
     @Override public void render(GuiGraphics gui, int mouseX, int mouseY, float partialTick) {
         renderBackground(gui);

@@ -1,0 +1,12 @@
+{
+  "pipeline": "energy_additive",
+  "shader": "forbidden_hex:energy",
+  "uniforms": {
+    "FlowSpeed": 0.85,
+    "GlowStrength": 1.0,
+    "PulseStrength": 0.44,
+    "PulseSpeed": 1.5,
+    "EdgeSoftness": 0.4,
+    "AlphaCutoff": 0.003
+  }
+}

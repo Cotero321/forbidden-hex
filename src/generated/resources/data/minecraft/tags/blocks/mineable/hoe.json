@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "forbidden_hex:forbidden_hex_hawthorn_leaves",
+    "forbidden_hex:forbidden_hex_rowan_leaves",
+    "forbidden_hex:forbidden_hex_alder_leaves",
+    "forbidden_hex:forbidden_hex_elder_leaves",
+    "forbidden_hex:forbidden_hex_willow_leaves"
+  ]
+}

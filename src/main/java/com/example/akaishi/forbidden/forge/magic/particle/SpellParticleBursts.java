@@ -128,6 +128,7 @@ public final class SpellParticleBursts {
 
     private static void burst(ClientLevel level, SpellMoteOptions options, Vec3 at, int count, double spread) {
         for (int i = 0; i < count; i++) {
+            if (!AkaishiMagicParticles.allowLocal(level, at.x, at.y, at.z)) break;
             level.addParticle(options, at.x, at.y, at.z,
                     jitter(level, spread), jitter(level, spread), jitter(level, spread));
         }
@@ -142,6 +143,7 @@ public final class SpellParticleBursts {
             double y = Mth.lerp(t, from.y, to.y);
             double z = Mth.lerp(t, from.z, to.z);
             for (int k = 0; k < perPoint; k++) {
+                if (!AkaishiMagicParticles.allowLocal(level, x, y, z)) break;
                 level.addParticle(options, x, y, z,
                         jitter(level, JITTER), jitter(level, JITTER), jitter(level, JITTER));
             }
@@ -153,8 +155,11 @@ public final class SpellParticleBursts {
         for (int i = 0; i < count; i++) {
             double angle = level.random.nextDouble() * Math.PI * 2;
             double r = radius * (0.55 + level.random.nextDouble() * 0.45);
-            level.addParticle(options, at.x + Math.cos(angle) * r, at.y + 0.05, at.z + Math.sin(angle) * r,
-                    0d, 0.01d, 0d);
+            double x = at.x + Math.cos(angle) * r;
+            double y = at.y + 0.05;
+            double z = at.z + Math.sin(angle) * r;
+            if (!AkaishiMagicParticles.allowLocal(level, x, y, z)) continue;
+            level.addParticle(options, x, y, z, 0d, 0.01d, 0d);
         }
     }
 

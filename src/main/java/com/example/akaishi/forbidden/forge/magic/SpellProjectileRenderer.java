@@ -37,8 +37,6 @@ public class SpellProjectileRenderer extends EntityRenderer<SpellProjectile> {
     /** 自转角速度（度/秒）——快一点才有"高速旋转的能量球"的观感 */
     private static final float SPIN_PER_SECOND = 220f;
 
-    /** 尾带长度（格）：约 1.5 倍初速，飞行中看得出"拖尾"又不至于糊成一团 */
-    private static final float TRAIL_LENGTH = 1.8f;
     /** 环绕微光的颗数（绕弹体旋转的小光点） */
     private static final int ORBIT_MOTES = 3;
 
@@ -115,9 +113,7 @@ public class SpellProjectileRenderer extends EntityRenderer<SpellProjectile> {
         SpellVisualPainter.paint(poseStack, buffers, visual, time);
         poseStack.popPose();
 
-        // 彗头 + 尾带 + 环绕微光：光靠"自转的几何笼"读不出"这一发在飞"。
-        // 三样的取图/取参都<b>跟着墨走</b> —— 于是"炽的一发"与"星的一发"不只是颜色不同：
-        // 头形不同、尾带滚动快慢不同、环绕微光的形态也不同。
+        // 彗头和环绕微光按墨选形；历史轨迹由 ProjectileTrailEffects 绘制。
         float size = visual.baseSize();
         float bright = visual.brightness();
         String inkId = visual.inkId();
@@ -129,11 +125,6 @@ public class SpellProjectileRenderer extends EntityRenderer<SpellProjectile> {
                 Math.max(0.18f, size * 0.78f), Math.min(1f, bright), visual.inkRgb());
         net.minecraft.world.phys.Vec3 motion = entity.getDeltaMovement();
         if (motion.lengthSqr() > 1.0e-6d) {
-            // 尾带：按墨的"旋性"滚起来（混墨/蔓墨绞得明显，炽墨几乎不滚）
-            float roll = time * rollSpeed(inkId);
-            SpellVisualPainter.ribbon(buffers, poseStack, motion.scale(-TRAIL_LENGTH),
-                    Math.max(0.05f, size * 0.16f), Math.min(0.85f, bright * 0.70f),
-                    visual.inkRgb(), SpellVfx.STREAK, roll);
             paintOrbitMotes(poseStack, buffers, visual, motion, billboard, head, size, bright, time);
         }
 

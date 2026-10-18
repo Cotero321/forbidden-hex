@@ -1,0 +1,81 @@
+{
+  "type": "forbidden_hex:crucible",
+  "heat": "fire",
+  "kind": "transformation",
+  "results": [
+    {
+      "count": 1,
+      "item": "forbidden_hex:forbidden_hex_mandrake_seeds"
+    },
+    {
+      "count": 1,
+      "item": "forbidden_hex:forbidden_hex_henbane_seeds"
+    },
+    {
+      "count": 1,
+      "item": "forbidden_hex:forbidden_hex_belladonna_seeds"
+    },
+    {
+      "count": 1,
+      "item": "forbidden_hex:forbidden_hex_datura_seeds"
+    },
+    {
+      "count": 1,
+      "item": "forbidden_hex:forbidden_hex_aconite_seeds"
+    },
+    {
+      "count": 1,
+      "item": "forbidden_hex:forbidden_hex_foxglove_seeds"
+    },
+    {
+      "count": 1,
+      "item": "forbidden_hex:forbidden_hex_hellroot_seeds"
+    },
+    {
+      "count": 1,
+      "item": "forbidden_hex:forbidden_hex_colchicum_seeds"
+    },
+    {
+      "count": 1,
+      "item": "forbidden_hex:forbidden_hex_yew_seeds"
+    },
+    {
+      "count": 1,
+      "item": "forbidden_hex:forbidden_hex_ergot_seeds"
+    },
+    {
+      "count": 1,
+      "item": "forbidden_hex:forbidden_hex_parasitic_vine_seeds"
+    },
+    {
+      "count": 1,
+      "item": "forbidden_hex:forbidden_hex_ember_moss_seeds"
+    },
+    {
+      "count": 1,
+      "item": "forbidden_hex:forbidden_hex_glint_weed_seeds"
+    }
+  ],
+  "steps": [
+    {
+      "ingredient": {
+        "tag": "forbidden_hex:brewing_plants"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:egg"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "forbidden_hex:forbidden_hex_fume"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "forbidden_hex:forbidden_hex_transmutation_dust"
+      }
+    }
+  ]
+}

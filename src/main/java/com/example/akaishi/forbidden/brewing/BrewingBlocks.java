@@ -17,6 +17,7 @@ public final class BrewingBlocks {
     private BrewingBlocks() { }
 
     public static void register(BlockEntityType.BlockEntitySupplier<CrucibleBlockEntity> crucibleFactory) {
+        BrewingPlants.register();
         var blocks = RegistrarManager.get(AkaishiMod.MOD_ID).get(Registries.BLOCK);
         OVEN = AkaishiBlockRegistrar.registerMachineBlock(blocks, "forbidden_hex_witch_oven", WitchOvenBlock::new);
         CRUCIBLE = AkaishiBlockRegistrar.registerMachineBlock(blocks, "forbidden_hex_crucible", CrucibleBlock::new);

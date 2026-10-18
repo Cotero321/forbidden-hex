@@ -52,8 +52,20 @@ public final class AkaishiMagicParticles {
 
     private static RegistrySupplier<ParticleType<SpellMoteOptions>> mote;
     private static RegistrySupplier<ParticleType<PhotonOptions>> photon;
-    private static long photonTick = Long.MIN_VALUE;
-    private static int photonCount;
+    @FunctionalInterface
+    public interface LocalParticleGate {
+        boolean allow(Level level, double x, double y, double z);
+    }
+
+    private static LocalParticleGate localGate = (level, x, y, z) -> true;
+
+    public static void setLocalParticleGate(LocalParticleGate gate) {
+        localGate = java.util.Objects.requireNonNull(gate);
+    }
+
+    public static boolean allowLocal(Level level, double x, double y, double z) {
+        return level.isClientSide && localGate.allow(level, x, y, z);
+    }
 
     private AkaishiMagicParticles() {
     }
@@ -143,6 +155,7 @@ public final class AkaishiMagicParticles {
                              double x, double y, double z, int count, double spread) {
         SpellMoteOptions options = options(source, inkId, carrier, rgb);
         for (int i = 0; i < count; i++) {
+            if (!allowLocal(level, x, y, z)) break;
             level.addParticle(options, x, y, z,
                     jitter(level, spread), jitter(level, spread), jitter(level, spread));
         }
@@ -155,8 +168,10 @@ public final class AkaishiMagicParticles {
         for (int i = 0; i < count; i++) {
             double angle = level.random.nextDouble() * Math.PI * 2;
             double r = radius * (0.55 + level.random.nextDouble() * 0.45);
-            level.addParticle(options,
-                    x + Math.cos(angle) * r, y, z + Math.sin(angle) * r, 0d, 0.01d, 0d);
+            double particleX = x + Math.cos(angle) * r;
+            double particleZ = z + Math.sin(angle) * r;
+            if (!allowLocal(level, particleX, y, particleZ)) continue;
+            level.addParticle(options, particleX, y, particleZ, 0d, 0.01d, 0d);
         }
     }
 
@@ -176,19 +191,16 @@ public final class AkaishiMagicParticles {
         if (length < 1.0e-4d) {
             return; // 重合：没有方向可言，直接不生成（避免 NaN 速度把粒子甩到天边）
         }
+        if (!allowLocal(level, x, y, z)) return;
         double scale = speed / length;
         level.addParticle(options(source, inkId, carrier, rgb), x, y, z,
                 dx * scale, dy * scale, dz * scale);
     }
 
-    /** 客户端 tick/event 高亮：每刻最多 48 颗，原版非强制粒子路径负责设置与相机距离裁剪。 */
+    /** 客户端 tick/event 高亮：与法术装饰粒子共享配额，保留原版非强制粒子路径。 */
     public static void photon(Level level, int rgb, double x, double y, double z,
             double vx, double vy, double vz, float size, float speed) {
-        if (!level.isClientSide || level.getNearestPlayer(x, y, z, 32d, false) == null) return;
-        long now = level.getGameTime();
-        if (photonTick != now) { photonTick = now; photonCount = 0; }
-        if (photonCount >= 48) return;
-        photonCount++;
+        if (!level.isClientSide || !allowLocal(level, x, y, z)) return;
         level.addParticle(PhotonOptions.of(0, photonRgb(rgb), size, speed), x, y, z, vx, vy, vz);
     }
 

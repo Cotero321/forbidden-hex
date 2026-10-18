@@ -1,7 +1,6 @@
 package com.example.akaishi.forbidden.forge.client;
 
 import com.example.akaishi.forbidden.effect.UnnameableClientAmbience;
-import net.minecraft.util.Mth;
 import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
@@ -30,13 +29,13 @@ public final class AkaishiUnnameableHandler {
         if (level <= 0.02f) {
             return;
         }
-        float t = elapsedSeconds();
+        double t = elapsedSeconds();
         // roll 为主通道：双频叠加产生不规则倾斜，比单一正弦更"不安定"
-        float roll = (Mth.sin(t * 1.10f) + 0.5f * Mth.sin(t * 2.70f)) * MAX_ROLL * level;
+        float roll = (float) (Math.sin(t * 1.10d) + 0.5d * Math.sin(t * 2.70d)) * MAX_ROLL * level;
         event.setRoll(event.getRoll() + roll);
         // yaw/pitch 用不同频率抖动，避免抖动方向固定成可预测的规律
-        event.setYaw(event.getYaw() + Mth.sin(t * 1.90f) * MAX_DRIFT * level);
-        event.setPitch(event.getPitch() + Mth.cos(t * 2.30f) * MAX_DRIFT * level);
+        event.setYaw(event.getYaw() + (float) Math.sin(t * 1.90d) * MAX_DRIFT * level);
+        event.setPitch(event.getPitch() + (float) Math.cos(t * 2.30d) * MAX_DRIFT * level);
     }
 
     @SubscribeEvent
@@ -49,13 +48,13 @@ public final class AkaishiUnnameableHandler {
         if (level <= 0.02f) {
             return;
         }
-        float t = elapsedSeconds();
-        double swing = (Mth.sin(t * 1.50f) + 0.4f * Mth.sin(t * 3.30f)) * MAX_FOV_SWING * level;
+        double t = elapsedSeconds();
+        double swing = (Math.sin(t * 1.50d) + 0.4d * Math.sin(t * 3.30d)) * MAX_FOV_SWING * level;
         event.setFOV(event.getFOV() + swing);
     }
 
     /** 以秒为单位的连续时间：与帧率解耦，保证不同帧率下抖动节奏一致 */
-    private static float elapsedSeconds() {
-        return (float) (System.nanoTime() / 1.0E9D);
+    private static double elapsedSeconds() {
+        return System.nanoTime() / 1.0E9d;
     }
 }

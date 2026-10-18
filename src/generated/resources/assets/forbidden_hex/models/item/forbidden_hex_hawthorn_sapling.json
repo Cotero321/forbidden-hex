@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "forbidden_hex:block/forbidden_hex_hawthorn_sapling"
+  }
+}

@@ -42,6 +42,7 @@ public final class MagicCastManager {
 
     public static void register() {
         TickEvent.SERVER_LEVEL_POST.register(MagicCastManager::serverTick);
+        com.example.akaishi.forbidden.sound.SpellSoundEvents.register();
         PlayerEvent.PLAYER_QUIT.register(player -> {
             MagicCastSession session = SESSIONS.get(player.getUUID());
             if (session != null) end(player, session, false, true, 0f);
@@ -51,6 +52,12 @@ public final class MagicCastManager {
     public static boolean isCasting(Player player) {
         return player != null && SESSIONS.containsKey(player.getUUID());
     }
+    public static boolean ownsCircle(Player player,
+            com.example.akaishi.forbidden.magic.circle.SpellCircleEntity circle) {
+        MagicCastSession session = player == null ? null : SESSIONS.get(player.getUUID());
+        return session != null && session.circle() == circle;
+    }
+
     public static MagicCastState stateOf(Player player) {
         MagicCastSession session = player == null ? null : SESSIONS.get(player.getUUID());
         return session == null ? MagicCastState.IDLE : session.state();
@@ -60,11 +67,15 @@ public final class MagicCastManager {
         return state == MagicCastState.CHANNELING || state == MagicCastState.VOLLEYING;
     }
 
-    /** 松手：引导已生效时正常结束；前摇松手按未生效打断返还。 */
+    public static void syncState(ServerPlayer player) {
+        MagicCastStateS2C.send(player, stateOf(player));
+    }
+
+    /** 松手结束当前持杖施法；已生效的首段正常收束，前摇中断则按原规则返还。 */
     public static void stop(Player player) {
         if (!(player instanceof ServerPlayer server)) return;
         MagicCastSession session = SESSIONS.get(player.getUUID());
-        if (session == null || !MagicIds.Delivery.CHANNEL.equals(session.snapshot().deliveryId())) return;
+        if (session == null) return;
         if (session.firstFired()) finish(server, session, true);
         else end(server, session, false, true, 0f);
     }
@@ -83,19 +94,53 @@ public final class MagicCastManager {
                         : Math.max(1, Math.round(snapshot.plan().schedule().intervalSeconds() * 20f)),
                 persistenceOf(context), player.getHealth());
         session.setFirstPayment(firstPayment);
+        if (firstPayment != null && !firstPayment.originalCarrier().isEmpty()) {
+            var carrier = firstPayment.originalCarrier();
+            if (player.getMainHandItem() == carrier) {
+                session.setCarrierHand(net.minecraft.world.InteractionHand.MAIN_HAND);
+            } else if (player.getOffhandItem() == carrier) {
+                session.setCarrierHand(net.minecraft.world.InteractionHand.OFF_HAND);
+            }
+        }
         SESSIONS.put(player.getUUID(), session);
-        if (player instanceof ServerPlayer server) MagicCastStateS2C.send(server, MagicCastState.CHARGING);
+        if (player instanceof ServerPlayer server) {
+            createCircle(server, session);
+            MagicCastStateS2C.send(server, MagicCastState.CHARGING);
+            com.example.akaishi.forbidden.sound.SpellSoundEvents.refresh(server, session);
+        }
         return true;
+    }
+
+    private static void createCircle(ServerPlayer player, MagicCastSession session) {
+        if (session.carrierHand() != null && !player.level().isClientSide && session.context() != null) {
+            var visual = com.example.akaishi.forbidden.magic.visual.SpellVisual.from(session.context());
+            if (visual == null) return;
+            var circle = new com.example.akaishi.forbidden.magic.circle.SpellCircleEntity(
+                    com.example.akaishi.forbidden.entity.AkaishiForbiddenEntities.SPELL_CIRCLE.get(),
+                    player.serverLevel());
+            circle.armFollowing(visual, player, session.chargeEndTick());
+            if (player.serverLevel().addFreshEntity(circle)) session.setCircle(circle);
+        }
     }
 
     public static void serverTick(ServerLevel level) {
         if (level.getGameTime() % 20L == 0L) {
-            SESSIONS.keySet().removeIf(id -> level.getServer().getPlayerList().getPlayer(id) == null);
+            SESSIONS.forEach((id, session) -> {
+                if (level.getServer().getPlayerList().getPlayer(id) == null && SESSIONS.remove(id, session)) {
+                    if (session.circle() != null) session.circle().fadeOut();
+                    com.example.akaishi.forbidden.sound.SpellSoundEvents.abandon(session);
+                    FIRST_DELIVERED.remove(id);
+                }
+            });
             FIRST_DELIVERED.keySet().removeIf(id -> !SESSIONS.containsKey(id));
         }
         for (ServerPlayer player : level.players()) {
             try {
                 tickOne(player, level);
+                MagicCastSession active = SESSIONS.get(player.getUUID());
+                if (active != null && level.getGameTime() % 20L == 0L) {
+                    com.example.akaishi.forbidden.sound.SpellSoundEvents.refresh(player, active);
+                }
             } catch (RuntimeException e) {
                 LOGGER.error("[AkaishiMagic] 施法推进异常，玩家={}", player.getUUID(), e);
                 MagicCastSession session = SESSIONS.get(player.getUUID());
@@ -109,6 +154,16 @@ public final class MagicCastManager {
         if (session == null) return;
         if (player.isDeadOrDying() || session.dimension() != level.dimension() || player.hasDisconnected()) {
             end(player, session, false, true, 0f);
+            return;
+        }
+        var hand = session.carrierHand();
+        if (hand != null && player.getItemInHand(hand) != session.firstPayment().originalCarrier()) {
+            if (session.firstFired()) finish(player, session, false);
+            else end(player, session, false, true, 0f);
+            return;
+        }
+        if (hand != null && (!player.isUsingItem() || player.getUsedItemHand() != hand)) {
+            stop(player);
             return;
         }
         float health = player.getHealth();
@@ -133,6 +188,8 @@ public final class MagicCastManager {
             return;
         }
         session.markFirstFired();
+        com.example.akaishi.forbidden.sound.SpellSoundEvents.session(player, session,
+                com.example.akaishi.forbidden.sound.SpellSoundEvent.Phase.RELEASE);
         Runnable delivered = FIRST_DELIVERED.remove(player.getUUID());
         if (delivered != null) delivered.run();
         session.recordSuccessfulPayment(session.firstPayment());
@@ -142,8 +199,10 @@ public final class MagicCastManager {
         }
         session.setState(MagicIds.Delivery.CHANNEL.equals(session.snapshot().deliveryId())
                 ? MagicCastState.CHANNELING : MagicCastState.VOLLEYING);
+        if (session.circle() != null) session.circle().setVisualState(session.state());
         session.setNextSegmentTick(now + session.segmentIntervalTicks());
         MagicCastStateS2C.send(player, session.state());
+        com.example.akaishi.forbidden.sound.SpellSoundEvents.refresh(player, session);
     }
 
     private static void tickContinuous(ServerPlayer player, MagicCastSession session, long now) {
@@ -172,6 +231,8 @@ public final class MagicCastManager {
             return;
         }
         session.recordSuccessfulPayment(payment);
+        com.example.akaishi.forbidden.sound.SpellSoundEvents.session(player, session,
+                com.example.akaishi.forbidden.sound.SpellSoundEvent.Phase.SEGMENT);
         if (!session.hasMoreSegments()) finish(player, session, true);
     }
 
@@ -193,7 +254,15 @@ public final class MagicCastManager {
     private static void end(ServerPlayer player, MagicCastSession session, boolean completed,
             boolean refund, float cooldown) {
         if (!SESSIONS.remove(player.getUUID(), session)) return;
+        com.example.akaishi.forbidden.sound.SpellSoundEvents.session(player, session, completed
+                ? com.example.akaishi.forbidden.sound.SpellSoundEvent.Phase.END
+                : com.example.akaishi.forbidden.sound.SpellSoundEvent.Phase.INTERRUPT);
         FIRST_DELIVERED.remove(player.getUUID());
+        if (session.circle() != null) session.circle().fadeOut();
+        if (session.carrierHand() != null && player.isUsingItem()
+                && player.getUseItem() == session.firstPayment().originalCarrier()) {
+            player.stopUsingItem();
+        }
         try {
             if (refund && !session.firstFired()) MagicPayment.refund(player, session.firstPayment(), REFUND_RATIO);
         } catch (RuntimeException e) {

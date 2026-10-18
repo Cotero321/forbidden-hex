@@ -24,6 +24,21 @@ public record WitchOvenRecipe(ResourceLocation id, BrewingIngredient input, Item
         fume = fume.copy();
     }
 
+    public static java.util.Optional<WitchOvenRecipe> find(Container container, Level level) {
+        if (container.getContainerSize() == 0) return java.util.Optional.empty();
+        var declared = level.getRecipeManager().getRecipeFor(BrewingRecipes.OVEN.get(), container, level);
+        if (declared.isPresent()) return declared;
+        ItemStack input = container.getItem(0);
+        if (input.isEmpty() || !(input.isEdible() || input.is(net.minecraft.tags.ItemTags.LOGS))) {
+            return java.util.Optional.empty();
+        }
+        return level.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.SMELTING, container, level)
+                .map(recipe -> new WitchOvenRecipe(recipe.getId(),
+                        new BrewingIngredient(net.minecraft.world.item.crafting.Ingredient.of(input.getItem()), new net.minecraft.nbt.CompoundTag()),
+                        recipe.getResultItem(level.registryAccess()), BrewingFumeItem.create(BrewingFumes.EVIL_BREATH),
+                        recipe.getCookingTime(), 0.3));
+    }
+
     @Override public ItemStack result() { return result.copy(); }
     @Override public ItemStack fume() { return fume.copy(); }
     public net.minecraft.nbt.CompoundTag signature() {

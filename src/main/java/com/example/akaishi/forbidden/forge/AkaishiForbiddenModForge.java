@@ -57,6 +57,9 @@ public final class AkaishiForbiddenModForge {
                 net.minecraft.world.item.ItemStack::getCraftingRemainingItem);
         com.example.akaishi.forbidden.brewing.BrewingBlocks.register(
                 com.example.akaishi.forbidden.forge.brewing.ForgeCrucibleBlockEntity::new);
+        modBus.addListener((net.minecraftforge.data.event.GatherDataEvent event) ->
+                event.getGenerator().addProvider(event.includeServer() || event.includeClient(),
+                        new com.example.akaishi.forbidden.forge.brewing.BrewingDataProvider(event.getGenerator().getPackOutput())));
         com.example.akaishi.forbidden.brewing.BrewingEntities.register(
                 com.example.akaishi.forbidden.forge.brewing.ForgeBrewingPotionProjectile::new,
                 com.example.akaishi.forbidden.forge.brewing.ForgeBrewingEffectCloud::new);
@@ -126,14 +129,17 @@ public final class AkaishiForbiddenModForge {
         // 客户端专属注册（渲染器 / HUD 元素 / 雾效 / 后处理）：在 FMLClientSetupEvent 中求值 ——
         // 该事件晚于各注册表填充，AkaishiForbiddenEntities.*.get() 才能取到值；服务端不加载客户端类型
         FMLJavaModLoadingContext.get().getModEventBus().addListener(
-                (FMLClientSetupEvent event) ->
-                        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> AkaishiForbiddenClientSetup::register));
+                (FMLClientSetupEvent event) -> event.enqueueWork(() ->
+                        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> AkaishiForbiddenClientSetup::register)));
 
         // ⚠ 注册类事件（键位 / HUD 叠加层）必须在**模组构造阶段**就挂上监听。
         // 它们与 FMLClientSetupEvent **同阶段**但不保证在其之后 —— 若在 FMLClientSetupEvent 内部再
         // addListener，事件可能已经派发完毕 ⇒ 键位没注册、overlay 永不绘制（表现：按 R 无反应 / HUD 不显示）。
         // 本体 AkaishiModForge 正是构造阶段挂的，此处与它同口径。
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+            ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.CLIENT,
+                    com.example.akaishi.forbidden.forge.client.ForbiddenVisualConfig.SPEC,
+                    "forbidden_hex-client.toml");
             FMLJavaModLoadingContext.get().getModEventBus().addListener(
                     (RegisterKeyMappingsEvent event) -> AkaishiForbiddenClientSetup.registerKeyMapping(event));
             FMLJavaModLoadingContext.get().getModEventBus().addListener(

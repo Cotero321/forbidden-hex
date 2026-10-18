@@ -40,6 +40,7 @@ final class BrewingRecipeIO {
 
     static BrewingPotionData potion(JsonObject json) {
         List<MobEffectInstance> effects = new ArrayList<>();
+        List<Integer> costs = new ArrayList<>();
         for (var entry : GsonHelper.getAsJsonArray(json, "effects")) {
             JsonObject effect = entry.getAsJsonObject();
             ResourceLocation id = new ResourceLocation(GsonHelper.getAsString(effect, "effect"));
@@ -47,13 +48,14 @@ final class BrewingRecipeIO {
             MobEffect type = BuiltInRegistries.MOB_EFFECT.get(id);
             effects.add(new MobEffectInstance(type, GsonHelper.getAsInt(effect, "duration"),
                     GsonHelper.getAsInt(effect, "amplifier", 0)));
+            costs.add(GsonHelper.getAsInt(effect, "cost", 1));
         }
         try {
             return new BrewingPotionData(GsonHelper.getAsInt(json, "capacity"),
                     GsonHelper.getAsInt(json, "strength"), GsonHelper.getAsInt(json, "duration"),
                     BrewingPotionData.Delivery.valueOf(GsonHelper.getAsString(json, "delivery", "drink").toUpperCase(Locale.ROOT)),
                     GsonHelper.getAsBoolean(json, "hide_particles", false),
-                    GsonHelper.getAsBoolean(json, "pressure_plates", false), effects);
+                    GsonHelper.getAsBoolean(json, "pressure_plates", false), effects, costs);
         } catch (IllegalArgumentException exception) {
             throw new JsonSyntaxException("Invalid brewing potion result", exception);
         }

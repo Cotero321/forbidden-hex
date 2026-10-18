@@ -4,6 +4,7 @@ import com.example.akaishi.forbidden.api.magic.*;
 import com.example.akaishi.forbidden.magic.table.*;
 import com.example.akaishi.forbidden.menu.CoreLayout;
 import com.example.akaishi.forbidden.magic.formula.SpellPlanTooltips;
+import com.example.akaishi.forbidden.visual.ItemTooltipMode;
 import dev.architectury.platform.Platform;
 import dev.architectury.utils.Env;
 import net.minecraft.ChatFormatting;
@@ -36,12 +37,17 @@ public final class MagicCoreItem extends Item {
     }
 
     public record Summary(SpellPlan result, Component reason) {}
-    public static Summary summarize(ItemStack stack) {
-        String main = "";
+    public static String mainInkId(ItemStack stack) {
         for (int slot = 0; slot < SLOTS; slot++) {
-            if (!word(stack, slot).isEmpty()) { main = ink(stack, slot); break; }
+            if (word(stack, slot).isEmpty()) continue;
+            String inkId = ink(stack, slot);
+            if (!inkId.isEmpty()) return inkId;
         }
-        var compiled = SpellPlans.fromCore(stack, main, 0f, 0);
+        return "";
+    }
+
+    public static Summary summarize(ItemStack stack) {
+        var compiled = SpellPlans.fromCore(stack, mainInkId(stack), 0f, 0);
         if (compiled.ok()) return new Summary(compiled.plan(), null);
         var error = compiled.diagnostics().stream().filter(d -> d.severity() == CompileDiagnostic.Severity.ERROR)
                 .findFirst();
@@ -50,47 +56,67 @@ public final class MagicCoreItem extends Item {
     }
 
     @Override public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("item.forbidden_hex.magic_core.tip.source", source(stack).label(), source(stack).id())
-                .withStyle(ChatFormatting.AQUA));
-        int count = 0;
-        for (int i = 0; i < SLOTS; i++) if (!word(stack, i).isEmpty()) count++;
-        if (count == 0) {
-            tooltip.add(Component.translatable("item.forbidden_hex.magic_core.tip.hint").withStyle(ChatFormatting.DARK_GRAY));
-            return;
-        }
-        tooltip.add(Component.translatable("item.forbidden_hex.magic_core.tip.level", level(stack), CoreLayout.openSlotCount(level(stack)))
-                .withStyle(ChatFormatting.YELLOW));
-        boolean expanded = Platform.getEnvironment() == Env.CLIENT && (Screen.hasShiftDown() || Screen.hasControlDown());
-        var summary = summarize(stack);
-        if (summary.result() == null) tooltip.add(summary.reason().copy().withStyle(ChatFormatting.RED));
-        else if (expanded) SpellPlanTooltips.append(tooltip, summary.result(), true, 0f);
-        else appendCompactSummary(tooltip, summary.result());
-        if (!expanded) {
-            tooltip.add(Component.translatable("item.forbidden_hex.magic_core.tip.more").withStyle(ChatFormatting.DARK_GRAY));
-            return;
-        }
-        for (int i = 0; i < SLOTS; i++) {
-            var word = MagicWord.byId(word(stack, i));
-            if (word == null) continue;
-            var ink = MagicInkTable.get(ink(stack, i));
-            tooltip.add(Component.literal((i + 1) + " ").append(MagicGlyphs.leading(word.id(),
-                    Component.literal(word.label() + " · " + (ink == null ? "—" : ink.label())))));
-        }
+        ItemTooltipMode mode = Platform.getEnvironment() == Env.CLIENT
+                ? ItemTooltipMode.select(Screen.hasShiftDown(), Screen.hasControlDown()) : ItemTooltipMode.SUMMARY;
+        appendDetails(stack, tooltip, mode);
     }
 
-    private static void appendCompactSummary(List<Component> tooltip, SpellPlan plan) {
-        tooltip.add(Component.translatable("item.forbidden_hex.magic_core.plan.operation_count", plan.operations().size())
+    public static void appendDetails(ItemStack stack, List<Component> tooltip, ItemTooltipMode mode) {
+        tooltip.add(Component.translatable("item.forbidden_hex.magic_core.tip.source_label", source(stack).label())
+                .withStyle(ChatFormatting.AQUA));
+        int count = 0;
+        for (int i = 0; i < SLOTS; i++) if (!entry(stack, WORDS_TAG, i).isEmpty()) count++;
+        tooltip.add(Component.translatable("item.forbidden_hex.magic_core.tip.inlaid", count, SLOTS)
                 .withStyle(ChatFormatting.GRAY));
-        for (var operation : plan.operations()) {
-            tooltip.add(Component.translatable("item.forbidden_hex.magic_core.plan.brief",
-                    Component.translatable("item.forbidden_hex.magic_core.op." + operation.effectId()),
-                    SpellPlanTooltips.briefValue(operation))
+        if (mode != ItemTooltipMode.SUMMARY) {
+            tooltip.add(Component.translatable("item.forbidden_hex.magic_core.tip.level", level(stack),
+                    CoreLayout.openSlotCount(level(stack))).withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.translatable("item.forbidden_hex.magic_core.tip.section." +
+                    (mode == ItemTooltipMode.USAGE ? "usage" : "technical")).withStyle(ChatFormatting.GOLD));
+        }
+        if (count == 0) {
+            tooltip.add(Component.translatable("item.forbidden_hex.magic_core.tip.hint").withStyle(ChatFormatting.DARK_GRAY));
+        } else {
+            var summary = summarize(stack);
+            if (summary.result() == null) tooltip.add(summary.reason().copy().withStyle(ChatFormatting.RED));
+            else SpellPlanTooltips.append(tooltip, summary.result(), mode, 0f);
+        }
+        if (mode == ItemTooltipMode.USAGE) {
+            tooltip.add(Component.translatable("item.forbidden_hex.magic_core.tip.socket").withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.translatable("item.forbidden_hex.magic_core.tip.edit").withStyle(ChatFormatting.GRAY));
+        } else if (mode == ItemTooltipMode.TECHNICAL) {
+            tooltip.add(Component.translatable("item.forbidden_hex.magic_core.tip.base_preview").withStyle(ChatFormatting.DARK_GRAY));
+            tooltip.add(Component.translatable("item.forbidden_hex.magic_core.tip.source", source(stack).label(), source(stack).id())
+                    .withStyle(ChatFormatting.DARK_GRAY));
+            tooltip.add(Component.translatable("item.forbidden_hex.magic_core.tip.section.slots").withStyle(ChatFormatting.GOLD));
+            appendSlots(stack, tooltip);
+        }
+        tooltip.add(Component.translatable("item.forbidden_hex.magic_core.tip.more").withStyle(ChatFormatting.DARK_GRAY));
+    }
+
+    public static void appendSlots(ItemStack stack, List<Component> tooltip) {
+        MagicInkDef mainInk = MagicInkTable.get(mainInkId(stack));
+        for (int slot = 0; slot < SLOTS; slot++) {
+            String wordId = entry(stack, WORDS_TAG, slot);
+            if (wordId.isEmpty()) continue;
+            MagicWord word = MagicWord.byId(wordId);
+            String inkId = entry(stack, WORD_INKS_TAG, slot);
+            MagicInkDef ink = MagicInkTable.get(inkId);
+            Component wordLabel = word == null ? Component.literal(wordId).withStyle(ChatFormatting.RED)
+                    : MagicGlyphs.leading(word.id(), Component.literal(word.label()));
+            Component inkLabel;
+            if (inkId.isEmpty()) {
+                inkLabel = mainInk == null
+                        ? Component.translatable("item.forbidden_hex.magic_core.tip.missing_ink").withStyle(ChatFormatting.RED)
+                        : Component.translatable("item.forbidden_hex.magic_core.tip.inherit_ink", mainInk.label());
+            } else {
+                inkLabel = ink == null
+                        ? Component.translatable("item.forbidden_hex.magic_core.tip.unknown_ink", inkId).withStyle(ChatFormatting.RED)
+                        : Component.literal(ink.label());
+            }
+            tooltip.add(Component.translatable("item.forbidden_hex.magic_core.tip.slot", slot + 1, wordLabel, inkLabel)
                     .withStyle(ChatFormatting.GRAY));
         }
-        tooltip.add(Component.translatable("item.forbidden_hex.magic_core.plan.cost",
-                String.format(java.util.Locale.ROOT, "%.2f", plan.cost().total()),
-                String.format(java.util.Locale.ROOT, "%.2f", plan.cost().segmentCost()))
-                .withStyle(ChatFormatting.DARK_GRAY));
     }
 
     public static MagicSource source(ItemStack stack) {

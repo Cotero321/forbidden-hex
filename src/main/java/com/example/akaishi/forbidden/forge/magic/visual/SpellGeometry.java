@@ -52,7 +52,7 @@ public final class SpellGeometry {
      * （自发光、逐顶点 alpha、有深度测试、无背面剔除），只是换成绑定指定贴图。
      */
     public static RenderType textureType(ResourceLocation texture) {
-        return RenderType.entityTranslucentEmissive(texture);
+        return SpellRenderTypes.glow(texture);
     }
 
     /**

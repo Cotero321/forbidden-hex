@@ -101,6 +101,28 @@ minecraft {
         client {
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             property 'forge.enabledGameTestNamespaces', mod_id
+            if (project.hasProperty('visualSmokeTest') || project.hasProperty('visualSceneTest') || project.hasProperty('shaderCompatTest')) {
+                property 'forbidden_hex.visualSmokeTest', 'true'
+            }
+            if (project.hasProperty('visualSceneTest')) {
+                property 'forbidden_hex.visualSceneTest', 'true'
+            }
+            if (project.hasProperty('circleSceneTest')) {
+                property 'forbidden_hex.circleSceneTest', 'true'
+            }
+            if (project.hasProperty('audioSceneTest')) {
+                property 'forbidden_hex.audioSceneTest', 'true'
+            }
+            if (project.hasProperty('sanitySceneTest')) {
+                property 'forbidden_hex.sanitySceneTest', 'true'
+            }
+            if (project.hasProperty('shaderCompatTest') || project.hasProperty('visualSceneTest') || project.hasProperty('circleSceneTest') || project.hasProperty('audioSceneTest') || project.hasProperty('sanitySceneTest')) {
+                workingDirectory project.file('build/shader-compat-run')
+                args '--quickPlaySingleplayer', 'shader_compat_world'
+            }
+            if (project.hasProperty('shaderCompatTest')) {
+                property 'forbidden_hex.shaderCompatTest', 'true'
+            }
         }
 
         server {
@@ -141,6 +163,15 @@ repositories {
         url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
         content { includeGroup 'software.bernie.geckolib' }
     }
+    if (project.hasProperty('shaderCompatTest')) {
+        exclusiveContent {
+            forRepository {
+                maven { url = 'https://api.modrinth.com/maven' }
+            }
+            forRepositories(fg.repository)
+            filter { includeGroup 'maven.modrinth' }
+        }
+    }
 }
 
 dependencies {
@@ -154,6 +185,10 @@ dependencies {
     implementation fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:${geckolib_version}")
     compileOnly 'org.jetbrains:annotations:24.1.0'
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    if (project.hasProperty('shaderCompatTest')) {
+        runtimeOnly fg.deobf('maven.modrinth:oculus:iQ1SwGc3')
+        runtimeOnly fg.deobf('maven.modrinth:embeddium:UTbfe5d1')
+    }
 
     // Example mod dependency with JEI - using fg.deobf() ensures the dependency is remapped to your development mappings
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime

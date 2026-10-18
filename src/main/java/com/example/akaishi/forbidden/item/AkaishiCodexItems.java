@@ -13,7 +13,7 @@ import net.minecraft.world.item.Rarity;
 import java.util.function.Supplier;
 
 /**
- * 禁忌秘典域物品注册（本轮只有一件：秘典本体）。
+ * 禁忌秘典域物品注册：秘典本体与全解锁测试用品。
  *
  * <p><b>P3a 归属</b>：本类随禁忌秘典整体迁入 {@code forbidden_hex}（包名与注册 id 均不变）；
  * 注册命名空间仍为本体共用的 {@code forbidden_hex:}，故 id 常量的唯一来源也一并从本体门面迁至此处。
@@ -24,11 +24,15 @@ import java.util.function.Supplier;
  */
 public final class AkaishiCodexItems {
 
-    /** 注册 id（命名空间 akaishi 不变；唯一来源） */
+    /** 注册 id（命名空间 forbidden_hex；唯一来源） */
     public static final String FORBIDDEN_CODEX_ID = "forbidden_hex_forbidden_codex";
+    /** 全解锁测试用品注册 id */
+    public static final String KNOWLEDGE_TEST_ID = "forbidden_hex_knowledge_test";
 
     /** 禁忌秘典（禁忌栏）：右键翻开，入知识/研究系统 */
     public static RegistrySupplier<Item> forbiddenCodex;
+    /** 测试用品：右键解锁全部秘典知识、魔法词和魔法师等级 */
+    public static RegistrySupplier<Item> knowledgeTest;
 
     private AkaishiCodexItems() {
     }
@@ -37,6 +41,8 @@ public final class AkaishiCodexItems {
         // 唯一性物品：秘典记载的是"这个玩家读到了哪一页"，同一本多持无意义，故不堆叠
         forbiddenCodex = item(FORBIDDEN_CODEX_ID, () -> new AkaishiCodexItem(
                 new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
+        knowledgeTest = item(KNOWLEDGE_TEST_ID, () -> new KnowledgeTestItem(
+                new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
     }
 
     /** 注册物品（generated 模型引用 textures/item/&lt;id&gt;.png，与 id 严格同名） */

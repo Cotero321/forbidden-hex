@@ -12,6 +12,16 @@ public final class ForgeBrewingPotionProjectile extends BrewingPotionProjectile 
         super(type, level);
     }
 
+    @Override
+    public void handleEntityEvent(byte event) {
+        if (event == SHATTER_EVENT) {
+            net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT,
+                    () -> () -> com.example.akaishi.forbidden.forge.magic.visual.ProjectileTrailEffects.INSTANCE.shatter(this));
+        } else {
+            super.handleEntityEvent(event);
+        }
+    }
+
     @Override public Packet<ClientGamePacketListener> getAddEntityPacket() {
         return NetworkHooks.getEntitySpawningPacket(this);
     }

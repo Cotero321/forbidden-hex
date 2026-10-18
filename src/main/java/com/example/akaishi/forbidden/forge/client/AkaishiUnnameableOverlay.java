@@ -2,6 +2,8 @@ package com.example.akaishi.forbidden.forge.client;
 
 import com.example.akaishi.AkaishiMod;
 import com.example.akaishi.forbidden.effect.UnnameableClientAmbience;
+import com.example.akaishi.forbidden.forge.client.visual.ClientPostEffects;
+import com.example.akaishi.forbidden.sanity.ClientSanityVision;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -82,36 +84,49 @@ public final class AkaishiUnnameableOverlay implements IGuiOverlay {
             return;
         }
         float level = UnnameableClientAmbience.level();
+        if (level <= MIN_LEVEL && !ClientPostEffects.sanityPostActive() && ClientSanityVision.active()) {
+            float gray = ClientSanityVision.gray();
+            float blood = ClientSanityVision.blood();
+            int red = Math.round(45f + 64f * blood);
+            int green = Math.round(88f - 42f * blood);
+            int blue = Math.round(105f - 19f * blood);
+            int tint = (red << 16) | (green << 8) | blue;
+            int band = Math.max(4, Math.round(Math.min(screenWidth, screenHeight) * 0.07f));
+            drawEdgeBands(graphics, screenWidth, screenHeight, band, gray, tint);
+        }
         if (level <= MIN_LEVEL) {
             // 效果已消退：清空残留条目，下次触发重新起算，避免旧条目"带偏移地"突然出现
             whispers.clear();
             return;
         }
         int band = Math.max(3, Math.round(MAX_BAND * level));
-        drawEdgeBands(graphics, screenWidth, screenHeight, band);
+        drawEdgeBands(graphics, screenWidth, screenHeight, band, level, 0x341629);
         drawEdgeNoise(graphics, screenWidth, screenHeight, band, level);
         drawWhispers(graphics, screenWidth, screenHeight, level);
     }
 
-    /** 四条边缘粗线：外层近黑压实边界，内层半透明羽化，避免生硬直角 */
-    private void drawEdgeBands(GuiGraphics graphics, int width, int height, int band) {
-        int outer = 0xFF14060A;
-        int inner = 0x6614060A;
-        graphics.fill(0, 0, width, band, outer);
-        graphics.fill(0, height - band, width, height, outer);
-        graphics.fill(0, band, band, height - band, outer);
-        graphics.fill(width - band, band, width, height - band, outer);
-
-        int feather = Math.max(1, band / 2);
-        graphics.fill(band, band, width - band, band + feather, inner);
-        graphics.fill(band, height - band - feather, width - band, height - band, inner);
-        graphics.fill(band, band + feather, band + feather, height - band - feather, inner);
-        graphics.fill(width - band - feather, band + feather, width - band, height - band - feather, inner);
+    /** 逐像素内收的羽化环，四角不重复叠加，透明度跟随强度消退。 */
+    private void drawEdgeBands(GuiGraphics graphics, int width, int height, int band, float level, int rgb) {
+        int extent = Math.min(band * 2, Math.min(width, height) / 2);
+        float visibility = Math.max(0f, (level - MIN_LEVEL) / (1f - MIN_LEVEL));
+        for (int inset = 0; inset < extent; inset++) {
+            float falloff = 1f - (float) inset / Math.max(1, extent);
+            int alpha = Math.round(150f * visibility * falloff * falloff);
+            if (alpha == 0) {
+                continue;
+            }
+            int color = (alpha << 24) | rgb;
+            graphics.fill(inset, inset, width - inset, inset + 1, color);
+            graphics.fill(inset, height - inset - 1, width - inset, height - inset, color);
+            graphics.fill(inset, inset + 1, inset + 1, height - inset - 1, color);
+            graphics.fill(width - inset - 1, inset + 1, width - inset, height - inset - 1, color);
+        }
     }
 
     /** 边缘噪点：仅在四条粗线范围内平铺噪点纹理，透明度随效果强度加深 */
     private void drawEdgeNoise(GuiGraphics graphics, int width, int height, int band, float level) {
-        graphics.setColor(1.0F, 1.0F, 1.0F, 0.45F + 0.55F * level);
+        graphics.setColor(0.86F, 0.72F, 0.94F,
+                0.38F * Math.max(0f, (level - MIN_LEVEL) / (1f - MIN_LEVEL)));
         graphics.blitRepeating(NOISE, 0, 0, width, band, 0, 0, 16, 16);
         graphics.blitRepeating(NOISE, 0, height - band, width, band, 0, 0, 16, 16);
         graphics.blitRepeating(NOISE, 0, band, band, height - 2 * band, 0, 0, 16, 16);

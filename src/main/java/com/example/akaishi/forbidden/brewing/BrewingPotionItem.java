@@ -64,7 +64,8 @@ public final class BrewingPotionItem extends Item {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         BrewingPotionData.read(stack).ifPresentOrElse(data -> {
             tooltip.add(Component.translatable("tooltip.forbidden_hex.brewing.volume", BrewingPotionData.VOLUME));
-            tooltip.add(Component.translatable("tooltip.forbidden_hex.brewing.attributes", data.capacity(), data.strength(), data.duration()));
+            tooltip.add(Component.translatable("tooltip.forbidden_hex.brewing.attributes", data.capacity(), data.strength(), Math.max(1, data.duration())));
+            tooltip.add(Component.translatable("tooltip.forbidden_hex.brewing.capacity", data.usedCapacity(), data.capacity()));
             tooltip.add(Component.translatable("tooltip.forbidden_hex.brewing.delivery." + data.delivery().name().toLowerCase(java.util.Locale.ROOT)));
             if (data.hideParticles()) tooltip.add(Component.translatable("tooltip.forbidden_hex.brewing.hide_particles"));
             if (data.triggerPressurePlates()) tooltip.add(Component.translatable("tooltip.forbidden_hex.brewing.pressure_plates"));

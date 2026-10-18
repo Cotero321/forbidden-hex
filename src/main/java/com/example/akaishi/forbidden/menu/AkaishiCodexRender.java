@@ -94,9 +94,14 @@ final class AkaishiCodexRender {
     private static final int COLOR_FAMILY_UNKNOWN = 0xFF8A8A95;
     private static final float INK_MIX = 0.62f;
 
-    /** 贴图存在性缓存（键 = 贴图 id；资源重载会换掉 ResourceManager 实例 ⇒ 整表失效重探） */
+    /** 贴图存在性缓存；重载只标记失效，下次绘制时在客户端线程清空。 */
     private static final Map<ResourceLocation, Boolean> PRESENT = new ConcurrentHashMap<>();
     private static ResourceManager cachedManager;
+    private static volatile boolean texturesDirty;
+
+    static void onResourceReload() {
+        texturesDirty = true;
+    }
 
     private AkaishiCodexRender() {
     }
@@ -367,8 +372,7 @@ final class AkaishiCodexRender {
      * 贴图是否存在（<b>缺图回落的前提</b>）：存在才 blit，否则一律走程序化笔触 ——
      * 直接 blit 不存在的贴图会被原版画成"缺图马赛克"，那是硬性禁止的。
      *
-     * <p>结果缓存；资源重载会换掉 {@code ResourceManager} 实例，检测到换实例即整表重探
-     * （于是开发期新丢进去的贴图不用重启也能生效）。
+     * <p>资源重载或管理器切换后整表重探，资源包增删贴图均会刷新缺图回退。
      */
     static boolean texturePresent(ResourceLocation id) {
         net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
@@ -376,7 +380,8 @@ final class AkaishiCodexRender {
             return false;
         }
         ResourceManager manager = minecraft.getResourceManager();
-        if (manager != cachedManager) {
+        if (texturesDirty || manager != cachedManager) {
+            texturesDirty = false;
             PRESENT.clear();
             cachedManager = manager;
         }

@@ -1,0 +1,18 @@
+{
+  "replace": false,
+  "values": [
+    "forbidden_hex:forbidden_hex_mandrake_crop",
+    "forbidden_hex:forbidden_hex_henbane_crop",
+    "forbidden_hex:forbidden_hex_belladonna_crop",
+    "forbidden_hex:forbidden_hex_datura_crop",
+    "forbidden_hex:forbidden_hex_aconite_crop",
+    "forbidden_hex:forbidden_hex_foxglove_crop",
+    "forbidden_hex:forbidden_hex_hellroot_crop",
+    "forbidden_hex:forbidden_hex_colchicum_crop",
+    "forbidden_hex:forbidden_hex_yew_crop",
+    "forbidden_hex:forbidden_hex_ergot_crop",
+    "forbidden_hex:forbidden_hex_parasitic_vine_crop",
+    "forbidden_hex:forbidden_hex_ember_moss_crop",
+    "forbidden_hex:forbidden_hex_glint_weed_crop"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "forbidden_hex:block/forbidden_hex_alder_log",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y": {
+      "model": "forbidden_hex:block/forbidden_hex_alder_log"
+    },
+    "axis=z": {
+      "model": "forbidden_hex:block/forbidden_hex_alder_log",
+      "x": 90
+    }
+  }
+}

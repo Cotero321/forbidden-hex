@@ -16,11 +16,10 @@ import org.joml.Matrix4f;
  * <p><b>不改变杖核轮廓</b>：宝石外形始终由 {@code Core} 部件决定 ——
  * 于是"换咒核"表现为<b>宝石上显示的法术变了</b>，而不是外面又多挂一颗球。
  *
- * <h3>为什么用"已居中"的坐标空间</h3>
- * 本层由 {@link WandRenderer} 在同一 pose 下调用，而那份 pose 已由原版施加过
- * {@code display} 变换与 {@code translate(-0.5,-0.5,-0.5)}（详见 {@link WandRenderer} 类注释）。
- * 因此这里的数字是"模型 0..16 坐标 ÷ 16 − 0.5"后的值，而<b>不是</b> 0..1 原始坐标；
- * {@link #GEM_MIN} 等常量直接抄自 {@code core_base.json} 的宝石包围盒。
+ * <h3>与部件共用模型坐标</h3>
+ * 本层与 {@link WandRenderer} 的部件共用 0..1 坐标；原版的
+ * {@code translate(-0.5,-0.5,-0.5)} 已在 pose 上生效，位置不能再次减去 0.5。
+ * 宝石表面坐标取自 {@code core_base.json}。
  *
  * <h3>⚠ 为什么贴在"表面"而不是画在"内部"</h3>
  * 早先的实现把符文画在晶腔内（{@code z = −0.0155}），但宝石是<b>实心块</b>
@@ -41,8 +40,7 @@ final class SpellInsetRenderer {
      */
     private static final float GEM_Y_MIN = 13.4f;
     private static final float GEM_Y_MAX = 15.1f;
-    /** 宝石中心（已居中坐标）：y = (13.4+15.1)/2 ÷ 16 − 0.5 */
-    private static final float GEM_CENTER_Y = (GEM_Y_MIN + GEM_Y_MAX) / 2f / 16f - 0.5f;
+    private static final float GEM_CENTER_Y = (GEM_Y_MIN + GEM_Y_MAX) / 2f / 16f;
     /**
      * 宝石主体的真实前后表面：主体元素是 x/z 6.8..9.2 的对称 cuboid。
      *
@@ -50,8 +48,8 @@ final class SpellInsetRenderer {
      * 在截图里看成悬浮突起。现在回到实际存在的几何：离表面只留 0.001。
      */
     private static final float FACE_OFFSET = 0.001f;
-    private static final float FRONT_Z = 6.8f / 16f - 0.5f - FACE_OFFSET;
-    private static final float BACK_Z = 9.2f / 16f - 0.5f + FACE_OFFSET;
+    private static final float FRONT_Z = 6.8f / 16f - FACE_OFFSET;
+    private static final float BACK_Z = 9.2f / 16f + FACE_OFFSET;
     /** 主符文半径：收小到 0.022，像刻在晶面上的核心符号，不形成悬浮大块 */
     private static final float MAIN_SIZE = 0.022f;
     /** 辅助符文环半径与单枚大小 */
@@ -80,7 +78,7 @@ final class SpellInsetRenderer {
         // 前后面各画一遍：法杖在手里会转，只画一面会变成"半张脸"
         for (float planeZ : FACE_PLANES) {
             pose.pushPose();
-            pose.translate(0f, GEM_CENTER_Y, planeZ);
+            pose.translate(0.5f, GEM_CENTER_Y, planeZ);
             Matrix4f matrix = pose.last().pose();
 
             // 计划来源词按原槽位分段，各自墨色，不隐式选择中心主词。

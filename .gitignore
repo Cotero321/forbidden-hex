@@ -30,6 +30,15 @@ run-data
 .aider*
 .cache
 
+# Local tool and editor preferences
+.occai/
+.vscode/
+
+# Runtime logs and Python bytecode
+/logs/
+__pycache__/
+*.py[cod]
+
 # OS
 Thumbs.db
 ehthumbs.db

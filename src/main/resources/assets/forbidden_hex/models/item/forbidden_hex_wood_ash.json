@@ -1,4 +1,4 @@
 {
   "parent": "minecraft:item/generated",
-  "textures": { "layer0": "minecraft:item/charcoal" }
+  "textures": { "layer0": "forbidden_hex:item/forbidden_hex_wood_ash" }
 }

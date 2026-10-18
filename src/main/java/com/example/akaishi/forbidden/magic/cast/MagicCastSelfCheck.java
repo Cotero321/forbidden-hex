@@ -84,24 +84,119 @@ public final class MagicCastSelfCheck {
         checkBuiltinCoverage(out);
         checkVisualSpecs(out);
         checkVisualRoundTrip(out);
+        checkCircleSlots(out);
         return out;
     }
 
     private static void checkVisualRoundTrip(List<String> out) {
         SpellVisual original = SpellVisual.assemble(MagicWord.LIU.id(), MagicIds.Delivery.INSTANT,
                 "chi", "san", 4f, 6f, 2f,
-                List.of(MagicWord.LIU.id(), MagicWord.JIAN.id()));
+                List.of(MagicWord.LIU.id(), MagicWord.JIAN.id()),
+                List.of(MagicWord.LIU.id(), "", "", "", "", "", "", MagicWord.JIAN.id()),
+                List.of("chi", "", "", "", "", "", "", "yao"));
         FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-        original.write(buf);
-        SpellVisual restored = SpellVisual.read(buf);
-        if (!original.effectId().equals(restored.effectId())
-                || !original.sourceId().equals(restored.sourceId())
-                || !original.wordIds().equals(restored.wordIds())) {
-            out.add("视觉快照 roundtrip 丢失源 ID 或词模块");
+        try {
+            original.write(buf);
+            buf.writeInt(0x51A7B00F);
+            SpellVisual restored = SpellVisual.read(buf);
+            if (!original.equals(restored)) {
+                out.add("视觉快照 roundtrip 丢失视觉字段或八槽词墨");
+            }
+            if (buf.readInt() != 0x51A7B00F || buf.isReadable()) {
+                out.add("视觉快照 roundtrip 字段边界错位");
+            }
+        } finally {
+            buf.release();
         }
         if (original.glyphs().codePointCount(0, original.glyphs().length())
                 != original.wordIds().size()) {
             out.add("视觉快照 Unicode glyph 数量与词模块不一致");
+        }
+    }
+
+    private static void checkCircleSlots(List<String> out) {
+        List<String> empty = java.util.Collections.nCopies(8, "");
+        List<String> sparse = List.of(MagicWord.TOU.id(), "", "", "", "", "", "", MagicWord.LIU.id());
+        List<String> full = List.of(MagicWord.TOU.id(), MagicWord.LIU.id(), MagicWord.JIAN.id(),
+                MagicWord.YIN.id(), MagicWord.XI.id(), MagicWord.GEN.id(), MagicWord.SI.id(), MagicWord.ZHAO_COVER.id());
+        for (List<String> slots : List.of(empty, sparse, full)) {
+            List<String> inks = new ArrayList<>();
+            for (int index = 0; index < slots.size(); index++) {
+                inks.add(slots.get(index).isEmpty() ? "" : index % 2 == 0 ? "chi" : "yuan");
+            }
+            SpellVisual visual = SpellVisual.assemble(MagicWord.LIU.id(), INSTANT, "chi", "san",
+                    2f, 3f, 4f, slots.stream().filter(word -> !word.isEmpty()).toList(), slots, inks);
+            var layers = visual.circleLayers();
+            if (layers.layers().size() != 4) out.add("法阵必须保留四个固定层");
+            for (int index = 0; index < 4; index++) {
+                var layer = layers.layer(index);
+                var expected = slots.subList(index * 2, index * 2 + 2);
+                long occupied = expected.stream().filter(word -> !word.isEmpty()).count();
+                if (layer.index() != index || !layer.wordIds().equals(expected)
+                        || !layer.inkIds().equals(inks.subList(index * 2, index * 2 + 2))
+                        || layer.occupied() != (occupied > 0)
+                        || layer.glyphs().codePointCount(0, layer.glyphs().length()) != occupied) {
+                    out.add("法阵层 " + index + " 压缩空槽、重排词墨或丢失符文");
+                }
+                for (int slot = 0; slot < 2; slot++) {
+                    var data = layer.slot(slot);
+                    MagicWord word = MagicWord.byId(expected.get(slot));
+                    String glyph = word == null ? "" : word.glyph();
+                    var ink = com.example.akaishi.forbidden.magic.table.MagicInkTable.get(inks.get(index * 2 + slot));
+                    int color = ink == null ? visual.inkRgb() : ink.rgb();
+                    if (!data.glyph().equals(glyph) || data.occupied() != !glyph.isEmpty() || data.inkRgb() != color) {
+                        out.add("法阵层 " + index + " 槽 " + slot + " 丢失独立符文或覆盖墨色");
+                    }
+                }
+            }
+        }
+
+        List<String> sparseInks = List.of("chi", "", "", "", "", "", "", "yuan");
+        MagicContext base = context(fixedWords(), INSTANT, 1f);
+        MagicContext slotted = new MagicContext(base.caster(), base.level(), base.origin(), base.sourceId(),
+                base.mainInkId(), base.inks(), base.words(), base.casterLevel(), base.snapshot(),
+                sparse, sparseInks, null, null);
+        for (MagicContext copied : List.of(slotted.withOrigin(new Vec3(1, 2, 3)),
+                slotted.withImpact(null, new Vec3(4, 5, 6), new Vec3(0, 0, 1)))) {
+            if (!copied.slotWords().equals(sparse) || !copied.slotInks().equals(sparseInks)
+                    || !copied.inks().equals(slotted.inks())) {
+                out.add("执行上下文复制丢失八槽词墨或支付墨列表");
+            }
+        }
+        SpellVisual snapshot = SpellVisual.from(slotted);
+        if (snapshot == null || !snapshot.slotWords().equals(sparse) || !snapshot.slotInks().equals(sparseInks)) {
+            out.add("执行上下文转换视觉时丢失八槽词墨");
+        }
+
+        List<String> badSlots = java.util.Arrays.asList("unknown_word", "x".repeat(49), "tou" + (char) 1,
+                null, "", MagicWord.LIU.id(), "", MagicWord.HU.id(), MagicWord.TOU.id());
+        List<String> badInks = java.util.Arrays.asList("unknown_ink", "x".repeat(49), "chi" + (char) 1,
+                null, "", "unknown_ink", "", "yuan", "chi");
+        SpellVisual normalized = SpellVisual.assemble(MagicWord.LIU.id(), INSTANT, "chi", "san", 2f, 3f, 4f,
+                java.util.Arrays.asList(null, "", "x".repeat(49), MagicWord.TOU.id(), MagicWord.LIU.id()),
+                badSlots, badInks);
+        if (!normalized.wordIds().equals(List.of(MagicWord.TOU.id(), MagicWord.LIU.id()))
+                || normalized.slotWords().size() != 8 || normalized.slotInks().size() != 8
+                || !normalized.slotWords().subList(1, 4).equals(List.of("", "", ""))
+                || !normalized.slotInks().subList(1, 4).equals(List.of("", "", ""))
+                || !normalized.slotWords().get(0).equals("unknown_word")) {
+            out.add("视觉快照损坏词墨未按原槽归一化，或坏词截断后续合法词");
+        }
+        var layers = normalized.circleLayers();
+        if (layers.layer(0).occupied() || !layers.layer(0).wordIds().equals(List.of("", ""))
+                || !layers.layer(2).wordIds().equals(List.of("", MagicWord.LIU.id()))
+                || layers.layer(2).inkRgb() != normalized.inkRgb()
+                || !layers.layer(3).wordIds().equals(List.of("", MagicWord.HU.id()))) {
+            out.add("法阵未知词未保留空层、未知墨未回退主色或后续槽位移位");
+        }
+        SpellVisual mixed = SpellVisual.assemble(MagicWord.TOU.id(), INSTANT, "chi", "san", 2f, 3f, 4f,
+                List.of(MagicWord.TOU.id(), MagicWord.LIU.id()),
+                List.of(MagicWord.TOU.id(), MagicWord.LIU.id(), "", "", "", "", "", ""),
+                List.of("yuan", "unknown_ink", "", "", "", "", "", ""));
+        var mixedLayer = mixed.circleLayers().layer(0);
+        if (mixedLayer.slot(0).inkRgb() != com.example.akaishi.forbidden.magic.table.MagicInkTable.get("yuan").rgb()
+                || mixedLayer.slot(1).inkRgb() != mixed.inkRgb()) {
+            out.add("同层双槽覆盖墨或未知墨主色回退不正确");
         }
     }
 

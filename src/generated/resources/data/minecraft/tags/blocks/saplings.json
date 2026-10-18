@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "forbidden_hex:forbidden_hex_hawthorn_sapling",
+    "forbidden_hex:forbidden_hex_rowan_sapling",
+    "forbidden_hex:forbidden_hex_alder_sapling",
+    "forbidden_hex:forbidden_hex_elder_sapling",
+    "forbidden_hex:forbidden_hex_willow_sapling"
+  ]
+}

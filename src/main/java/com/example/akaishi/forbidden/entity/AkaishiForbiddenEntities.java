@@ -112,14 +112,14 @@ public final class AkaishiForbiddenEntities {
 
         // 法阵：碰撞箱只是"占位"（它不可被选取、不可被攻击，见 SpellCircleEntity#isPickable）；
         // 尺寸取 0.5×0.5 而不是 0 —— 零尺寸实体会让部分原版逻辑（包围盒求交、区块实体计数）出怪值。
-        // 追踪范围 10：法阵半径可达 8 格，玩家在圈外也要看得见它。
+        // 追踪范围以区块计：10 区块（名义 160 格），位置每 2 tick 同步。
         SPELL_CIRCLE = entity("spell_circle",
                 () -> EntityType.Builder
                         .<SpellCircleEntity>of(SpellCircleEntity::new, MobCategory.MISC)
                         .sized(0.5F, 0.5F)
                         .fireImmune()
                         .clientTrackingRange(10)
-                        .updateInterval(10)
+                        .updateInterval(2)
                         .build("spell_circle"));
     }
 

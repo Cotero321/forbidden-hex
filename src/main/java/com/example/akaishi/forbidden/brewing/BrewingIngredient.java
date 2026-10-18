@@ -4,20 +4,28 @@ import com.google.gson.JsonObject;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
 public record BrewingIngredient(Ingredient ingredient, CompoundTag requiredTag) {
     public BrewingIngredient {
-        if (ingredient == null || requiredTag == null) throw new IllegalArgumentException("Missing brewing ingredient");
+        if (ingredient == null || requiredTag == null || requiredTag.sizeInBytes() > 65536) {
+            throw new IllegalArgumentException("Invalid brewing ingredient");
+        }
         requiredTag = requiredTag.copy();
     }
 
     @Override public CompoundTag requiredTag() { return requiredTag.copy(); }
 
     public boolean test(ItemStack stack) {
-        return ingredient.test(stack) && (requiredTag.isEmpty()
-                || stack.hasTag() && NbtUtils.compareNbt(requiredTag, stack.getTag(), true));
+        if (!ingredient.test(stack)) return false;
+        if (stack.is(BrewingItems.FUME.get())) {
+            ResourceLocation kind = BrewingFumeItem.kind(stack);
+            if (!BrewingFumes.isAllowed(kind) || requiredTag.isEmpty() && !BrewingFumes.isNonEvil(kind)) return false;
+        }
+        return requiredTag.isEmpty()
+                || stack.hasTag() && NbtUtils.compareNbt(requiredTag, stack.getTag(), true);
     }
 
     public static BrewingIngredient fromJson(JsonObject json) {

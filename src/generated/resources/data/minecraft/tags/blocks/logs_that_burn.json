@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "forbidden_hex:forbidden_hex_hawthorn_log",
+    "forbidden_hex:forbidden_hex_rowan_log",
+    "forbidden_hex:forbidden_hex_alder_log",
+    "forbidden_hex:forbidden_hex_elder_log",
+    "forbidden_hex:forbidden_hex_willow_log"
+  ]
+}

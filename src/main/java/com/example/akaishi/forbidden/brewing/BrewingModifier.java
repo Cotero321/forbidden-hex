@@ -17,9 +17,9 @@ public record BrewingModifier(BrewingIngredient ingredient, Kind kind, int value
     public BrewingModifier {
         if (ingredient == null || kind == null || delivery == null || amplifiers == null) throw new IllegalArgumentException("Invalid brewing modifier");
         amplifiers = List.copyOf(amplifiers);
-        if (kind == Kind.CAPACITY && (value < 0 || value > 64)
-                || kind == Kind.STRENGTH && (value < 1 || value > 5 || amplifiers.isEmpty())
-                || kind == Kind.DURATION && (value < 1 || value > 6)
+        if (kind == Kind.CAPACITY && (value < 1 || value > 4)
+                || kind == Kind.STRENGTH && (value < 2 || value > BrewingPotionData.MAX_STRENGTH)
+                || kind == Kind.DURATION && (value < 2 || value > BrewingPotionData.MAX_DURATION)
                 || amplifiers.size() > BrewingPotionData.MAX_EFFECTS
                 || amplifiers.stream().anyMatch(amplifier -> amplifier < 0 || amplifier > BrewingPotionData.MAX_AMPLIFIER)) {
             throw new IllegalArgumentException("Invalid brewing modifier value");
@@ -33,29 +33,44 @@ public record BrewingModifier(BrewingIngredient ingredient, Kind kind, int value
         boolean hide = base.hideParticles(), pressure = base.triggerPressurePlates();
         List<MobEffectInstance> effects = base.effects();
         switch (kind) {
-            case CAPACITY -> capacity = value;
+            case CAPACITY -> {
+                if (capacity + value > BrewingPotionData.MAX_CAPACITY) throw new IllegalArgumentException("Capacity exceeds the supported budget");
+                capacity += value;
+            }
             case STRENGTH -> {
-                if (amplifiers.size() != effects.size()) throw new IllegalArgumentException("Strength amplifiers must match the effect list");
+                if (value <= strength || !amplifiers.isEmpty() && amplifiers.size() != effects.size()) {
+                    throw new IllegalArgumentException("Strength must increase and match the effect list");
+                }
                 strength = value;
                 List<MobEffectInstance> modified = new ArrayList<>();
                 for (int i = 0; i < effects.size(); i++) {
                     MobEffectInstance effect = effects.get(i);
-                    modified.add(new MobEffectInstance(effect.getEffect(), effect.getDuration(), amplifiers.get(i),
+                    modified.add(new MobEffectInstance(effect.getEffect(), effect.getDuration(),
+                            amplifiers.isEmpty() ? value - 1 : amplifiers.get(i),
                             effect.isAmbient(), effect.isVisible(), effect.showIcon()));
                 }
                 effects = modified;
             }
             case DURATION -> {
-                duration = Math.multiplyExact(duration, value);
+                int previousMultiplier = Math.max(1, duration);
+                if (value <= previousMultiplier) throw new IllegalArgumentException("Duration must increase");
+                duration = value;
                 effects = effects.stream().map(effect -> new MobEffectInstance(effect.getEffect(),
-                        effect.getEffect().isInstantenous() ? effect.getDuration() : Math.multiplyExact(effect.getDuration(), value),
+                        effect.getEffect().isInstantenous() ? effect.getDuration()
+                                : Math.toIntExact(Math.multiplyExact((long) effect.getDuration(), value) / previousMultiplier),
                         effect.getAmplifier(), effect.isAmbient(), effect.isVisible(), effect.showIcon())).toList();
             }
-            case DELIVERY -> delivery = this.delivery;
+            case DELIVERY -> {
+                if (this.delivery == delivery || this.delivery == BrewingPotionData.Delivery.SPLASH
+                        && delivery == BrewingPotionData.Delivery.LINGERING) {
+                    throw new IllegalArgumentException("Delivery must change without downgrading lingering");
+                }
+                delivery = this.delivery;
+            }
             case HIDE_PARTICLES -> hide = true;
             case PRESSURE_PLATES -> pressure = true;
         }
-        return new BrewingPotionData(capacity, strength, duration, delivery, hide, pressure, effects);
+        return new BrewingPotionData(capacity, strength, duration, delivery, hide, pressure, effects, base.effectCosts());
     }
 
     public static BrewingModifier fromJson(JsonObject json) {
@@ -71,7 +86,9 @@ public record BrewingModifier(BrewingIngredient ingredient, Kind kind, int value
                     ? BrewingPotionData.Delivery.valueOf(GsonHelper.getAsString(json, "delivery").toUpperCase(Locale.ROOT))
                     : BrewingPotionData.Delivery.DRINK;
             List<Integer> amplifiers = new ArrayList<>();
-            if (kind == Kind.STRENGTH) for (var entry : GsonHelper.getAsJsonArray(json, "amplifiers")) amplifiers.add(entry.getAsInt());
+            if (kind == Kind.STRENGTH && json.has("amplifiers")) {
+                for (var entry : GsonHelper.getAsJsonArray(json, "amplifiers")) amplifiers.add(entry.getAsInt());
+            }
             return new BrewingModifier(BrewingIngredient.fromJson(json), kind, value, delivery, amplifiers);
         } catch (IllegalArgumentException exception) {
             throw new JsonSyntaxException("Invalid brewing modifier", exception);

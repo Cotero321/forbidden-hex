@@ -1,34 +1,32 @@
 package com.example.akaishi.forbidden.forge.client.hud;
 
 import com.example.akaishi.forbidden.magic.ClientMagicData;
-import com.example.akaishi.forbidden.magic.particle.AkaishiMagicParticles;
+import com.example.akaishi.forbidden.magic.cast.MagicCastState;
 import com.example.akaishi.forbidden.magic.table.MagicSource;
 import com.example.akaishi.forbidden.sanity.ClientSanityData;
 import com.example.akaishi.forbidden.wand.WandItem;
 import com.example.akaishi.forbidden.wand.WandModifiers;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.Vec3;
 
 /** 法杖准星 HUD：独立归一的双轨读数与逐像素环带。 */
 public final class WandHudPainter {
 
-    public static final int RING_RADIUS = 11;
-    public static final int RING_THICKNESS = 2;
-    public static final int RING_DX = 18;
-    public static final int RING_DY = -6;
-    public static final int BAR_WIDTH = 48;
-    public static final int BAR_HEIGHT = 5;
-    public static final int BAR_DY = 9;
-    private static final int EXTRA_HEIGHT = 3;
-    private static final int TRACK_GAP = 2;
-    private static final int CELL_WIDTH = 6;
-    public static final int HALO_RADIUS_FROM = 9;
-    public static final int HALO_RADIUS_TO = 22;
+    // 以整数像素直接绘制原方案约 50% 的尺寸，避免 GUI 缩放矩阵造成半像素模糊。
+    public static final int RING_RADIUS = 6;
+    public static final int RING_THICKNESS = 1;
+    public static final int RING_DX = 9;
+    public static final int RING_DY = -3;
+    public static final int BAR_WIDTH = 24;
+    public static final int BAR_HEIGHT = 3;
+    public static final int BAR_DY = 5;
+    private static final int EXTRA_HEIGHT = 2;
+    private static final int TRACK_GAP = 1;
+    private static final int CELL_WIDTH = 3;
+    public static final int HALO_RADIUS_FROM = 5;
+    public static final int HALO_RADIUS_TO = 11;
     public static final int HALO_PERIOD_TICKS = 34;
 
     private static final int COLOR_TRACK = 0xFF20242A;
@@ -135,9 +133,9 @@ public final class WandHudPainter {
         }
     }
 
-    /** 就绪不画空圈；冷却的轨道与黄色进度在同一次扫描内择一绘制。 */
-    public static void drawCooldownRing(GuiGraphics g, Font font, int cx, int cy, int radius,
-            float remainFraction, String seconds, boolean overloaded, float breath) {
+    /** 就绪不画空圈；冷却只显示环形进度，避免文字压在准星与视线中心。 */
+    public static void drawCooldownRing(GuiGraphics g, int cx, int cy, int radius,
+            float remainFraction, boolean overloaded, float breath) {
         float remain = Mth.clamp(remainFraction, 0f, 1f);
         if (!overloaded && remain <= 0f) {
             return;
@@ -145,14 +143,6 @@ public final class WandHudPainter {
         drawRingBand(g, cx, cy, radius, 0f, overloaded ? 1f : remain,
                 overloaded ? COLOR_OVERLOAD : withAlpha(COLOR_CD, breath), RING_THICKNESS,
                 overloaded ? COLOR_OVERLOAD : COLOR_RING_TRACK);
-        if (!overloaded && seconds != null && !seconds.isEmpty()) {
-            g.drawString(font, seconds, cx - font.width(seconds) / 2, cy - 4, COLOR_CD, true);
-        }
-    }
-
-    /** 不把仍在冷却的不足一秒显示为零。 */
-    public static String secondsText(float seconds) {
-        return Integer.toString(Math.max(0, (int) Math.ceil(seconds)));
     }
 
     public static void drawHalo(GuiGraphics g, int cx, int cy, int rgb, float phase, float alphaScale) {
@@ -165,27 +155,45 @@ public final class WandHudPainter {
         ringArc(g, cx, cy, radius, 0f, 1f, withAlpha(rgb, fade), 1);
     }
 
-    /** 出生节拍由 overlay 按玩家 tick 节流，位置与既有汇聚效果保持一致。 */
-    public static void spawnConvergingMotes(LocalPlayer player, MagicSource source, String inkId, int rgb, int age) {
-        Vec3 eye = player.getEyePosition();
-        Vec3 dir = player.getLookAngle();
-        double distance = 2.2d;
-        double aimX = eye.x + dir.x * distance;
-        double aimY = eye.y + dir.y * distance;
-        double aimZ = eye.z + dir.z * distance;
-        Vec3 up = Math.abs(dir.y) > 0.9d ? new Vec3(1d, 0d, 0d) : new Vec3(0d, 1d, 0d);
-        Vec3 side = dir.cross(up).normalize();
-        Vec3 vert = side.cross(dir).normalize();
-        double angle = Math.toRadians(age % 12 * 30d);
-        double radius = 0.26d + age % 5 * 0.03d;
-        double ox = Math.cos(angle) * radius;
-        double oy = Math.sin(angle) * radius;
-        double x = aimX + side.x * ox + vert.x * oy;
-        double y = aimY + side.y * ox + vert.y * oy;
-        double z = aimZ + side.z * ox + vert.z * oy;
-        AkaishiMagicParticles.converge(player.level(), source, inkId,
-                com.example.akaishi.forbidden.magic.visual.SpellCarrierForm.ORB, rgb,
-                x, y, z, aimX, aimY, aimZ, 0.055d);
+    public static void drawCastIndicator(GuiGraphics g, int cx, int cy, int rgb,
+            MagicCastState state, float age, float progress, float transition, float segmentPhase) {
+        int color = withAlpha(brighten(rgb, 0.25f), 0.9f);
+        switch (state) {
+            case CHARGING -> {
+                drawRingBand(g, cx, cy, RING_RADIUS, 0f, Math.max(0.04f, progress), color, 1, COLOR_RING_TRACK);
+                g.fill(cx - 1, cy - 1, cx + 1, cy + 1, withAlpha(rgb, 0.35f + 0.6f * progress));
+            }
+            case CHANNELING -> {
+                float turn = age / 32f;
+                ringArc(g, cx, cy, RING_RADIUS, turn, 0.30f, color, 1);
+                ringArc(g, cx, cy, RING_RADIUS, turn + 0.5f, 0.30f, color, 1);
+            }
+            case VOLLEYING -> {
+                int segment = (int) (segmentPhase * 4f);
+                for (int i = 0; i < 4; i++) {
+                    ringArc(g, cx, cy, RING_RADIUS, i * 0.25f, 0.16f,
+                            withAlpha(rgb, i == segment ? 1f : 0.32f), 1);
+                }
+                g.fill(cx - 1, cy - 1, cx + 1, cy + 1, withAlpha(rgb, 1f - segmentPhase));
+            }
+            default -> { }
+        }
+        if (state == MagicCastState.CHANNELING || state == MagicCastState.VOLLEYING) {
+            ringArc(g, cx, cy, RING_RADIUS, 0f, 1f, withAlpha(0xFFFFFF, transition * 0.55f), 1);
+        }
+    }
+
+    public static void drawUnavailable(GuiGraphics g, int cx, int cy, boolean empty, boolean denied) {
+        int color = denied ? COLOR_OVERLOAD : empty ? 0xB3707782 : COLOR_CD;
+        if (empty) {
+            g.fill(cx - 3, cy - 1, cx + 3, cy, color);
+            g.fill(cx - 3, cy + 1, cx + 3, cy + 2, color);
+        } else {
+            for (int i = -2; i <= 2; i++) {
+                g.fill(cx + i, cy + i, cx + i + 1, cy + i + 1, color);
+                g.fill(cx + i, cy - i, cx + i + 1, cy - i + 1, color);
+            }
+        }
     }
 
     public static void ringArc(GuiGraphics g, int cx, int cy, int radius,
@@ -230,17 +238,10 @@ public final class WandHudPainter {
     }
 
     public static int brighten(int rgb, float f) {
-        float t = Mth.clamp(f, 0f, 1f);
-        int r = (rgb >> 16 & 0xFF);
-        int g = (rgb >> 8 & 0xFF);
-        int b = (rgb & 0xFF);
-        return Math.round(r + (255 - r) * t) << 16
-                | Math.round(g + (255 - g) * t) << 8
-                | Math.round(b + (255 - b) * t);
+        return com.example.akaishi.forbidden.visual.VisualColor.brighten(rgb, f);
     }
 
     public static int withAlpha(int rgb, float alpha) {
-        int a = Math.round(Mth.clamp(alpha, 0f, 1f) * 255f);
-        return a << 24 | rgb & 0xFFFFFF;
+        return com.example.akaishi.forbidden.visual.VisualColor.withAlpha(rgb, alpha);
     }
 }

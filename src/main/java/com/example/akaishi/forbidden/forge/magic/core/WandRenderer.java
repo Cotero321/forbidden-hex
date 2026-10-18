@@ -1,6 +1,13 @@
 package com.example.akaishi.forbidden.forge.magic.core;
 
 import com.example.akaishi.AkaishiMod;
+import com.example.akaishi.forbidden.forge.client.visual.ClientWandVisuals;
+import com.mojang.math.Axis;
+import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.LivingEntity;
 import com.example.akaishi.forbidden.wand.WandCoreTable;
 import com.example.akaishi.forbidden.wand.WandHandleTable;
 import com.example.akaishi.forbidden.wand.WandItem;
@@ -44,6 +51,15 @@ import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 public final class WandRenderer extends BlockEntityWithoutLevelRenderer implements IClientItemExtensions {
 
     public static final WandRenderer INSTANCE = new WandRenderer();
+    private static final HumanoidModel.ArmPose CASTING_POSE = HumanoidModel.ArmPose.create(
+            "FORBIDDEN_HEX_WAND_CASTING", false, (model, entity, arm) -> {
+                var part = arm == HumanoidArm.RIGHT ? model.rightArm : model.leftArm;
+                float sign = arm == HumanoidArm.RIGHT ? 1f : -1f;
+                float progress = Math.min(1f, entity.getTicksUsingItem() / 6f);
+                part.xRot = -0.35f + (-1.45f + model.head.xRot * 0.65f + 0.35f) * progress;
+                part.yRot = model.head.yRot + sign * 0.12f;
+                part.zRot = sign * 0.08f;
+            });
 
     private WandRenderer() {
         // 不使用方块实体渲染分发器与实体模型集：本渲染器只画 baked model，不涉及它们
@@ -53,6 +69,25 @@ public final class WandRenderer extends BlockEntityWithoutLevelRenderer implemen
     @Override
     public BlockEntityWithoutLevelRenderer getCustomRenderer() {
         return this;
+    }
+
+    @Override
+    public HumanoidModel.ArmPose getArmPose(LivingEntity entity, InteractionHand hand, ItemStack stack) {
+        return entity.isUsingItem() && entity.getUsedItemHand() == hand ? CASTING_POSE : null;
+    }
+
+    @Override
+    public boolean applyForgeHandTransform(PoseStack pose, LocalPlayer player, HumanoidArm arm,
+                                           ItemStack stack, float partialTick, float equip, float swing) {
+        if (!ClientWandVisuals.state().isActive() || ClientWandVisuals.wand() != stack) return false;
+        float sign = arm == HumanoidArm.RIGHT ? 1f : -1f;
+        float amount = ClientWandVisuals.transition(partialTick);
+        float pulse = (float) Math.sin(ClientWandVisuals.age(partialTick) * 0.45f) * 0.008f * amount;
+        pose.translate(sign * 0.56f - sign * 0.12f * amount,
+                -0.52f - equip * 0.6f + 0.10f * amount + pulse, -0.72f - 0.10f * amount);
+        pose.mulPose(Axis.XP.rotationDegrees(-12f * amount));
+        pose.mulPose(Axis.YP.rotationDegrees(sign * -10f * amount));
+        return true;
     }
 
     @Override

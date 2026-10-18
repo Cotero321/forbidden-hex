@@ -115,12 +115,19 @@ public class AkaishiCodexScreen extends AbstractContainerScreen<AkaishiCodexMenu
     /** 行数缓存的键与值（键 = 节点 + 快照 + 版心宽；换节点/换快照/改窗口只重算一次） */
     private String rowsKey = "";
     private int rowsCache = 1;
+    private static final java.util.concurrent.atomic.AtomicLong RESOURCE_REVISION = new java.util.concurrent.atomic.AtomicLong();
+    private long layoutRevision = RESOURCE_REVISION.get();
 
     public AkaishiCodexScreen(AkaishiCodexMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
         this.imageWidth = AkaishiCodexMenu.PANEL_W;
         this.imageHeight = AkaishiCodexMenu.PANEL_H;
         this.canvas = new AkaishiCodexCanvasView(CodexTable.all());
+    }
+
+    public static void onResourceReload() {
+        AkaishiCodexRender.onResourceReload();
+        RESOURCE_REVISION.incrementAndGet();
     }
 
     /**
@@ -154,6 +161,12 @@ public class AkaishiCodexScreen extends AbstractContainerScreen<AkaishiCodexMenu
 
     @Override
     public void render(GuiGraphics gui, int mouseX, int mouseY, float partialTick) {
+        long revision = RESOURCE_REVISION.get();
+        if (layoutRevision != revision) {
+            rowsKey = "";
+            canvas.invalidateLayout();
+            layoutRevision = revision;
+        }
         // 静态表里没有这个节点（理论上不会发生）：退回画布，不留一张空白书页
         if (openId != null && CodexTable.get(openId) == null) {
             backToChart();

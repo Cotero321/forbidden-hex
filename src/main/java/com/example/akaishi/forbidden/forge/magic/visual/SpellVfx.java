@@ -61,6 +61,8 @@ public final class SpellVfx {
     public static final ResourceLocation SHARD = tex("vfx_shard");
     /** 火花：束端光晕 */
     public static final ResourceLocation SPARK = tex("vfx_spark");
+    public static final ResourceLocation BREWING_MIST = tex("vfx_brewing_mist");
+    public static final ResourceLocation BREWING_RIPPLE = tex("vfx_brewing_ripple");
 
     // ===== 源专属闪光：同一个"命中核心一亮"，四种源长得不一样 =====
 

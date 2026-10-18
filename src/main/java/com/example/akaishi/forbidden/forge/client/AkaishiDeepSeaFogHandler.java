@@ -51,7 +51,7 @@ public final class AkaishiDeepSeaFogHandler {
     private AkaishiDeepSeaFogHandler() {
     }
 
-    /** 客户端 tick：重算目标强度（贵操作——群系采样——每 20t 才做一次） */
+    /** 客户端 tick：重算目标并平滑一次，渲染读端不再推进状态。 */
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) {
@@ -60,7 +60,10 @@ public final class AkaishiDeepSeaFogHandler {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (player == null || minecraft.level == null) {
-            ClientDeepSeaLock.setTarget(0f);
+            ClientDeepSeaLock.reset();
+            return;
+        }
+        if (minecraft.isPaused()) {
             return;
         }
         boolean deep = ModConfig.sanityEnabled
@@ -68,6 +71,7 @@ public final class AkaishiDeepSeaFogHandler {
                 && player.getY() < DEEP_Y_MAX
                 && minecraft.level.getBiome(player.blockPosition()).is(BiomeTags.IS_OCEAN);
         ClientDeepSeaLock.setTarget(deep ? 1f : 0f);
+        ClientDeepSeaLock.update();
     }
 
     @SubscribeEvent

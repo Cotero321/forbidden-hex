@@ -6,10 +6,9 @@ import com.example.akaishi.forbidden.forge.boss.agaitolos.AgaitolosBossBarOverla
 import com.example.akaishi.forbidden.forge.boss.agaitolos.AgaitolosMusicHandler;
 import com.example.akaishi.forbidden.forge.boss.agaitolos.AgaitolosRenderer;
 import com.example.akaishi.forbidden.forge.client.AkaishiDeepSeaFogHandler;
-import com.example.akaishi.forbidden.forge.client.AkaishiSanityVisionPostHandler;
+import com.example.akaishi.forbidden.forge.client.visual.ClientPostEffects;
 import com.example.akaishi.forbidden.forge.client.AkaishiUnnameableHandler;
 import com.example.akaishi.forbidden.forge.client.AkaishiUnnameableOverlay;
-import com.example.akaishi.forbidden.forge.client.AkaishiUnnameablePostHandler;
 import com.example.akaishi.forbidden.forge.client.MotherAltarRenderer;
 import com.example.akaishi.forbidden.forge.client.hud.AkaishiSanityHudElement;
 import com.example.akaishi.forbidden.forge.client.hud.AkaishiWandFocusOverlay;
@@ -40,6 +39,9 @@ public final class AkaishiForbiddenClientSetup {
 
     /** 客户端注册（<b>运行期</b>部分）：渲染器 / HUD 元素 / 雾效 / 后处理 / 按键消费 */
     public static void register() {
+        com.example.akaishi.forbidden.magic.particle.AkaishiMagicParticles.setLocalParticleGate(
+                com.example.akaishi.forbidden.forge.client.visual.ClientVisualBudget::reserveLocalSpell);
+        MinecraftForge.EVENT_BUS.register(com.example.akaishi.forbidden.forge.magic.visual.ProjectileTrailEffects.INSTANCE);
         // 咒核镶嵌按键的运行期部分：forge 总线消费点击 + 把真实键名注入 tooltip 提示。
         // 键位本身在 {@link #registerKeyMapping} 里注册（由模组构造阶段挂上的监听调用）
         com.example.akaishi.forbidden.forge.client.WandSocketKeybind.registerRuntime(MinecraftForge.EVENT_BUS);
@@ -58,16 +60,17 @@ public final class AkaishiForbiddenClientSetup {
         EntityRenderers.register(AkaishiForbiddenEntities.SPELL_CIRCLE.get(), SpellCircleRenderer::new);
         com.example.akaishi.forbidden.forge.magic.visual.SpellVisualEventHandler.INSTANCE.register();
         MinecraftForge.EVENT_BUS.register(com.example.akaishi.forbidden.forge.magic.visual.SpellVisualEventHandler.INSTANCE);
+        com.example.akaishi.forbidden.forge.magic.sound.SpellSoundHandler.INSTANCE.register();
+        MinecraftForge.EVENT_BUS.register(com.example.akaishi.forbidden.forge.magic.sound.SpellSoundHandler.INSTANCE);
         // 母神祭坛：方块实体渲染器（供奉物悬浮展示，P3d 随祭坛自本体迁入）
         BlockEntityRenderers.register(
                 AkaishiForbiddenBlockEntities.CHISHI_MOTHER_ALTAR.get(), MotherAltarRenderer::new);
         // 深海视野锁定：主世界海洋群系 Y<0 时大幅收拢雾距并染深水色
         MinecraftForge.EVENT_BUS.register(AkaishiDeepSeaFogHandler.INSTANCE);
-        // 低理智视野后处理：灰化 / 血丝 / 黑白（与不可名状后处理互斥，后者优先）
-        MinecraftForge.EVENT_BUS.register(AkaishiSanityVisionPostHandler.INSTANCE);
-        // 「不可名状」视野扭曲（相机滚转/抖动与 FOV 脉动）+ 整帧后处理（P3d 随不可名状自本体迁入）
+        // 低理智和不可名状后处理由同一调度器管理所有权与优先级。
+        MinecraftForge.EVENT_BUS.register(ClientPostEffects.INSTANCE);
+        // 相机滚转/抖动与 FOV 脉动继续复用同一个只读强度源。
         MinecraftForge.EVENT_BUS.register(AkaishiUnnameableHandler.INSTANCE);
-        MinecraftForge.EVENT_BUS.register(AkaishiUnnameablePostHandler.INSTANCE);
         // 阿盖托洛丝战斗音乐：附近有存活 BOSS 时挂一条跟随它的循环位置音效（客户端 TickableSoundInstance）
         MinecraftForge.EVENT_BUS.register(AgaitolosMusicHandler.INSTANCE);
         // 注：客户端 HUD 叠加层不在此处注册 —— 见 registerOverlays(RegisterGuiOverlaysEvent)：
@@ -102,7 +105,7 @@ public final class AkaishiForbiddenClientSetup {
         // 挂上去即占据"原版血条的位置"（该层已空 —— 本 BOSS 不用 ServerBossEvent）
         event.registerAbove(VanillaGuiOverlay.BOSS_EVENT_PROGRESS.id(),
                 "agaitolos_boss_bar", new AgaitolosBossBarOverlay());
-        // 法杖 HUD·准星区（冷却环 + 环内秒数 + 魔力条；释放中改画光环与微光）：
+        // 法杖 HUD·准星区（缩小后的冷却环 + 魔力条；释放中改画光环与微光）：
         // 挂在原版准星之上 —— 准星本体仍由原版画，我们只在它周围加东西
         event.registerAbove(VanillaGuiOverlay.CROSSHAIR.id(),
                 "forbidden_hex_wand_focus", new AkaishiWandFocusOverlay());

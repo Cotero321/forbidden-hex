@@ -1,7 +1,6 @@
 package com.example.akaishi.forbidden.wand;
 
 import com.example.akaishi.forbidden.api.magic.IMagicService.CastOutcome;
-import com.example.akaishi.forbidden.api.magic.CastResult;
 import com.example.akaishi.forbidden.item.MagicCoreItem;
 import com.example.akaishi.forbidden.magic.MagicServiceImpl;
 import com.example.akaishi.forbidden.magic.table.MagicSource;
@@ -28,28 +27,32 @@ public final class WandCasting {
     private WandCasting() {
     }
 
-    /** 服务端右键入口（{@code WandItem.use} 调用；客户端侧不做任何事） */
-    public static void castFromHand(ServerPlayer player, ItemStack wand) {
+    /** 服务端右键入口（{@code WandItem.use} 调用；客户端侧不做任何事）。返回是否已建立施法会话。 */
+    public static boolean castFromHand(ServerPlayer player, ItemStack wand) {
         ItemStack spell = WandItem.spell(wand);
         if (spell.isEmpty()) {
             reject(player, "no_spell");
-            return;
+            return false;
         }
         // 词序列与逐词墨：按核内槽位序（与书写序一致）
         List<String> wordIds = new ArrayList<>();
         List<String> wordInks = new ArrayList<>();
+        List<String> slotWords = new ArrayList<>(MagicCoreItem.SLOTS);
+        List<String> slotInks = new ArrayList<>(MagicCoreItem.SLOTS);
 
         for (int i = 0; i < MagicCoreItem.SLOTS; i++) {
             String word = MagicCoreItem.word(spell, i);
+            String ink = MagicCoreItem.ink(spell, i);
+            slotWords.add(word);
+            slotInks.add(ink);
             if (!word.isEmpty()) {
-
                 wordIds.add(word);
-                wordInks.add(MagicCoreItem.ink(spell, i));
+                wordInks.add(ink);
             }
         }
         if (wordIds.isEmpty()) {
             reject(player, "no_spell");
-            return;
+            return false;
         }
         String mainInk = "";
         for (String ink : wordInks) {
@@ -60,7 +63,7 @@ public final class WandCasting {
         }
         if (mainInk.isEmpty()) {
             reject(player, "no_ink");
-            return;
+            return false;
         }
         MagicSource source = MagicCoreItem.source(spell);
         long now = player.level().getGameTime();
@@ -68,7 +71,7 @@ public final class WandCasting {
         if (!compiled.ok()) {
             reject(player, compiled.diagnostics().stream().anyMatch(d -> d.code().contains("conflict"))
                     ? "conflict" : "not_exists");
-            return;
+            return false;
         }
         String spellKey = source.id() + ":" + String.join(",", wordIds) + ":" + String.join(",", wordInks);
         int combo = WandComboTracker.peek(player.getUUID(), spellKey, now);
@@ -77,20 +80,23 @@ public final class WandCasting {
 
         if (com.example.akaishi.forbidden.magic.cast.MagicCastManager.isCasting(player)) {
             reject(player, "busy");
-            return;
+            return false;
         }
         WandSessionLinks.link(player.getUUID(), wand, source, adjustments.postCastRefund());
-        CastOutcome outcome = MagicServiceImpl.instance().castWithWand(player, wordIds, mainInk, adjustments);
+        CastOutcome outcome = MagicServiceImpl.instance().castWithWand(
+                player, wordIds, mainInk, adjustments, slotWords, slotInks);
         if (!outcome.ok()) {
             WandSessionLinks.unlink(player.getUUID());
             if (!outcome.detail().isEmpty()) {
-                player.displayClientMessage(com.example.akaishi.forbidden.magic.judge.MagicModifierSupport
-                        .reason(outcome.detail()).copy().withStyle(ChatFormatting.RED), true);
+                player.displayClientMessage(Component.translatable("gui.forbidden_hex.wand.cast.detail",
+                        com.example.akaishi.forbidden.magic.judge.MagicModifierSupport.reason(outcome.detail()))
+                        .withStyle(ChatFormatting.RED), true);
             } else reject(player, outcome.result().name().toLowerCase(java.util.Locale.ROOT));
-            return;
+            return false;
         }
         com.example.akaishi.forbidden.magic.cast.MagicCastManager.onFirstDelivered(player,
                 () -> WandComboTracker.commit(player.getUUID(), spellKey, player.level().getGameTime()));
+        return true;
     }
 
     /** 施法反馈（动作栏；拒绝码走统一模板键，内容与 CastResult 一一对应） */

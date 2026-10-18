@@ -118,6 +118,11 @@ public final class WandTooltips {
 
     public static void appendPreview(List<Component> tooltip, net.minecraft.world.item.ItemStack wand,
             net.minecraft.world.item.ItemStack spell) {
+        appendPreview(tooltip, wand, spell, com.example.akaishi.forbidden.visual.ItemTooltipMode.SUMMARY);
+    }
+
+    public static void appendPreview(List<Component> tooltip, net.minecraft.world.item.ItemStack wand,
+            net.minecraft.world.item.ItemStack spell, com.example.akaishi.forbidden.visual.ItemTooltipMode mode) {
         var summary = com.example.akaishi.forbidden.item.MagicCoreItem.summarize(spell);
         if (summary.result() == null) {
             tooltip.add(summary.reason().copy().withStyle(ChatFormatting.RED));
@@ -132,15 +137,11 @@ public final class WandTooltips {
         var source = com.example.akaishi.forbidden.magic.table.MagicSource.byIdOrDefault(base.input().sourceId());
         var result = com.example.akaishi.forbidden.magic.formula.SpellPlanAdapter.adjusted(base,
                 WandModifiers.resolve(wand, source, inks, WandItem.extra(wand, source), 1));
-        tooltip.add(key("preview.combo"));
-        boolean expanded = dev.architectury.platform.Platform.getEnvironment() == dev.architectury.utils.Env.CLIENT
-                && net.minecraft.client.gui.screens.Screen.hasShiftDown();
-        com.example.akaishi.forbidden.magic.formula.SpellPlanTooltips.append(tooltip, result, expanded,
+        if (mode == com.example.akaishi.forbidden.visual.ItemTooltipMode.TECHNICAL) {
+            tooltip.add(key("preview.combo"));
+        }
+        com.example.akaishi.forbidden.magic.formula.SpellPlanTooltips.append(tooltip, result, mode,
                 WandItem.extra(wand, source));
-    }
-
-    private static String decimal(float value) {
-        return String.format(java.util.Locale.ROOT, "%.2f", value);
     }
 
     // ==================== 格式化 ====================

@@ -10,7 +10,10 @@ Bundled particle / VFX textures are derived from:
 
 Import processing: all textures were desaturated to white (original
 luminance preserved as brightness, alpha preserved) so they can be
-tinted per-instance at runtime.
+tinted per-instance at runtime. Dim exterior pixels in spell_mote_an_beam.png
+and spell_mote_an_field.png use a straight-alpha edge correction: brightness
+and coverage are redistributed to preserve emitted color while reducing
+unintended background darkening. Interior silhouettes are preserved.
 
 Files (assets/forbidden_hex/textures/):
   particle/spell_mote_san.png     <- ash_mote.png
@@ -70,6 +73,14 @@ Files (assets/forbidden_hex/textures/):
   magic/vfx_flare_life.png         <- nature_bloom.png         (绿源命中闪光)
   magic/vfx_flare_dark.png         <- abyss_flare.png          (暗源命中闪光)
   magic/vfx_flare_white.png        <- holy_flare.png           (白源命中闪光)
+  magic/vfx_brewing_mist.png       <- frost_mist.png           (酿造滞留雾气)
+  magic/vfx_brewing_ripple.png     <- carian_ripple_0.png       (破瓶涟漪)
+
+The two brewing textures were imported from upstream commit:
+  b365fb78e8912623ff0e9bab2f4cd8f5117f9a89
+Processing: RGB channels replaced with their maximum channel value;
+original alpha preserved for per-instance potion-effect tinting.
+The repository supplies PNG assets, not a Minecraft runtime dependency.
 
 MIT License
 

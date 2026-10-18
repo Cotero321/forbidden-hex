@@ -1,0 +1,54 @@
+{
+  "sample_rate": 32000,
+  "seed": 809173,
+  "sources": {
+    "san": {"frequency": 220, "ratios": [1, 1.4983, 2.003, 3.01], "air": 0.17, "shimmer": 6.0},
+    "life": {"frequency": 174, "ratios": [1, 1.25, 1.5, 2.5], "air": 0.11, "shimmer": 3.0},
+    "dark": {"frequency": 110, "ratios": [1, 1.4142, 2.01, 2.8284], "air": 0.28, "shimmer": 2.0},
+    "white": {"frequency": 294, "ratios": [1, 1.5, 2, 3, 4], "air": 0.10, "shimmer": 8.0}
+  },
+  "effects": {
+    "damage": {"kind": "strike", "frequency": 180, "duration": 0.65},
+    "break_unlock": {"kind": "chime", "frequency": 540, "duration": 0.95},
+    "break_terminate": {"kind": "cut", "frequency": 290, "duration": 0.45},
+    "break_shield": {"kind": "shatter", "frequency": 720, "duration": 0.80},
+    "move": {"kind": "gust", "frequency": 145, "duration": 0.55},
+    "teleport": {"kind": "fold", "frequency": 390, "duration": 0.75},
+    "bind": {"kind": "chain", "frequency": 330, "duration": 0.80},
+    "weaken": {"kind": "drain", "frequency": 240, "duration": 0.85},
+    "boost": {"kind": "rise", "frequency": 440, "duration": 1.10},
+    "mind": {"kind": "whisper", "frequency": 180, "duration": 1.15},
+    "sense": {"kind": "ping", "frequency": 780, "duration": 1.05},
+    "conceal": {"kind": "veil", "frequency": 260, "duration": 0.90},
+    "summon": {"kind": "portal", "frequency": 165, "duration": 1.20},
+    "field": {"kind": "seal", "frequency": 330, "duration": 0.95},
+    "gather": {"kind": "vortex", "frequency": 195, "duration": 0.90},
+    "link": {"kind": "spark", "frequency": 620, "duration": 0.50},
+    "temporal": {"kind": "echo", "frequency": 490, "duration": 1.15},
+    "vessel": {"kind": "vessel", "frequency": 205, "duration": 0.90},
+    "toll": {"kind": "fracture", "frequency": 125, "duration": 0.75},
+    "ward": {"kind": "glass", "frequency": 660, "duration": 1.05}
+  },
+  "inks": {
+    "chi": {"kind": "spark", "frequency": 370, "duration": 0.42},
+    "yuan": {"kind": "fold", "frequency": 95, "duration": 0.70},
+    "man": {"kind": "rise", "frequency": 250, "duration": 0.58},
+    "rang": {"kind": "strike", "frequency": 85, "duration": 0.48},
+    "shi": {"kind": "drain", "frequency": 175, "duration": 0.52},
+    "xu": {"kind": "ping", "frequency": 580, "duration": 0.55},
+    "hun": {"kind": "shatter", "frequency": 420, "duration": 0.51},
+    "xing": {"kind": "chime", "frequency": 920, "duration": 0.80},
+    "yao": {"kind": "glass", "frequency": 740, "duration": 0.68},
+    "an": {"kind": "veil", "frequency": 130, "duration": 0.64},
+    "ju": {"kind": "gust", "frequency": 315, "duration": 0.46}
+  },
+  "carriers": {
+    "instant": {"kind": "cut", "frequency": 430, "duration": 0.27},
+    "projectile": {"kind": "gust", "frequency": 310, "duration": 0.42},
+    "channel": {"kind": "rise", "frequency": 250, "duration": 0.55},
+    "attach": {"kind": "seal", "frequency": 470, "duration": 0.44},
+    "place": {"kind": "portal", "frequency": 150, "duration": 0.80},
+    "echo": {"kind": "echo", "frequency": 670, "duration": 0.78},
+    "volley": {"kind": "spark", "frequency": 540, "duration": 0.24}
+  }
+}

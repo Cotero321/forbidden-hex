@@ -11,7 +11,6 @@ import com.example.akaishi.forbidden.sanity.ClientSanityData;
 import com.example.akaishi.forbidden.sanity.SanityPenalties;
 import com.example.akaishi.forbidden.sanity.SanityState;
 import com.example.akaishi.forbidden.sanity.SanityThresholds;
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -24,12 +23,13 @@ import net.minecraft.world.effect.MobEffectInstance;
  * 理智 HUD 元素（仅客户端，<b>五段刻度条</b>方案）：注册为 Forge overlay，锚在快捷栏右侧、
  * 与经验条同一水平带。
  *
- * <p><b>三段式布局</b>（总宽按锚点可用宽度自适应，高固定 38）：
+ * <p><b>紧凑三段式布局</b>（总宽按锚点可用宽度自适应，高固定 32）：
  * <pre>
  *   数字行  | 88 / 150                 （当前量 / 有效上限）
  *   条行    | (COG 环) [五段刻度条 ……]
  *   状态行  | 上限 200 · 削 −50        （仅当有削减时；不可名状持续时追加剩余秒数）
  * </pre>
+ * <p>环心不绘制数字，使用弧长表达 COG，精确数值保留在悬停提示中，避免底部 HUD 产生文字噪声。
  *
  * <p><b>条体读法</b>（全部来自服务端权威快照 {@link ClientSanityData}，客户端不自行推算）：
  * <ul>
@@ -39,7 +39,7 @@ import net.minecraft.world.effect.MobEffectInstance;
  *   <li><b>右端斜纹区</b> = {@code [有效上限, SANC]} = 被临时削减掉、当前用不了的那一截；</li>
  *   <li><b>黄色竖线</b> = 有效上限分界（{@code SANC − tempCut}）；<b>白色右端线</b> = 基础上限 SANC；</li>
  *   <li><b>保护高亮</b> = 临时保护（{@code protection}）在填充上叠的一层亮色；</li>
- *   <li><b>左端 COG 环</b> = 环形仪表，弧长表示 {@code cog / COG_UPPER_BOUND}，环心写 COG 整数。</li>
+ *   <li><b>左端 COG 环</b> = 环形仪表，弧长表示 {@code cog / COG_UPPER_BOUND}，精确值在悬停提示中查看。</li>
  * </ul>
  *
  * <p><b>换算式只有一份</b>：{@code 有效上限 = SANC − tempCut} 直接取
@@ -47,11 +47,11 @@ import net.minecraft.world.effect.MobEffectInstance;
  * {@link SanityValues#hardLimit(float, float)}），客户端<b>不另写一份</b>；档位同样复用服端
  * {@link SanityPenalties#tierOfPercent(float)} + {@link SanityThresholds#percentOf(float, float)}。
  *
- * <p><b>配色</b>：填充色统一到系统青蓝识别色 {@code #4FE3D0}，随档位向暗紫 {@code #5A2E8C} 过渡
- * （零档 = 最暗紫）；六档色为常量表 {@link #TIER_FILL}，不做逐帧插值。
+ * <p><b>配色</b>：正常状态使用低饱和青绿色，随档位经过灰紫逐步过渡到暖玫红；
+ * 六档色为常量表 {@link #TIER_FILL}，避免低理智时只靠亮度变化判断状态。
  *
- * <p><b>性能</b>：字符串与像素几何均按"值未变则不重建"缓存；斜纹矩形与 COG 环刻度点位在静态初始化
- * 里一次算好 —— 稳态下本元素每帧只做比较 + 若干次 {@code fill}，零集合/数组分配。
+ * <p><b>性能</b>：字符串与斜纹几何均按"值未变则不重建"缓存；COG 环直接使用共享的逐像素环带
+ * 绘制器，稳态下本元素每帧只做比较 + 若干次 {@code fill}，零集合/数组分配。
  */
 public final class AkaishiSanityHudElement implements IGuiOverlay {
 
@@ -59,84 +59,68 @@ public final class AkaishiSanityHudElement implements IGuiOverlay {
 
     /** 期望宽度：GUI 缩放 4 / 1920×1080 下锚点可用宽 135 ⇒ 132 恰好放得下并留 3px 余量。 */
     private static final int PREFERRED_WIDTH = 132;
-    /** 最小可读宽度：再窄就不画五段刻度（数字会被截断）。 */
-    private static final int MIN_WIDTH = 84;
+    /** 最小可读宽度：窄屏仍保留状态条与分段刻度。 */
+    private static final int MIN_WIDTH = 76;
     /** 数字行 / 状态行高度 = 原版字体行高。 */
     private static final int ROW_TEXT_HEIGHT = 9;
-    /** 条行高度：容纳 COG 环（16）与条体（6）。 */
-    private static final int ROW_BAR_HEIGHT = 16;
+    /** 条行高度：容纳紧凑 COG 环（12）与条体（5）。 */
+    private static final int ROW_BAR_HEIGHT = 12;
     /** 行间距。 */
-    private static final int ROW_GAP = 2;
+    private static final int ROW_GAP = 1;
     /** COG 环外径。 */
-    private static final int RING_BOX = 16;
+    private static final int RING_BOX = 12;
     /** COG 环与条体之间的横向间隙。 */
-    private static final int RING_GAP = 3;
+    private static final int RING_GAP = 2;
     /** 条体高度。 */
-    private static final int BAR_HEIGHT = 6;
+    private static final int BAR_HEIGHT = 5;
     /** 刻度段数 = 惩罚档位数（20/40/60/80 四条段界）。 */
     private static final int SEGMENTS = 5;
 
     private static final int ROW_NUM_Y = 0;
     private static final int ROW_BAR_Y = ROW_TEXT_HEIGHT + ROW_GAP;
     private static final int ROW_STATUS_Y = ROW_BAR_Y + ROW_BAR_HEIGHT + ROW_GAP;
-    /** 总高固定 38：状态行始终占位，避免"有削减才出现"导致整块上下跳动。 */
+    /** 总高固定 32：状态行始终占位，避免"有削减才出现"导致整块上下跳动。 */
     private static final int TOTAL_HEIGHT = ROW_STATUS_Y + ROW_TEXT_HEIGHT;
 
     // ===== 配色 =====
 
-    /** 条体外的 1px 半透明衬底：亮背景（雪地/天空）下也能看清轮廓。 */
-    private static final int COLOR_BACKDROP = 0xC0000000;
+    /** 条体外的 1px 半透明衬底：带冷青色调，减少纯黑块对画面的切割感。 */
+    private static final int COLOR_BACKDROP = 0xA81B282D;
     /** 轨道底槽。 */
-    private static final int COLOR_TRACK = 0xFF20202A;
+    private static final int COLOR_TRACK = 0xD51A252C;
     /**
      * 填充色 6 档表：下标 = {@link SanityPenalties} 档位下标（0 正常 → 5 零档）。
-     * 从识别色 {@code #4FE3D0} 线性过渡到暗紫 {@code #5A2E8C}（t = 下标 / 5）。
+     * 从清透青绿过渡到蓝紫与珊瑚红，让理智下降时的危险状态更容易分辨。
      */
     private static final int[] TIER_FILL = {
-            0xFF4FE3D0, 0xFF51BFC2, 0xFF539BB5, 0xFF5676A7, 0xFF58529A, 0xFF5A2E8C
+            0xFF62E6CF, 0xFF55D5C8, 0xFF62C3D0, 0xFF718FC5, 0xFF9274B6, 0xFFE06A73
     };
     /** 被削区底色（斜纹的暗底）。 */
-    private static final int COLOR_CUT_BASE = 0xFF7A2626;
+    private static final int COLOR_CUT_BASE = 0xD13F2D4A;
     /** 被削区斜纹色。 */
-    private static final int COLOR_CUT_HATCH = 0xFFD04545;
+    private static final int COLOR_CUT_HATCH = 0xE06F5579;
     /** 五段分隔刻度（1px 暗线，压在填充之上）。 */
-    private static final int COLOR_SEPARATOR = 0xFF0A0A12;
-    /** 有效上限分界竖线（黄）。 */
-    private static final int COLOR_TICK_HARD = 0xFFFFE08A;
-    /** 基础上限右端线（白）。 */
-    private static final int COLOR_TICK_BASE = 0xFFFFFFFF;
-    /** 临时保护高亮（带 alpha 的冷白，叠在填充之上）。 */
-    private static final int COLOR_PROTECTION = 0x99D9FBFF;
+    private static final int COLOR_SEPARATOR = 0xB512202A;
+    /** 有效上限分界竖线（柔和紫金）。 */
+    private static final int COLOR_TICK_HARD = 0xFFD8B77A;
+    /** 基础上限右端线（冷白）。 */
+    private static final int COLOR_TICK_BASE = 0xCDE5F6F3;
+    /** 临时保护高亮（带 alpha 的冷白绿，叠在填充之上）。 */
+    private static final int COLOR_PROTECTION = 0x91D8FFF3;
     /** 主行字色。 */
-    private static final int COLOR_TEXT = 0xFFE6E6F0;
+    private static final int COLOR_TEXT = 0xFFE7FBF5;
     /** 状态行字色（弱化一档）。 */
-    private static final int COLOR_TEXT_DIM = 0xFFB0B4C8;
+    private static final int COLOR_TEXT_DIM = 0xA8B7D0D0;
     /** COG 环未填充部分。 */
-    private static final int COLOR_RING_DIM = 0xFF2A2A36;
-    /** COG 环填充弧（识别色）。 */
-    private static final int COLOR_RING = 0xFF4FE3D0;
-
+    private static final int COLOR_RING_DIM = 0x80344454;
     // ===== 斜纹口径 =====
 
     /** 斜纹最多条数（待调手感值）：受它反推条距，避免条窄时斜纹密成一片。 */
     private static final int HATCH_MAX_LINES = 12;
 
-    // ===== COG 环刻度点位（静态预计算，逐帧零计算）=====
+    // ===== 斜纹缓存 =====
 
-    /** 环上点位步数（40 步 ⇒ 每步 9°；满环 500 点时每步 12.5 点）。 */
-    private static final int RING_STEPS = 40;
-    private static final int[] RING_DOT_DX = new int[RING_STEPS];
-    private static final int[] RING_DOT_DY = new int[RING_STEPS];
     private static final int[] NO_RECTS = new int[0];
-
-    static {
-        for (int i = 0; i < RING_STEPS; i++) {
-            // 从正上方（-90°）起、顺时针铺点
-            double angle = -Math.PI / 2.0 + Math.PI * 2.0 * i / RING_STEPS;
-            RING_DOT_DX[i] = (int) Math.round(Math.cos(angle) * (RING_BOX / 2 - 1));
-            RING_DOT_DY[i] = (int) Math.round(Math.sin(angle) * (RING_BOX / 2 - 1));
-        }
-    }
 
     // ===== 文案（双语键，见 lang 的 hud.forbidden_hex.sanity.*）=====
 
@@ -154,9 +138,6 @@ public final class AkaishiSanityHudElement implements IGuiOverlay {
     private int cachedStatusSanc = Integer.MIN_VALUE;
     private int cachedStatusCut = Integer.MIN_VALUE;
     private int cachedStatusSeconds = Integer.MIN_VALUE;
-
-    private String cogText = "0";
-    private int cachedCog = Integer.MIN_VALUE;
 
     private int barWidth = -1;
     private int fillPx;
@@ -228,10 +209,6 @@ public final class AkaishiSanityHudElement implements IGuiOverlay {
             mainText = qSan + " / " + qMax;
         }
         int qCog = Math.round(values.cog());
-        if (qCog != cachedCog) {
-            cachedCog = qCog;
-            cogText = Integer.toString(qCog);
-        }
         int seconds = unnameableSeconds();
         if (qSanc != cachedStatusSanc || qCut != cachedStatusCut || seconds != cachedStatusSeconds) {
             cachedStatusSanc = qSanc;
@@ -266,24 +243,17 @@ public final class AkaishiSanityHudElement implements IGuiOverlay {
         }
         graphics.fill(barX + barWidth - 1, barTop - 1, barX + barWidth, barBottom + 1, COLOR_TICK_BASE);
 
-        // COG 环：整圈暗底 + 按 cog 比例点亮前 n 个点位
+        // COG 环：纯弧形状态指示，颜色随 SAN 档位变化，不在环心叠加数字。
         int ringCx = x + RING_BOX / 2;
         int ringCy = y + ROW_BAR_Y + ROW_BAR_HEIGHT / 2;
-        for (int i = 0; i < RING_STEPS; i++) {
-            drawRingDot(graphics, ringCx, ringCy, i, COLOR_RING_DIM);
+        int ringRadius = RING_BOX / 2 - 1;
+        WandHudPainter.ringArc(graphics, ringCx, ringCy, ringRadius, 0f, 1f, COLOR_RING_DIM, 1);
+        if (qCog > 0) {
+            float cogRatio = Mth.clamp(values.cog() / SanityState.COG_UPPER_BOUND, 0f, 1f);
+            float pulse = WandHudPainter.breath((minecraft.player.tickCount + partialTick) / 20f);
+            WandHudPainter.ringArc(graphics, ringCx, ringCy, ringRadius, 0f, cogRatio,
+                    WandHudPainter.withAlpha(TIER_FILL[tier], pulse), 1);
         }
-        int arcSteps = qCog <= 0 ? 0
-                : Mth.clamp(Math.round(values.cog() / SanityState.COG_UPPER_BOUND * RING_STEPS), 1, RING_STEPS);
-        for (int i = 0; i < arcSteps; i++) {
-            drawRingDot(graphics, ringCx, ringCy, i, COLOR_RING);
-        }
-        // 环心数字：0.5 倍字号才能塞进 16px 的环内（-4 是 9px 行高在该字号下的竖直居中）
-        PoseStack pose = graphics.pose();
-        pose.pushPose();
-        pose.translate((float) ringCx, (float) ringCy, 0f);
-        pose.scale(0.5f, 0.5f, 1f);
-        graphics.drawString(font, cogText, -font.width(cogText) / 2, -4, COLOR_RING, false);
-        pose.popPose();
 
         // 文本行
         graphics.drawString(font, mainText, x, y + ROW_NUM_Y, COLOR_TEXT, true);
@@ -368,13 +338,6 @@ public final class AkaishiSanityHudElement implements IGuiOverlay {
         int[] trimmed = new int[count];
         System.arraycopy(rects, 0, trimmed, 0, count);
         return trimmed;
-    }
-
-    /** 画一枚 2×2 的环上点位。 */
-    private static void drawRingDot(GuiGraphics graphics, int centerX, int centerY, int index, int color) {
-        int x = centerX + RING_DOT_DX[index];
-        int y = centerY + RING_DOT_DY[index];
-        graphics.fill(x - 1, y - 1, x + 1, y + 1, color);
     }
 
     /** 数值 → 轨道内像素（按基础上限 SANC 归一，越界夹回轨道内）。 */

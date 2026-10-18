@@ -186,26 +186,29 @@ final class AkaishiCodexEmblem {
             }
         }
         if (hovered) {
-            gui.fill(area.x(), area.y(), area.right(), area.bottom(), HOVER_VEIL);
+            gui.pose().pushPose();
+            gui.pose().translate(0f, 0f, 300f);
+            plate(gui, area, node.tier(), HOVER_VEIL);
+            gui.pose().popPose();
         }
         // 5) 状态叠加
-        overlay(gui, area, cx, cy, accent, mark, pulse, seed);
+        overlay(gui, area, node.tier(), cx, cy, accent, mark, pulse, seed);
     }
 
     /** 状态叠加：暗罩必须抬到物品层之上（{@code renderItem} 会把 z 抬到物品层，留底层等于白画） */
-    private static void overlay(GuiGraphics gui, AkaishiCodexRender.Area area, int cx, int cy,
+    private static void overlay(GuiGraphics gui, AkaishiCodexRender.Area area, CodexTier tier, int cx, int cy,
                                 int accent, Mark mark, int pulse, int seed) {
         switch (mark) {
             case LOCKED -> {
                 gui.pose().pushPose();
                 gui.pose().translate(0f, 0f, 300f);
-                gui.fill(area.x(), area.y(), area.right(), area.bottom(), LOCK_VEIL);
+                plate(gui, area, tier, LOCK_VEIL);
                 gui.pose().popPose();
             }
             case HIDDEN -> {
                 gui.pose().pushPose();
                 gui.pose().translate(0f, 0f, 300f);
-                gui.fill(area.x(), area.y(), area.right(), area.bottom(), HIDDEN_VEIL);
+                plate(gui, area, tier, HIDDEN_VEIL);
                 gui.pose().popPose();
                 AkaishiCodexBookArt.ring(gui, area.x() - 2, area.y() - 2, area.w() + 4, area.h() + 4,
                         HIDDEN_RING);
@@ -262,8 +265,8 @@ final class AkaishiCodexEmblem {
             int cut = Math.min(CHAMFER, size / 3);
             gui.fill(x + cut, y, x + size - cut, y + size, color);
             for (int i = 1; i < cut; i++) {
-                gui.fill(x + cut - i, y + i, x + cut, y + size - i, color);
-                gui.fill(x + size - cut, y + i, x + size - cut + i, y + size - i, color);
+                gui.fill(x + cut - i, y + i, x + cut - i + 1, y + size - i, color);
+                gui.fill(x + size - cut + i - 1, y + i, x + size - cut + i, y + size - i, color);
             }
             return;
         }
@@ -279,7 +282,8 @@ final class AkaishiCodexEmblem {
 
     /** 一根尖刺（从外框边缘向外的小三角；{@code (dx, dy)} 为朝外方向） */
     private static void spike(GuiGraphics gui, int x, int y, int dx, int dy, int color) {
-        for (int i = 0; i < SPIKE; i++) {
+        int start = dx < 0 || dy < 0 ? 1 : 0;
+        for (int i = start; i < SPIKE; i++) {
             int half = SPIKE - i;
             int px = x + dx * i;
             int py = y + dy * i;

@@ -5,6 +5,7 @@ import com.example.akaishi.forbidden.item.MagicCoreItem;
 import net.minecraft.resources.ResourceLocation;
 import com.example.akaishi.forbidden.magic.MagicState;
 import com.example.akaishi.forbidden.magic.table.MagicSource;
+import com.example.akaishi.forbidden.visual.ItemTooltipMode;
 
 import dev.architectury.platform.Platform;
 import dev.architectury.utils.Env;
@@ -58,13 +59,19 @@ public class WandItem extends Item {
             net.minecraft.world.level.Level level, net.minecraft.world.entity.player.Player player,
             net.minecraft.world.InteractionHand hand) {
         ItemStack wand = player.getItemInHand(hand);
-        if (player instanceof net.minecraft.server.level.ServerPlayer server) {
-            WandCasting.castFromHand(server, wand);
-        }
-        if (level.isClientSide() || com.example.akaishi.forbidden.magic.cast.MagicCastManager.isCasting(player)) {
+        if (level.isClientSide()) {
+            // 客户端先进入举杖状态，服务端会用施法状态包确认或清空表现；失败时不会结算玩法。
             player.startUsingItem(hand);
+            return net.minecraft.world.InteractionResultHolder.consume(wand);
         }
-        return net.minecraft.world.InteractionResultHolder.sidedSuccess(wand, level.isClientSide());
+        if (player instanceof net.minecraft.server.level.ServerPlayer server) {
+            if (WandCasting.castFromHand(server, wand)) {
+                player.startUsingItem(hand);
+                return net.minecraft.world.InteractionResultHolder.consume(wand);
+            }
+            com.example.akaishi.forbidden.magic.cast.MagicCastManager.syncState(server);
+        }
+        return net.minecraft.world.InteractionResultHolder.fail(wand);
     }
 
     @Override
@@ -159,13 +166,7 @@ public class WandItem extends Item {
      * <p>与施法链取主墨的口径一致（首个非空）—— 表现层要靠它选粒子的"形"。
      */
     public static String mainInkId(ItemStack spell) {
-        for (int i = 0; i < MagicCoreItem.SLOTS; i++) {
-            String ink = MagicCoreItem.ink(spell, i);
-            if (!ink.isEmpty()) {
-                return ink;
-            }
-        }
-        return "";
+        return MagicCoreItem.mainInkId(spell);
     }
 
     /**
@@ -238,67 +239,68 @@ public class WandItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
-        String tip = tipId(stack);
-        if (tip.isEmpty()) return;
-        WandPartDef tipDef = WandTipTable.get(tip);
+        ItemTooltipMode mode = Platform.getEnvironment() == Env.CLIENT
+                ? ItemTooltipMode.select(Screen.hasShiftDown(), Screen.hasControlDown()) : ItemTooltipMode.SUMMARY;
+        appendDetails(stack, tooltip, mode);
+    }
+
+    public static void appendDetails(ItemStack stack, List<Component> tooltip, ItemTooltipMode mode) {
+        WandPartDef tipDef = WandTipTable.get(tipId(stack));
         WandPartDef handleDef = WandHandleTable.get(handleId(stack));
         WandPartDef coreDef = WandCoreTable.get(coreId(stack));
         List<WandPartDef> parts = parts(stack);
-
-        // ---- 默认档：聚合总效果 + 法术槽 + 额外池账面 ----
-        // 三段词条**聚合**成总效果行（重复词条合并：同键乘算/绝对项相加，显示合成值而非逐段值）
-        WandTooltips.appendAggregated(tooltip, parts);
+        if (mode == ItemTooltipMode.SUMMARY) WandTooltips.appendAggregated(tooltip, parts);
+        if (parts.size() != 3) {
+            tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.invalid_parts").withStyle(ChatFormatting.RED));
+        }
         ItemStack spell = spell(stack);
         tooltip.add(Component.translatable(spell.isEmpty()
                         ? "gui.forbidden_hex.wand.staff.spell_empty" : "gui.forbidden_hex.wand.staff.spell",
                 spell.isEmpty() ? socketKeyHint() : spell.getHoverName())
                 .withStyle(ChatFormatting.GRAY));
-        if (!spell.isEmpty()) WandTooltips.appendPreview(tooltip, stack, spell);
-        for (MagicSource source : MagicSource.values()) {
-            float amount = extra(stack, source);
-            if (amount > 0f) {
-                tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.extra",
-                        source.label(), Math.round(amount)).withStyle(ChatFormatting.DARK_GRAY));
-            }
+        if (mode == ItemTooltipMode.USAGE) {
+            tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.section.usage").withStyle(ChatFormatting.GOLD));
+            tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.use").withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.socket", socketKeyHint()).withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.assembly").withStyle(ChatFormatting.GRAY));
+        } else if (mode == ItemTooltipMode.TECHNICAL) {
+            tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.section.technical").withStyle(ChatFormatting.GOLD));
         }
-
-        // ---- 分级（与咒核同口径：Shift 展开 / Ctrl 工程档；服务端不展开，防客户端类探针）----
-        boolean expanded = clientExpanded();
-        boolean full = clientFull();
-        if (!expanded) {
-            tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.more").withStyle(ChatFormatting.DARK_GRAY));
-            return;
-        }
-
-        // ---- Shift 档：三段分段明细（各段自己的词条）+ 咒核摘要 ----
-        appendSection(tooltip, "tip", tipDef);
-        appendSection(tooltip, "handle", handleDef);
-        appendSection(tooltip, "core", coreDef);
-        if (!spell.isEmpty() && spell.getItem() instanceof MagicCoreItem core) {
-            tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.spell_brief",
-                    core.source().label(), countWords(spell)).withStyle(ChatFormatting.GRAY));
-        }
-
-        // ---- Ctrl 档（工程数值）：额外池容量/恢复、过热、三段 id ----
-        if (full) {
-            WandModifiers mods = WandModifiers.resolve(stack, MagicSource.DEFAULT, List.of(), 0f, 1);
-            float mainCap = clientMainPoolCapacity();
-            tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.extra_cap",
-                    Math.round(mainCap * WandModifiers.EXTRA_POOL_BASE_RATIO)).withStyle(ChatFormatting.DARK_GRAY));
+        if (!spell.isEmpty()) WandTooltips.appendPreview(tooltip, stack, spell, mode);
+        if (mode == ItemTooltipMode.SUMMARY) {
             for (MagicSource source : MagicSource.values()) {
-                float cap = WandModifiers.extraPoolCapacity(parts, mainCap, source);
-                tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.extra_cap_source",
-                        source.label(), Math.round(cap)).withStyle(ChatFormatting.DARK_GRAY));
+                float amount = extra(stack, source);
+                if (amount > 0f) {
+                    tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.extra",
+                            source.label(), Math.round(amount)).withStyle(ChatFormatting.DARK_GRAY));
+                }
             }
-            tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.regen",
-                    trimNum(mods.extraRegenInterval()),
-                    Math.round(WandModifiers.extraRegenAmount(parts, MagicSource.DEFAULT))).withStyle(ChatFormatting.DARK_GRAY));
-            tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.heat",
-                    WandTooltips.signed(mods.heatThresholdMul()),
-                    WandTooltips.signed(mods.heatDissipationMul())).withStyle(ChatFormatting.DARK_GRAY));
-            tooltip.add(Component.literal("[" + tipId(stack) + " / " + handleId(stack) + " / " + coreId(stack) + "]")
+        } else if (mode == ItemTooltipMode.TECHNICAL) {
+            MagicSource activeSource = socketedSource(stack);
+            if (activeSource == null) activeSource = MagicSource.DEFAULT;
+            WandModifiers mods = WandModifiers.resolve(stack, activeSource, List.of(), 0f, 1);
+            float mainCap = clientMainPoolCapacity();
+            tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.section.reserve").withStyle(ChatFormatting.GOLD));
+            for (MagicSource source : MagicSource.values()) {
+                tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.reserve_source", source.label(),
+                        trimNum(extra(stack, source)), trimNum(WandModifiers.extraPoolCapacity(parts, mainCap, source)),
+                        trimNum(WandModifiers.extraRegenAmount(parts, source))).withStyle(ChatFormatting.GRAY));
+            }
+            tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.regen_interval", trimNum(mods.extraRegenInterval()))
                     .withStyle(ChatFormatting.DARK_GRAY));
+            tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.capacity_preview").withStyle(ChatFormatting.DARK_GRAY));
+            tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.heat",
+                    WandTooltips.signed(mods.heatThresholdMul()), WandTooltips.signed(mods.heatDissipationMul()))
+                    .withStyle(ChatFormatting.DARK_GRAY));
+            appendSection(tooltip, "tip", tipDef);
+            appendSection(tooltip, "handle", handleDef);
+            appendSection(tooltip, "core", coreDef);
+            if (spell.getItem() instanceof MagicCoreItem) {
+                tooltip.add(Component.translatable("item.forbidden_hex.magic_core.tip.section.slots").withStyle(ChatFormatting.GOLD));
+                MagicCoreItem.appendSlots(spell, tooltip);
+            }
         }
+        tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.more").withStyle(ChatFormatting.DARK_GRAY));
     }
 
     /** 三段定义（缺失段跳过 —— 表外 id 不炸 tooltip / HUD）；tooltip 与数值引擎共用此一份 */
@@ -313,26 +315,18 @@ public class WandItem extends Item {
         return parts;
     }
 
-    /** Shift 档的分段标题 + 该段自己的词条（复用模块物品的渲染） */
     private static void appendSection(List<Component> tooltip, String sectionKey, WandPartDef def) {
         if (def == null) return;
         tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.section." + sectionKey)
                 .withStyle(ChatFormatting.GOLD));
+        tooltip.add(Component.translatable("gui.forbidden_hex.wand.staff.part_identity",
+                Component.translatable(shortKey(def.id())), def.id()).withStyle(ChatFormatting.DARK_GRAY));
         WandTooltips.appendPart(tooltip, def);
-    }
-
-    /** 咒核词数（含未知词的槽不算 —— 与施法链同口径读有效词） */
-    private static int countWords(ItemStack spell) {
-        int count = 0;
-        for (int i = 0; i < MagicCoreItem.SLOTS; i++) {
-            if (!MagicCoreItem.word(spell, i).isEmpty()) count++;
-        }
-        return count;
     }
 
     /**
      * 客户端取玩家等级推主池容量（额外池容量 = 主池 ×10% 的基数）。
-     * 仅在客户端展开档调用（{@link #clientExpanded()} 已挡住服务端）；取不到快照退 Lv1 基准。
+     * 只读取同步镜像；取不到快照退 Lv1 基准。
      */
     private static float clientMainPoolCapacity() {
         if (com.example.akaishi.forbidden.magic.ClientMagicData.hasData()) {
@@ -342,17 +336,6 @@ public class WandItem extends Item {
                                     - MagicState.LEVEL_MIN);
         }
         return MagicState.BASE_POOL_CAPACITY;
-    }
-
-    /** 是否按住 Shift / Ctrl 展开分段明细（环境口径与 MagicCoreItem 相同：先判运行环境） */
-    private static boolean clientExpanded() {
-        return Platform.getEnvironment() == Env.CLIENT
-                && (Screen.hasShiftDown() || Screen.hasControlDown());
-    }
-
-    /** 是否按住 Ctrl（工程档） */
-    private static boolean clientFull() {
-        return Platform.getEnvironment() == Env.CLIENT && Screen.hasControlDown();
     }
 
     /** 数值去尾零（1.0 → 1、2.5 → 2.5），工程行显示用 */

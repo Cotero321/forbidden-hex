@@ -49,6 +49,20 @@ public final class AkaishiForbiddenSounds {
     /** 「不可名状」减益的耳中呓语：以玩家自身为音源播放的一次性低语（8s，P3d 迁入） */
     public static final RegistrySupplier<SoundEvent> UNNAMEABLE_WHISPER = reg("unnameable_whisper");
 
+    private static final java.util.Map<String, RegistrySupplier<SoundEvent>> SPELL_SOUNDS = registerSpellSounds();
+
+    private static java.util.Map<String, RegistrySupplier<SoundEvent>> registerSpellSounds() {
+        var sounds = new java.util.LinkedHashMap<String, RegistrySupplier<SoundEvent>>();
+        for (String id : SpellSoundCatalog.events()) sounds.put(id, reg(id));
+        return java.util.Collections.unmodifiableMap(sounds);
+    }
+
+    public static SoundEvent spell(String id) {
+        var supplier = SPELL_SOUNDS.get(id);
+        if (supplier == null) throw new IllegalArgumentException("Unknown spell sound: " + id);
+        return supplier.get();
+    }
+
     private AkaishiForbiddenSounds() {
     }
 

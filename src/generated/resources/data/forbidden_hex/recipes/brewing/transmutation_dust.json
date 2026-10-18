@@ -1,0 +1,33 @@
+{
+  "type": "forbidden_hex:crucible",
+  "heat": "fire",
+  "kind": "transformation",
+  "results": [
+    {
+      "count": 1,
+      "item": "forbidden_hex:forbidden_hex_transmutation_dust"
+    }
+  ],
+  "steps": [
+    {
+      "ingredient": {
+        "item": "minecraft:redstone"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:glowstone_dust"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:gunpowder"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:sugar"
+      }
+    }
+  ]
+}

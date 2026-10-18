@@ -1,4 +1,4 @@
 {
   "parent": "minecraft:item/generated",
-  "textures": { "layer0": "minecraft:item/potion_overlay", "layer1": "minecraft:item/potion" }
+  "textures": { "layer0": "forbidden_hex:item/forbidden_hex_brewed_potion", "layer1": "forbidden_hex:item/forbidden_hex_brewed_potion_glass" }
 }

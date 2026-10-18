@@ -8,6 +8,7 @@
     "PlayerFoodExhaustionMixin"
   ],
   "client": [
+    "PostChainAccess",
     "PostPassMixin",
     "MagicCoreItemRendererMixin"
   ],

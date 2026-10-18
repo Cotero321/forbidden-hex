@@ -48,7 +48,12 @@ public final class SpellImpactVfx {
      */
     public static void paint(PoseStack poseStack, MultiBufferSource buffers, SpellVisual visual,
             float ageSeconds, Quaternionf billboard) {
-        if (ageSeconds >= LINGER_SECONDS) {
+        paint(poseStack, buffers, visual, ageSeconds, billboard, 1f);
+    }
+
+    public static void paint(PoseStack poseStack, MultiBufferSource buffers, SpellVisual visual,
+            float ageSeconds, Quaternionf billboard, float detail) {
+        if (ageSeconds >= LINGER_SECONDS || detail <= 0f) {
             return;
         }
         float size = Math.max(0.35f, visual.baseSize());
@@ -66,8 +71,10 @@ public final class SpellImpactVfx {
             SpellVisualPainter.flatQuad(buffers, poseStack, SpellVfx.flare(source), billboard,
                     size * (0.45f + 0.95f * progress), fade * fade * 0.95f, ink);
             // ③ 放射星芒（墨色）：力度
-            SpellVisualPainter.flatQuad(buffers, poseStack, SpellVfx.NOVA, billboard,
-                    size * (0.30f + 1.70f * progress), fade * 0.85f, ink);
+            if (detail > 0.5f) {
+                SpellVisualPainter.flatQuad(buffers, poseStack, SpellVfx.NOVA, billboard,
+                        size * (0.30f + 1.70f * progress), fade * 0.85f, ink);
+            }
             return;
         }
 
@@ -78,8 +85,10 @@ public final class SpellImpactVfx {
         poseStack.translate(0f, linger * 0.55f, 0f);
         SpellVisualPainter.flatQuad(buffers, poseStack, SpellVfx.GLOW, billboard,
                 size * (0.55f + 1.30f * linger), fade * 0.32f, ink);
-        SpellVisualPainter.flatQuad(buffers, poseStack, SpellVfx.WISP, billboard,
-                size * (0.45f + 1.05f * linger), fade * 0.26f, aura);
+        if (detail > 0.5f) {
+            SpellVisualPainter.flatQuad(buffers, poseStack, SpellVfx.WISP, billboard,
+                    size * (0.45f + 1.05f * linger), fade * 0.26f, aura);
+        }
         poseStack.popPose();
     }
 }

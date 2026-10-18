@@ -21,10 +21,14 @@ import java.util.List;
 
 public class CrucibleBlockEntity extends BlockEntity {
     public static final int WATER_CAPACITY = 1000;
+    public static final int HEATING_TICKS = 100;
     public static final int MAX_STEPS = 128;
     private int water;
+    private int heatingTicks;
     private boolean locked;
+    private boolean brewing;
     private boolean corrupt;
+    private String brewingRecipeId = "";
     private final List<ItemStack> steps = new ArrayList<>();
     private final List<ItemStack> outputs = new ArrayList<>();
 
@@ -33,6 +37,8 @@ public class CrucibleBlockEntity extends BlockEntity {
     }
 
     public int water() { return water; }
+    public int heatingTicks() { return heatingTicks; }
+    public boolean brewing() { return brewing; }
     public boolean locked() { return locked; }
     public List<ItemStack> steps() { return steps.stream().map(ItemStack::copy).toList(); }
     public boolean hasOutputs() { return !outputs.isEmpty(); }
@@ -67,6 +73,7 @@ public class CrucibleBlockEntity extends BlockEntity {
             if (level.addFreshEntity(entity)) { pot.outputs.remove(0); pot.changed(); }
             return;
         }
+        if (pot.brewing) pot.advanceBrewing();
         AABB mouth = new AABB(pos.getX() + 0.2, pos.getY() + 0.25, pos.getZ() + 0.2,
                 pos.getX() + 0.8, pos.getY() + 1.25, pos.getZ() + 0.8);
         List<ItemEntity> candidates = level.getEntitiesOfClass(ItemEntity.class, mouth,
@@ -100,10 +107,11 @@ public class CrucibleBlockEntity extends BlockEntity {
         if (input.is(BrewingItems.GRASS_ASH.get())) {
             if (steps.isEmpty()) return false;
             steps.remove(steps.size() - 1);
+            cancelBrewing();
             changed();
             return true;
         }
-        if (water != WATER_CAPACITY || steps.size() >= MAX_STEPS || BrewingHeat.below(level, worldPosition) == BrewingHeat.NONE) return false;
+        if (brewing || water != WATER_CAPACITY || steps.size() >= MAX_STEPS || BrewingHeat.below(level, worldPosition) == BrewingHeat.NONE) return false;
         List<ItemStack> candidate = new ArrayList<>(steps);
         candidate.add(input);
         boolean known = level.getRecipeManager().getAllRecipesFor(BrewingRecipes.CRUCIBLE.get()).stream()
@@ -122,24 +130,65 @@ public class CrucibleBlockEntity extends BlockEntity {
     }
 
     public boolean commitRecipe() {
-        if (!canMutate() || corrupt || !locked || water != WATER_CAPACITY || hasOutputs()) return false;
+        if (!canMutate() || corrupt || brewing || !locked || water != WATER_CAPACITY || hasOutputs()) return false;
         BrewingHeat heat = BrewingHeat.below(level, worldPosition);
         List<CrucibleRecipe> matched = level.getRecipeManager().getAllRecipesFor(BrewingRecipes.CRUCIBLE.get()).stream()
                 .filter(recipe -> recipe.complete(steps, heat)).toList();
         if (matched.size() != 1) return false;
-        CrucibleRecipe recipe = matched.get(0);
-        ItemStack result = recipe.evaluate(steps).result();
-        if (result.isEmpty() || result.getCount() > result.getMaxStackSize()) return false;
-        if (recipe.potion()) {
-            if (BrewingPotionData.read(result).isEmpty()) return false;
-            for (int i = 0; i < 4; i++) outputs.add(result.copyWithCount(1));
-        } else outputs.add(result);
-        resetBatch();
+        brewingRecipeId = matched.get(0).id().toString();
+        brewing = true;
+        heatingTicks = 0;
         changed();
         return true;
     }
 
-    private void resetBatch() { water = 0; locked = false; corrupt = false; steps.clear(); }
+    private void advanceBrewing() {
+        var recipes = level.getRecipeManager().getAllRecipesFor(BrewingRecipes.CRUCIBLE.get());
+        List<CrucibleRecipe> matched = recipes.stream().filter(recipe -> recipe.id().toString().equals(brewingRecipeId)
+                && recipe.prefix(steps) && recipe.evaluate(steps).baseSteps() == recipe.steps().size()).toList();
+        if (matched.size() != 1) {
+            cancelBrewing();
+            changed();
+            return;
+        }
+        CrucibleRecipe recipe = matched.get(0);
+        if (BrewingHeat.below(level, worldPosition) != recipe.heat()) {
+            if (heatingTicks != 0) { heatingTicks = 0; changed(); }
+            return;
+        }
+        heatingTicks++;
+        setChanged();
+        if (heatingTicks < HEATING_TICKS) {
+            if (heatingTicks % 20 == 0) changed();
+            return;
+        }
+        ItemStack result = recipe.potion() ? recipe.evaluate(steps).result() : recipe.randomResult(level.random);
+        if (result.isEmpty() || result.getCount() > result.getMaxStackSize()
+                || recipe.potion() && BrewingPotionData.read(result).isEmpty()) {
+            cancelBrewing();
+            changed();
+            return;
+        }
+        if (recipe.potion()) {
+            for (int i = 0; i < WATER_CAPACITY / BrewingPotionData.VOLUME; i++) outputs.add(result.copyWithCount(1));
+        } else outputs.add(result);
+        resetBatch();
+        changed();
+    }
+
+    private void cancelBrewing() {
+        brewing = false;
+        heatingTicks = 0;
+        brewingRecipeId = "";
+    }
+
+    private void resetBatch() {
+        water = 0;
+        locked = false;
+        corrupt = false;
+        steps.clear();
+        cancelBrewing();
+    }
 
     private boolean validateLoadedState() {
         if (water < 0 || water > WATER_CAPACITY || steps.size() > MAX_STEPS || outputs.size() > 4) return false;
@@ -148,7 +197,11 @@ public class CrucibleBlockEntity extends BlockEntity {
                 || stack.hasTag() && stack.getTag().sizeInBytes() > 65536
                 || stack.is(BrewingItems.POTION.get()) && (stack.getCount() != 1 || BrewingPotionData.read(stack).isEmpty())) return false;
         return (!locked || water == WATER_CAPACITY)
-                && (outputs.isEmpty() || water == 0 && !locked && steps.isEmpty());
+                && (outputs.isEmpty() || water == 0 && !locked && steps.isEmpty())
+                && heatingTicks >= 0 && heatingTicks < HEATING_TICKS
+                && (brewing ? locked && !steps.isEmpty() && outputs.isEmpty()
+                    && net.minecraft.resources.ResourceLocation.tryParse(brewingRecipeId) != null
+                    : heatingTicks == 0 && brewingRecipeId.isEmpty());
     }
 
     public List<ItemStack> takeOutputs() {
@@ -172,6 +225,13 @@ public class CrucibleBlockEntity extends BlockEntity {
         if (recipes.isEmpty()) return Component.translatable("message.forbidden_hex.brewing.no_recipes");
         if (steps.isEmpty() || water != WATER_CAPACITY) return Component.translatable("message.forbidden_hex.brewing.waiting");
         BrewingHeat heat = BrewingHeat.below(level, worldPosition);
+        if (brewing) {
+            if (heat == BrewingHeat.NONE) return Component.translatable("message.forbidden_hex.brewing.no_heat");
+            if (recipes.stream().noneMatch(recipe -> recipe.id().toString().equals(brewingRecipeId) && recipe.heat() == heat)) {
+                return Component.translatable("message.forbidden_hex.brewing.wrong_heat");
+            }
+            return Component.translatable("message.forbidden_hex.brewing.heating", heatingTicks, HEATING_TICKS);
+        }
         long completed = recipes.stream().filter(recipe -> recipe.complete(steps, heat)).count();
         if (completed > 1) return Component.translatable("message.forbidden_hex.brewing.ambiguous");
         if (completed == 1) return Component.translatable("message.forbidden_hex.brewing.ready");
@@ -195,6 +255,12 @@ public class CrucibleBlockEntity extends BlockEntity {
                 }
             }
         }
+        if (!steps.isEmpty()) {
+            ItemStack last = steps.get(steps.size() - 1);
+            if (last.is(BrewingItems.FUME.get())) return BrewingFumes.color(BrewingFumeItem.kind(last));
+            int hash = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(last.getItem()).toString().hashCode();
+            return 0x404040 | (hash & 0xBFBFBF);
+        }
         return 0x3F76E4;
     }
 
@@ -216,6 +282,9 @@ public class CrucibleBlockEntity extends BlockEntity {
         tag.putInt("Water", water);
         tag.putBoolean("Locked", locked);
         tag.putBoolean("Corrupt", corrupt);
+        tag.putBoolean("Brewing", brewing);
+        tag.putInt("HeatingTicks", heatingTicks);
+        tag.putString("BrewingRecipe", brewingRecipeId);
         tag.put("Steps", saveStacks(steps));
         tag.put("Outputs", saveStacks(outputs));
     }
@@ -232,7 +301,14 @@ public class CrucibleBlockEntity extends BlockEntity {
                 || tag.contains("BrewingVersion") && (!tag.contains("BrewingVersion", Tag.TAG_INT) || tag.getInt("BrewingVersion") != 1)
                 || tag.contains("Water") && !tag.contains("Water", Tag.TAG_INT)
                 || tag.contains("Locked") && !tag.contains("Locked", Tag.TAG_BYTE)
-                || tag.contains("Corrupt") && !tag.contains("Corrupt", Tag.TAG_BYTE);
+                || tag.contains("Corrupt") && !tag.contains("Corrupt", Tag.TAG_BYTE)
+                || tag.contains("Brewing") && !tag.contains("Brewing", Tag.TAG_BYTE)
+                || tag.contains("HeatingTicks") && !tag.contains("HeatingTicks", Tag.TAG_INT)
+                || tag.contains("BrewingRecipe") && !tag.contains("BrewingRecipe", Tag.TAG_STRING);
+        brewing = tag.getBoolean("Brewing");
+        heatingTicks = tag.getInt("HeatingTicks");
+        brewingRecipeId = tag.getString("BrewingRecipe");
+        corrupt |= brewingRecipeId.length() > 256;
         water = tag.contains("Water", Tag.TAG_INT) ? tag.getInt("Water") : 0;
         corrupt |= !loadStacks(tag, "Steps", steps, MAX_STEPS);
         corrupt |= !loadStacks(tag, "Outputs", outputs, 4);
@@ -243,6 +319,7 @@ public class CrucibleBlockEntity extends BlockEntity {
             steps.clear();
             outputs.clear();
             locked = true;
+            cancelBrewing();
         }
     }
     private static boolean loadStacks(CompoundTag tag, String key, List<ItemStack> stacks, int maximum) {

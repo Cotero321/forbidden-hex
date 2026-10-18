@@ -13,17 +13,32 @@ import java.util.Optional;
 
 public record BrewingPotionData(int capacity, int strength, int duration, Delivery delivery,
                                 boolean hideParticles, boolean triggerPressurePlates,
-                                List<MobEffectInstance> effects) {
+                                List<MobEffectInstance> effects, List<Integer> effectCosts) {
     public static final String TAG = "forbidden_hex_brewing";
     public static final int VOLUME = 250;
     public static final int MAX_EFFECTS = 64;
     public static final int MAX_AMPLIFIER = 127;
+    public static final int MAX_CAPACITY = 64;
+    public static final int MAX_STRENGTH = 5;
+    public static final int MAX_DURATION = 6;
+
+    public int usedCapacity() {
+        return effectCosts.stream().mapToInt(Integer::intValue).sum();
+    }
+
+    public BrewingPotionData(int capacity, int strength, int duration, Delivery delivery,
+                             boolean hideParticles, boolean triggerPressurePlates,
+                             List<MobEffectInstance> effects) {
+        this(capacity, strength, duration, delivery, hideParticles, triggerPressurePlates,
+                effects, effects == null ? List.of() : java.util.Collections.nCopies(effects.size(), 1));
+    }
 
     public enum Delivery { DRINK, SPLASH, LINGERING, DIRECT }
 
     public BrewingPotionData {
-        if (capacity < 0 || capacity > 64 || strength < 1 || strength > 5 || duration < 0
-                || delivery == null || effects == null || effects.isEmpty() || effects.size() > MAX_EFFECTS) {
+        if (capacity < 0 || capacity > MAX_CAPACITY || strength < 1 || strength > MAX_STRENGTH
+                || duration < 0 || duration > MAX_DURATION || delivery == null
+                || effects == null || effects.isEmpty() || effects.size() > MAX_EFFECTS) {
             throw new IllegalArgumentException("Invalid brewing potion properties");
         }
         List<MobEffectInstance> copies = new ArrayList<>();
@@ -36,6 +51,14 @@ public record BrewingPotionData(int capacity, int strength, int duration, Delive
                     effect.isAmbient(), effect.isVisible(), effect.showIcon()));
         }
         effects = List.copyOf(copies);
+        if (effectCosts == null || effectCosts.size() != effects.size()
+                || effectCosts.stream().anyMatch(cost -> cost == null || cost < 1 || cost > MAX_CAPACITY)) {
+            throw new IllegalArgumentException("Invalid brewing effect costs");
+        }
+        effectCosts = List.copyOf(effectCosts);
+        if (effectCosts.stream().mapToInt(Integer::intValue).sum() > capacity) {
+            throw new IllegalArgumentException("Brewing effects exceed capacity");
+        }
     }
 
     @Override
@@ -56,6 +79,7 @@ public record BrewingPotionData(int capacity, int strength, int duration, Delive
         ListTag list = new ListTag();
         for (MobEffectInstance effect : effects) list.add(effect.save(new CompoundTag()));
         tag.put("effects", list);
+        tag.putIntArray("effect_costs", effectCosts.stream().mapToInt(Integer::intValue).toArray());
         return tag;
     }
 
@@ -85,10 +109,20 @@ public record BrewingPotionData(int capacity, int strength, int duration, Delive
             if (effect == null) return Optional.empty();
             effects.add(effect);
         }
+        if (tag.contains("effect_costs") && !tag.contains("effect_costs", Tag.TAG_INT_ARRAY)) return Optional.empty();
+        List<Integer> costs = tag.contains("effect_costs", Tag.TAG_INT_ARRAY)
+                ? java.util.Arrays.stream(tag.getIntArray("effect_costs")).boxed().toList()
+                : java.util.Collections.nCopies(effects.size(), 1);
+        int savedCapacity = tag.getInt("capacity");
+        int savedDuration = tag.getInt("duration");
+        if (!tag.contains("effect_costs")) {
+            if (savedCapacity >= 0 && savedCapacity <= MAX_CAPACITY) savedCapacity = Math.max(savedCapacity, effects.size());
+            if (savedDuration >= 0) savedDuration = Math.min(savedDuration, MAX_DURATION);
+        }
         try {
-            return Optional.of(new BrewingPotionData(tag.getInt("capacity"), tag.getInt("strength"),
-                    tag.getInt("duration"), Delivery.valueOf(tag.getString("delivery")),
-                    tag.getBoolean("hide_particles"), tag.getBoolean("pressure_plates"), effects));
+            return Optional.of(new BrewingPotionData(savedCapacity, tag.getInt("strength"),
+                    savedDuration, Delivery.valueOf(tag.getString("delivery")),
+                    tag.getBoolean("hide_particles"), tag.getBoolean("pressure_plates"), effects, costs));
         } catch (IllegalArgumentException exception) {
             return Optional.empty();
         }

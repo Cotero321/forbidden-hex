@@ -48,6 +48,12 @@ public final class ClientSanityVision {
         mono = approach(mono, target[2]);
     }
 
+    public static void reset() {
+        gray = 0f;
+        blood = 0f;
+        mono = 0f;
+    }
+
     /** 是否有可见表现（后处理是否挂载的判据） */
     public static boolean active() {
         return gray > MIN_VISIBLE || blood > MIN_VISIBLE || mono > MIN_VISIBLE;

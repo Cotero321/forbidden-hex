@@ -168,6 +168,8 @@ public class SpellProjectile extends WitherSkull {
         Vec3 impact = result.getLocation();
         Entity hit = result instanceof EntityHitResult entityHit ? entityHit.getEntity() : null;
         Vec3 direction = this.getDeltaMovement().normalize();
+        com.example.akaishi.forbidden.sound.SpellSoundEvents.entity(this, visual(),
+                com.example.akaishi.forbidden.sound.SpellSoundEvent.Phase.IMPACT, impact);
         this.discard();
         // 命中即结算：由投送器登记的回调决定"打谁、打多狠"
         SpellProjectiles.fire(this, hit, impact, direction);
@@ -190,6 +192,9 @@ public class SpellProjectile extends WitherSkull {
         if (this.level().isClientSide() || source.getEntity() == this.getOwner()) {
             return false;
         }
+        if (isRemoved()) return false;
+        com.example.akaishi.forbidden.sound.SpellSoundEvents.entity(this, visual(),
+                com.example.akaishi.forbidden.sound.SpellSoundEvent.Phase.SHATTER, position());
         SpellProjectiles.drop(this);
         this.discard();
         return true;
