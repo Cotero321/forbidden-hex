@@ -1,6 +1,8 @@
 package com.example.akaishi.forbidden.forge.client.visual;
 
 import com.example.akaishi.AkaishiMod;
+import com.example.akaishi.forbidden.magic.projectile.SpellProjectile;
+import com.example.akaishi.forbidden.magic.visual.SpellCarrierForm;
 import com.example.akaishi.forbidden.forge.magic.visual.SpellVisualEventHandler;
 import com.example.akaishi.forbidden.magic.table.MagicIds;
 import com.example.akaishi.forbidden.magic.table.MagicSource;
@@ -34,13 +36,18 @@ public final class ClientVisualSceneTest {
     private static final int[] COUNTS = {0, 1, 8, 32};
     private static final String[] DELIVERIES = {MagicIds.Delivery.INSTANT, MagicIds.Delivery.CHANNEL,
             MagicIds.Delivery.PROJECTILE, MagicIds.Delivery.ATTACH, MagicIds.Delivery.ECHO, MagicIds.Delivery.VOLLEY};
-    private static final String[] INKS = {MagicIds.Ink.CHI, MagicIds.Ink.YUAN, MagicIds.Ink.MAN, MagicIds.Ink.XING};
-    private static final int[] COLORS = {0xF6A24D, 0x7664CA, 0x75BE78, 0xA3DCEE};
+    private static final String[] INKS = com.example.akaishi.forbidden.magic.table.MagicInkTable.order().toArray(String[]::new);
+    private static final int[] COLORS = java.util.Arrays.stream(INKS)
+            .mapToInt(ink -> com.example.akaishi.forbidden.magic.table.MagicInkTable.get(ink).rgb()).toArray();
+    private record TestProjectile(SpellProjectile entity, long started) { }
+    private static final List<TestProjectile> projectiles = new ArrayList<>();
+    private static int nextProjectileId = -891000;
     private static final List<Double> frameTimes = new ArrayList<>();
     private static final JsonArray results = new JsonArray();
     private static final JsonArray screenshots = new JsonArray();
     private static boolean started;
     private static boolean finished;
+    private static boolean galleryStarted;
     private static int phase;
     private static int frames;
     private static int pendingScreenshots;
@@ -95,6 +102,8 @@ public final class ClientVisualSceneTest {
     }
 
     private static void beginPhase(Minecraft minecraft) {
+        for (TestProjectile projectile : projectiles) projectile.entity().discard();
+        projectiles.clear();
         frames = 0;
         lastFrame = 0;
         lastEmission = Long.MIN_VALUE;
@@ -110,6 +119,11 @@ public final class ClientVisualSceneTest {
         var level = minecraft.level;
         if (level == null || minecraft.isPaused() || minecraft.screen != null || minecraft.getOverlay() != null) return;
         long now = level.getGameTime();
+        projectiles.removeIf(projectile -> {
+            if (now - projectile.started() < 6 && !projectile.entity().isRemoved()) return false;
+            projectile.entity().discard();
+            return true;
+        });
         if (now < drainUntilTick || now == lastEmission || (lastEmission != Long.MIN_VALUE && now - lastEmission < 6)) return;
         lastEmission = now;
         int count = COUNTS[phase % COUNTS.length];
@@ -118,12 +132,19 @@ public final class ClientVisualSceneTest {
             double x = count == 1 ? 0d : ((index % 8) - 3.5d) * 0.5d;
             double y = count <= 8 ? 0d : ((index / 8) - 1.5d) * 0.55d;
             Vec3 to = eye.add(forward.scale(distance)).add(side.scale(x)).add(0, y, 0);
-            MagicSource source = MagicSource.values()[index % MagicSource.values().length];
+            MagicSource source = MagicSource.values()[(index + index / DELIVERIES.length) % MagicSource.values().length];
             SpellVisual visual = new SpellVisual(MagicIds.Effect.DAMAGE, DELIVERIES[index % DELIVERIES.length],
                     source.id(), INKS[index % INKS.length], COLORS[index % COLORS.length], source.rgb(),
                     3f, 0.6f, 1f, 0, List.of(), "");
             SpellVisualEventHandler.INSTANCE.accept(new SpellVisualEvent(visual,
                     eye.add(side.scale(-2d)).add(forward.scale(2d)), to, -1, 6));
+            if (visual.carrier() == SpellCarrierForm.ORB && minecraft.player != null) {
+                SpellProjectile projectile = SpellProjectile.create(level, minecraft.player,
+                        to.subtract(java.util.Objects.requireNonNull(forward.scale(1.4d))), forward, visual);
+                projectile.setDeltaMovement(java.util.Objects.requireNonNull(forward.scale(0.18d)));
+                level.putNonPlayerEntity(nextProjectileId--, projectile);
+                projectiles.add(new TestProjectile(projectile, now));
+            }
         }
     }
 
@@ -138,7 +159,17 @@ public final class ClientVisualSceneTest {
             return;
         }
         if (phase >= COUNTS.length * 2) {
-            if (pendingScreenshots == 0) finish(minecraft);
+            if (pendingScreenshots > 0) return;
+            if (!galleryStarted) {
+                try {
+                    ClientSpellVfxGallery.start(output.resolve("sources"));
+                    galleryStarted = true;
+                } catch (IOException exception) {
+                    throw new IllegalStateException("Spell gallery failed to start", exception);
+                }
+            } else if (!ClientSpellVfxGallery.active()) {
+                finish(minecraft);
+            }
             return;
         }
         long now = System.nanoTime();
@@ -178,8 +209,9 @@ public final class ClientVisualSceneTest {
 
     private static void finish(Minecraft minecraft) {
         try {
+            ClientSpellVfxGallery.verifyOutput();
             JsonObject report = new JsonObject();
-            report.addProperty("scope", "synthetic client spell carriers, particles and impacts; no gameplay execution");
+            report.addProperty("scope", "synthetic client spell carriers, six-tick client-only ORB entities and trails, particles and impacts; no gameplay execution");
             report.addProperty("shader_state", ClientShaderCompatibility.state().name());
             report.addProperty("renderer", org.lwjgl.opengl.GL11.glGetString(org.lwjgl.opengl.GL11.GL_RENDERER));
             report.addProperty("resolution", minecraft.getWindow().getWidth() + "x" + minecraft.getWindow().getHeight());
@@ -187,7 +219,8 @@ public final class ClientVisualSceneTest {
             report.addProperty("frame_limit", 120);
             report.addProperty("warmup_frames_per_case", WARMUP_FRAMES);
             report.addProperty("baseline", "zero-effect scene in this run; no pre-redesign frame-time baseline exists");
-            report.addProperty("acceptance", "measurements only; not a pre-redesign 15-percent regression verdict or full gameplay acceptance");
+            report.addProperty("acceptance", "measurements and synthetic render references only; not an aesthetic verdict, pre-redesign regression verdict, charge timing or full gameplay acceptance");
+            report.addProperty("source_gallery", "sources/screenshots: four sources, eleven inks, three effect forms, two detail modes; live painter, glyphs, link and impact");
             report.add("cases", results);
             report.add("screenshots", screenshots);
             Files.writeString(output.resolve("frame-times.json"), new GsonBuilder().setPrettyPrinting().create().toJson(report)
@@ -197,7 +230,7 @@ public final class ClientVisualSceneTest {
                     throw new IOException("Scene screenshot was not written: " + screenshot.getAsString());
                 }
             }
-            LogUtils.getLogger().info("VISUAL_SCENE_TEST PASSED: 8 cases and 4 screenshots written to {}", output);
+            LogUtils.getLogger().info("VISUAL_SCENE_TEST PASSED: 8 measurement cases, 4 scene and 24 source-gallery screenshots written to {}; no aesthetic or gameplay verdict", output);
             finished = true;
         } catch (IOException exception) {
             throw new IllegalStateException("Visual scene output failed", exception);

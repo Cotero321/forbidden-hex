@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "minecraft:block/crying_obsidian",
+    "bottom": "minecraft:block/obsidian",
+    "side": "forbidden_hex:block/forbidden_hex_magic_stone_block"
+  }
+}

@@ -2,10 +2,14 @@
   "sample_rate": 32000,
   "seed": 809173,
   "sources": {
-    "san": {"frequency": 220, "ratios": [1, 1.4983, 2.003, 3.01], "air": 0.17, "shimmer": 6.0},
-    "life": {"frequency": 174, "ratios": [1, 1.25, 1.5, 2.5], "air": 0.11, "shimmer": 3.0},
-    "dark": {"frequency": 110, "ratios": [1, 1.4142, 2.01, 2.8284], "air": 0.28, "shimmer": 2.0},
-    "white": {"frequency": 294, "ratios": [1, 1.5, 2, 3, 4], "air": 0.10, "shimmer": 8.0}
+    "san": {"frequency": 220, "ratios": [1, 1.4983, 2.003, 3.01], "air": 0.17, "shimmer": 6.0,
+      "charge": {"frequency": 132, "ratios": [1, 1.5, 2.01], "weights": [0.48, 0.16, 0.08], "fm": 0.14, "air": 0.006}},
+    "life": {"frequency": 174, "ratios": [1, 1.25, 1.5, 2.5], "air": 0.11, "shimmer": 3.0,
+      "charge": {"frequency": 110, "ratios": [1, 1.5, 2], "weights": [0.48, 0.15, 0.06], "fm": 0.06, "air": 0.004}},
+    "dark": {"frequency": 110, "ratios": [1, 1.4142, 2.01, 2.8284], "air": 0.28, "shimmer": 2.0,
+      "charge": {"frequency": 88, "ratios": [1, 1.5, 2], "weights": [0.52, 0.12, 0.05], "fm": 0.10, "air": 0.006}},
+    "white": {"frequency": 294, "ratios": [1, 1.5, 2, 3, 4], "air": 0.10, "shimmer": 8.0,
+      "charge": {"frequency": 176, "ratios": [1, 1.5, 2], "weights": [0.46, 0.16, 0.07], "fm": 0.02, "air": 0.002}}
   },
   "effects": {
     "damage": {"kind": "strike", "frequency": 180, "duration": 0.65},
@@ -30,17 +34,28 @@
     "ward": {"kind": "glass", "frequency": 660, "duration": 1.05}
   },
   "inks": {
-    "chi": {"kind": "spark", "frequency": 370, "duration": 0.42},
-    "yuan": {"kind": "fold", "frequency": 95, "duration": 0.70},
-    "man": {"kind": "rise", "frequency": 250, "duration": 0.58},
-    "rang": {"kind": "strike", "frequency": 85, "duration": 0.48},
-    "shi": {"kind": "drain", "frequency": 175, "duration": 0.52},
-    "xu": {"kind": "ping", "frequency": 580, "duration": 0.55},
-    "hun": {"kind": "shatter", "frequency": 420, "duration": 0.51},
-    "xing": {"kind": "chime", "frequency": 920, "duration": 0.80},
-    "yao": {"kind": "glass", "frequency": 740, "duration": 0.68},
-    "an": {"kind": "veil", "frequency": 130, "duration": 0.64},
-    "ju": {"kind": "gust", "frequency": 315, "duration": 0.46}
+    "chi": {"kind": "spark", "frequency": 370, "duration": 0.42,
+      "charge": {"frequency": 220, "ratios": [1, 2, 3, 4, 5], "weights": [0.48, 0.25, 0.13, 0.06, 0.03], "fm": 0.12, "drive": 1.6, "air": 0.008}},
+    "yuan": {"kind": "fold", "frequency": 95, "duration": 0.70,
+      "charge": {"frequency": 98, "ratios": [1, 1.5, 2.125, 3.25], "weights": [0.42, 0.10, 0.16, 0.05], "fm": 0.32, "air": 0.003}},
+    "man": {"kind": "rise", "frequency": 250, "duration": 0.58,
+      "charge": {"frequency": 196, "ratios": [1, 1.25, 1.5, 2.5], "weights": [0.40, 0.18, 0.14, 0.07], "fm": 0.10, "air": 0.003}},
+    "rang": {"kind": "strike", "frequency": 85, "duration": 0.48,
+      "charge": {"frequency": 82.5, "ratios": [1, 2, 2.5, 3.5], "weights": [0.50, 0.19, 0.08, 0.035], "fm": 0.03, "air": 0.002}},
+    "shi": {"kind": "drain", "frequency": 175, "duration": 0.52,
+      "charge": {"frequency": 147, "ratios": [1, 1.015, 1.98, 2.94], "weights": [0.32, 0.22, 0.11, 0.055], "fm": 0.42, "air": 0.006}},
+    "xu": {"kind": "ping", "frequency": 580, "duration": 0.55,
+      "charge": {"frequency": 264, "ratios": [1, 2, 3, 4], "weights": [0.50, 0.16, 0.05, 0.02], "fm": 0.0, "air": 0.0}},
+    "hun": {"kind": "shatter", "frequency": 420, "duration": 0.51,
+      "charge": {"frequency": 231, "ratios": [1, 1.4142, 2.17, 3.31], "weights": [0.35, 0.21, 0.10, 0.06], "fm": 0.65, "air": 0.005}},
+    "xing": {"kind": "chime", "frequency": 920, "duration": 0.80,
+      "charge": {"frequency": 440, "ratios": [1, 1.5, 2.5, 3.75, 5], "weights": [0.18, 0.22, 0.13, 0.065, 0.03], "fm": 0.06, "air": 0.001}},
+    "yao": {"kind": "glass", "frequency": 740, "duration": 0.68,
+      "charge": {"frequency": 352, "ratios": [1, 2, 3, 4], "weights": [0.38, 0.22, 0.13, 0.06], "fm": 0.03, "air": 0.001}},
+    "an": {"kind": "veil", "frequency": 130, "duration": 0.64,
+      "charge": {"frequency": 110, "ratios": [0.5, 1, 1.5, 2], "weights": [0.12, 0.45, 0.08, 0.025], "fm": 0.18, "air": 0.004}},
+    "ju": {"kind": "gust", "frequency": 315, "duration": 0.46,
+      "charge": {"frequency": 294, "ratios": [1, 1.5, 2.5, 4], "weights": [0.22, 0.15, 0.07, 0.02], "fm": 0.10, "air": 0.075}}
   },
   "carriers": {
     "instant": {"kind": "cut", "frequency": 430, "duration": 0.27},

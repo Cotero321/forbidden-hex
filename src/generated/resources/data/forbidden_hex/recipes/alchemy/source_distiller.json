@@ -1,0 +1,26 @@
+{
+  "type": "forbidden_hex:forbidden_hex_alchemy_upgrade",
+  "ingredients": [
+    {
+      "item": "forbidden_hex:forbidden_hex_distiller"
+    },
+    {
+      "item": "forbidden_hex:forbidden_hex_magic_stone"
+    },
+    {
+      "item": "forbidden_hex:forbidden_hex_silver_ingot"
+    },
+    {
+      "item": "forbidden_hex:forbidden_hex_silver_ingot"
+    },
+    {
+      "item": "forbidden_hex:forbidden_hex_silver_ingot"
+    },
+    {
+      "item": "forbidden_hex:forbidden_hex_silver_ingot"
+    }
+  ],
+  "result": {
+    "item": "forbidden_hex:forbidden_hex_source_distiller"
+  }
+}

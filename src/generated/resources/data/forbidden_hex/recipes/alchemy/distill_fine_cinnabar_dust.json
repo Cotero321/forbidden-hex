@@ -1,0 +1,24 @@
+{
+  "type": "forbidden_hex:forbidden_hex_alchemy",
+  "bottles": 2,
+  "equivalents": 1,
+  "ingredient": {
+    "item": "forbidden_hex:forbidden_hex_fine_cinnabar_dust"
+  },
+  "mode": 0,
+  "outputs": [
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_mercury",
+      "max": 1,
+      "min": 1
+    },
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_sulfurous_acid",
+      "max": 1,
+      "min": 1
+    }
+  ],
+  "process": "distilling"
+}

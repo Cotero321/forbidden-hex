@@ -23,6 +23,11 @@ public record BrewingIngredient(Ingredient ingredient, CompoundTag requiredTag) 
         if (stack.is(BrewingItems.FUME.get())) {
             ResourceLocation kind = BrewingFumeItem.kind(stack);
             if (!BrewingFumes.isAllowed(kind) || requiredTag.isEmpty() && !BrewingFumes.isNonEvil(kind)) return false;
+            if ("*".equals(requiredTag.getString(BrewingFumeItem.FUME_ID))) {
+                CompoundTag remainder = requiredTag.copy();
+                remainder.remove(BrewingFumeItem.FUME_ID);
+                return remainder.isEmpty() || stack.hasTag() && NbtUtils.compareNbt(remainder, stack.getTag(), true);
+            }
         }
         return requiredTag.isEmpty()
                 || stack.hasTag() && NbtUtils.compareNbt(requiredTag, stack.getTag(), true);

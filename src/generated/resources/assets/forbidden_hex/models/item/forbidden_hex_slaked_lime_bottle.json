@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "forbidden_hex:item/forbidden_hex_slaked_lime_bottle",
+    "layer1": "minecraft:item/potion"
+  }
+}

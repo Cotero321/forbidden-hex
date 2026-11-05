@@ -7,6 +7,8 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.util.Mth;
 import org.joml.Quaternionf;
 
+import java.util.Objects;
+
 /**
  * <b>命中冲击 + 余韵</b>（仅客户端）：一发法术打到点上之后的两段表现。
  *
@@ -53,41 +55,67 @@ public final class SpellImpactVfx {
 
     public static void paint(PoseStack poseStack, MultiBufferSource buffers, SpellVisual visual,
             float ageSeconds, Quaternionf billboard, float detail) {
-        if (ageSeconds >= LINGER_SECONDS || detail <= 0f) {
+        if (!Float.isFinite(ageSeconds) || ageSeconds < 0f || ageSeconds >= LINGER_SECONDS || detail <= 0f) {
             return;
         }
         float size = Math.max(0.35f, visual.baseSize());
         int ink = visual.inkRgb();
         int aura = visual.sourceRgb();
+        float life = ageSeconds / LINGER_SECONDS;
+        MagicSource source = MagicSource.byIdOrDefault(visual.sourceId());
+        boolean soft = switch (visual.form().kind()) {
+            case MIST, VORTEX, RIPPLE, GLOW_DISC -> true;
+            default -> false;
+        };
+        float turn = visual.form().inverted() ? -1f : 1f;
+        float spread = soft ? 0.78f : 1f;
+        float sourceRadius = source == MagicSource.DARK ? 1.45f - life * 1.10f : 0.75f + 1.10f * life;
+        poseStack.pushPose();
+        poseStack.mulPose(Objects.requireNonNull(billboard));
+        SpellSourceVfx.paint(poseStack, buffers, source,
+                aura, ink, ageSeconds, size * sourceRadius,
+                (1f - life) * (1f - life) * 0.85f, detail);
+        poseStack.popPose();
 
         if (ageSeconds <= BURST_SECONDS) {
             float progress = Mth.clamp(ageSeconds / BURST_SECONDS, 0f, 1f);
             float fade = 1f - progress;
-            MagicSource source = MagicSource.byIdOrDefault(visual.sourceId());
-            // ① 外扩虚环（源色）：范围感
+            float waveRadius = source == MagicSource.DARK ? 2.30f - 1.75f * progress : 0.55f + 2.30f * progress;
             SpellVisualPainter.flatQuad(buffers, poseStack, SpellVfx.RING_PULSE, billboard,
-                    size * (0.55f + 2.30f * progress), fade * 0.72f, aura);
+                    size * waveRadius, fade * 0.72f, aura);
             // ② 源专属闪光（墨色）：身份感
             SpellVisualPainter.flatQuad(buffers, poseStack, SpellVfx.flare(source), billboard,
                     size * (0.45f + 0.95f * progress), fade * fade * 0.95f, ink);
             // ③ 放射星芒（墨色）：力度
             if (detail > 0.5f) {
-                SpellVisualPainter.flatQuad(buffers, poseStack, SpellVfx.NOVA, billboard,
-                        size * (0.30f + 1.70f * progress), fade * 0.85f, ink);
+                SpellVisualPainter.flatQuad(buffers, poseStack, soft ? SpellVfx.WISP : SpellVfx.NOVA,
+                        new Quaternionf(billboard).rotateZ(turn * progress * (soft ? 0.35f : 0.65f)),
+                        size * (0.30f + 1.70f * progress) * spread, fade * (soft ? 0.38f : 0.62f), ink);
+                float echo = Mth.clamp((progress - 0.16f) / 0.84f, 0f, 1f);
+                float echoFade = com.example.akaishi.forbidden.magic.visual.SpellCircleAnimation.smooth(echo / 0.22f)
+                        * (1f - echo) * (1f - echo);
+                SpellVisualPainter.flatQuad(buffers, poseStack, SpellVfx.RING_PULSE,
+                        new Quaternionf(billboard).rotateZ(-turn * progress * 0.45f),
+                        size * (0.40f + 1.85f * echo) * spread, echoFade * 0.35f, ink);
+                SpellVisualPainter.flatQuad(buffers, poseStack, SpellVfx.RUNE,
+                        new Quaternionf(billboard).rotateZ(-progress * 0.5f),
+                        size * (0.65f + 0.75f * progress), fade * fade * 0.32f, aura);
             }
-            return;
         }
 
-        // 余韵：上浮 + 扩散 + 渐隐（"还有余味"，而不是"打完了什么也没留下"）
-        float linger = (ageSeconds - BURST_SECONDS) / (LINGER_SECONDS - BURST_SECONDS);
-        float fade = (1f - linger) * (1f - linger);
+        float linger = Mth.clamp((ageSeconds - 0.16f) / (LINGER_SECONDS - 0.16f), 0f, 1f);
+        float fade = com.example.akaishi.forbidden.magic.visual.SpellCircleAnimation.smooth(linger / 0.30f)
+                * (1f - linger) * (1f - linger);
+        float drift = source == MagicSource.DARK ? -0.08f : source == MagicSource.LIFE ? 0.36f : 0.20f;
+        float radius = source == MagicSource.DARK ? 1.05f - 0.50f * linger : 0.55f + 0.85f * linger;
         poseStack.pushPose();
-        poseStack.translate(0f, linger * 0.55f, 0f);
+        poseStack.translate(0f, linger * drift, 0f);
         SpellVisualPainter.flatQuad(buffers, poseStack, SpellVfx.GLOW, billboard,
-                size * (0.55f + 1.30f * linger), fade * 0.32f, ink);
+                size * radius * spread, fade * 0.28f, ink);
         if (detail > 0.5f) {
-            SpellVisualPainter.flatQuad(buffers, poseStack, SpellVfx.WISP, billboard,
-                    size * (0.45f + 1.05f * linger), fade * 0.26f, aura);
+            SpellVisualPainter.flatQuad(buffers, poseStack, SpellVfx.WISP,
+                    new Quaternionf(billboard).rotateZ(turn * linger * 0.25f),
+                    size * (0.45f + 0.80f * linger) * spread, fade * 0.22f, aura);
         }
         poseStack.popPose();
     }

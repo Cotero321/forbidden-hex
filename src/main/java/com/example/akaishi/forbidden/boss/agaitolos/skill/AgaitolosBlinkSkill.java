@@ -108,8 +108,6 @@ public final class AgaitolosBlinkSkill {
         faceTarget(boss, target);
         // 清掉瞬移前的残余速度：带着冲刺惯性落位会让"落点"名不副实
         boss.setDeltaMovement(Vec3.ZERO);
-        // 纯表现：本招<b>无专属 clip</b>，按任务口径复用 attack_slash（同一触发键，落位瞬间挥一下）
-        AgaitolosAnimations.playAttack(boss);
         return true;
     }
 

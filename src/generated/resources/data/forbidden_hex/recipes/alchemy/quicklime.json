@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smelting",
+  "cookingtime": 200,
+  "experience": 0.1,
+  "ingredient": {
+    "item": "forbidden_hex:forbidden_hex_limestone_dust"
+  },
+  "result": "forbidden_hex:forbidden_hex_quicklime"
+}

@@ -105,6 +105,13 @@ public final class ClientVisualSmokeTest {
         }
         require(ClientVisualBudget.contractCheck(), "Visual budget failed exhaustion, tick, config or world reset checks");
         verifyDetailBounds(minecraft);
+        SpellGeometryCheck.verify();
+        com.example.akaishi.forbidden.forge.boss.agaitolos.AgaitolosBladeTrailCheck.verify();
+        LogUtils.getLogger().info("BOSS_BLADE_HISTORY_CHECK PASSED");
+        com.example.akaishi.forbidden.forge.boss.agaitolos.AgaitolosAnimationCheck.verify();
+        LogUtils.getLogger().info("BOSS_BAKED_ANIMATION_CHECK PASSED");
+        com.example.akaishi.forbidden.brewing.client.BrewingResourceCheck.verify(minecraft);
+        com.example.akaishi.forbidden.ore.client.ForbiddenOreResourceCheck.verify(minecraft);
         ResourceLocation texture = new ResourceLocation("minecraft", "textures/misc/white.png");
         if (!ClientShaderCompatibility.allowsCustomPrograms()) {
             require(!ClientVisualShaders.available(ClientVisualShaders.ENERGY), "Shader-pack fallback kept the local core shader available");

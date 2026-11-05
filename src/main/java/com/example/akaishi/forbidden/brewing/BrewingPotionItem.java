@@ -48,7 +48,8 @@ public final class BrewingPotionItem extends Item {
     public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity entity) {
         Optional<BrewingPotionData> data = BrewingPotionData.read(stack);
         if (level.isClientSide || data.isEmpty() || data.get().delivery() != BrewingPotionData.Delivery.DRINK) return stack;
-        data.get().apply(entity, 1);
+        BrewingPotionExecutor.applyWorld(data.get(), (net.minecraft.server.level.ServerLevel) level, entity.position(), entity);
+        BrewingPotionExecutor.applyEntity(data.get(), entity, entity, entity, 1, true);
         if (entity instanceof Player player && player.getAbilities().instabuild) return stack;
         stack.shrink(1);
         ItemStack bottle = new ItemStack(Items.GLASS_BOTTLE);
@@ -71,6 +72,13 @@ public final class BrewingPotionItem extends Item {
             if (data.triggerPressurePlates()) tooltip.add(Component.translatable("tooltip.forbidden_hex.brewing.pressure_plates"));
             for (var effect : data.effects()) {
                 tooltip.add(Component.translatable(effect.getDescriptionId()).append(" " + (effect.getAmplifier() + 1)));
+            }
+            for (BrewingEffectEntry entry : data.customEffects()) {
+                String time = entry.type().instantaneous() ? "—" : String.format(java.util.Locale.ROOT, "%.2fs", data.ticks(entry.type()) / 20.0);
+                tooltip.add(Component.translatable("tooltip.forbidden_hex.brewing.custom_effect",
+                        Component.translatable(entry.type().translationKey()), data.strength(), time));
+                tooltip.add(Component.translatable("tooltip.forbidden_hex.brewing.effect_cost", entry.type().cost()));
+                tooltip.add(Component.translatable(entry.type().translationKey() + ".description"));
             }
         }, () -> tooltip.add(Component.translatable("tooltip.forbidden_hex.brewing.empty")));
     }

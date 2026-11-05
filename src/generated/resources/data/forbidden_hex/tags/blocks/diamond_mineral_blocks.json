@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "forbidden_hex:forbidden_hex_deepslate_magic_stone_ore",
+    "forbidden_hex:forbidden_hex_magic_stone_block"
+  ]
+}

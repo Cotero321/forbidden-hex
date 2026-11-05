@@ -53,19 +53,26 @@ public class AgaitolosModel extends GeoModel<AgaitolosEntity> {
     /** 按阶段索引的动画资源：三阶段共用同一骨架动画文件 */
     private static final ResourceLocation[] ANIMATIONS = {SHARED_ANIMATION, SHARED_ANIMATION, SHARED_ANIMATION};
 
+    private static final ResourceLocation QUEEN_MODEL =
+            new ResourceLocation(AkaishiMod.MOD_ID, "geo/entity/agaitolos_queen.geo.json");
+    private static final ResourceLocation QUEEN_TEXTURE =
+            new ResourceLocation(AkaishiMod.MOD_ID, "textures/entity/agaitolos_queen.png");
+    private static final ResourceLocation QUEEN_ANIMATION =
+            new ResourceLocation(AkaishiMod.MOD_ID, "animations/entity/agaitolos_queen.animation.json");
+
     @Override
     public ResourceLocation getModelResource(AgaitolosEntity animatable) {
-        return MODELS[phaseIndex(animatable)];
+        return QUEEN_MODEL;
     }
 
     @Override
     public ResourceLocation getTextureResource(AgaitolosEntity animatable) {
-        return TEXTURES[phaseIndex(animatable)];
+        return QUEEN_TEXTURE;
     }
 
     @Override
     public ResourceLocation getAnimationResource(AgaitolosEntity animatable) {
-        return ANIMATIONS[phaseIndex(animatable)];
+        return QUEEN_ANIMATION;
     }
 
     /**

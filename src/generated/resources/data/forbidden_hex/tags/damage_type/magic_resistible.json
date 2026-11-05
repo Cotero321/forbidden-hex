@@ -1,0 +1,16 @@
+{
+  "replace": false,
+  "values": [
+    "forbidden_hex:spell",
+    "forbidden_hex:spell_chaos",
+    "forbidden_hex:spell_corrosion",
+    "forbidden_hex:spell_earth",
+    "forbidden_hex:spell_fire",
+    "forbidden_hex:spell_nature",
+    "forbidden_hex:spell_order",
+    "forbidden_hex:spell_radiance",
+    "forbidden_hex:spell_shadow",
+    "forbidden_hex:spell_storm",
+    "forbidden_hex:spell_water"
+  ]
+}

@@ -13,6 +13,7 @@ public class ShadowRenderer extends GeoEntityRenderer<ShadowEntity> {
 
     public ShadowRenderer(EntityRendererProvider.Context ctx) {
         super(ctx, new ShadowModel());
+        addRenderLayer(new com.example.akaishi.forbidden.brewing.client.BrewingGeoTintLayer<>(this));
         addRenderLayer(new ShadowGlowLayer(this));
     }
 }

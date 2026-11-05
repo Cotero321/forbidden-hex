@@ -317,6 +317,7 @@ public final class AgaitolosGuardCharge {
      */
     private static void endChargeInterrupted(AgaitolosEntity boss) {
         finishCharge(boss);
+        if (boss.isAlive() && !boss.isRespawning()) boss.startVisualAction("boss_curse_break", 26);
         AgaitolosMinionSkill.dismissAll(boss);
     }
 

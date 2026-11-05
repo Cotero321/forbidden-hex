@@ -4,6 +4,9 @@ import com.example.akaishi.AkaishiMod;
 import com.example.akaishi.forbidden.block.AkaishiForbiddenBlocks;
 import com.example.akaishi.forbidden.block.entity.AkaishiInscriptionTableBlockEntity;
 import com.example.akaishi.forbidden.block.AkaishiMotherAltarBlocks;
+import com.example.akaishi.forbidden.altar.SourceAltarContent;
+import com.example.akaishi.forbidden.altar.SourceAltarBlockEntity;
+import com.example.akaishi.forbidden.altar.OfferingPedestalBlockEntity;
 import dev.architectury.registry.registries.RegistrarManager;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
@@ -26,6 +29,8 @@ public final class AkaishiForbiddenBlockEntities {
 
     /** 母神祭坛方块实体类型（黑山羊之母：NBT 识别供奉 + 供奉物悬浮展示） */
     public static RegistrySupplier<BlockEntityType<AkaishiMotherAltarBlockEntity>> CHISHI_MOTHER_ALTAR;
+    public static RegistrySupplier<BlockEntityType<SourceAltarBlockEntity>> SOURCE_ALTAR;
+    public static RegistrySupplier<BlockEntityType<OfferingPedestalBlockEntity>> OFFERING_PEDESTAL;
 
     private AkaishiForbiddenBlockEntities() {
     }
@@ -36,6 +41,8 @@ public final class AkaishiForbiddenBlockEntities {
                 AkaishiForbiddenBlocks.INSCRIPTION_TABLE);
         CHISHI_MOTHER_ALTAR = be("forbidden_hex_mother_altar", AkaishiMotherAltarBlockEntity::new,
                 AkaishiMotherAltarBlocks.CHISHI_MOTHER_ALTAR);
+        SOURCE_ALTAR = be("forbidden_hex_source_altar", SourceAltarBlockEntity::new, SourceAltarContent.SOURCE_ALTAR);
+        OFFERING_PEDESTAL = be("forbidden_hex_offering_pedestal", OfferingPedestalBlockEntity::new, SourceAltarContent.OFFERING_PEDESTAL);
     }
 
     @SuppressWarnings("unchecked")

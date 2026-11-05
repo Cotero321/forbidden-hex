@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "forbidden_hex:forbidden_hex_magic_stone_block"
+    }
+  ],
+  "result": {
+    "count": 9,
+    "item": "forbidden_hex:forbidden_hex_magic_stone"
+  }
+}

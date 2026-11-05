@@ -56,6 +56,7 @@ public final class AgaitolosCombatHooks {
         boss.invulnerableTime = 0;
         boolean applied = boss.doSuperHurt(source, resolved);
         if (applied) {
+            ++boss.appliedHurtSequence;
             // 「恶怨倒转」的打断阈值累计：只统计<b>真正落地</b>的伤害，故放在 super.hurt 返回 true 之后。
             // 上面三条 return 已经排除了「被格挡（直接短路）/ 被免伤（非玩家来源、复活无敌）/ 被 0.2s 冷却」
             // 三类分支，再叠加这里的 applied 闸，阈值绝不会被"没打到 BOSS 身上"的伤害推进。
@@ -145,18 +146,12 @@ public final class AgaitolosCombatHooks {
         if (boss.meleeCooldownTicks > 0) {
             return false;
         }
-        // 普攻必须整套走 skill（物理 + 凋零 + 真实伤害），不能只留原版 Mob#doHurtTarget
-        boolean hit = AgaitolosMeleeSkill.perform(boss, target);
-        if (hit) {
-            // 纯表现：命中才播挥砍，不影响上面的结算结果
-            AgaitolosAnimations.playAttack(boss);
-            // 纯表现：斩击弧与挥砍动作同刻（同样只在 hit 分支内 —— 空挥没有刃痕）
-            AgaitolosActionFx.meleeSlash(boss);
-        }
+        if (!(target instanceof LivingEntity victim)
+                || !boss.actions().start(AgaitolosActionState.Strike.SLASH, victim)) return false;
         // 无论命中与否都起算间隔：挥空也是"这一刀挥出去了"（与横扫"被格挡也算挥出去"同一取舍），
         // 否则目标走位躲开会让 BOSS 每 tick 补刀。基准 20 tick（原版同值）再按阶段折算。
         boss.meleeCooldownTicks = AgaitolosPace.scaledCooldown(boss, AgaitolosMeleeSkill.MELEE_INTERVAL_TICKS);
-        return hit;
+        return true;
     }
 
     /**
@@ -171,15 +166,8 @@ public final class AgaitolosCombatHooks {
     static void performRangedAttack(AgaitolosEntity boss, LivingEntity target, float velocity) {
         // 出场演出期间一律不起手（与 doHurtTarget 同一口径）：即便被外部直接调用，也不发射弹体、不播施法动作，
         // 避免"一边降临一边吐凋零头"
-        if (boss.isIntroPlaying() || target == null || !target.isAlive()) {
-            return;
-        }
-        AgaitolosSkullSkill.fire(boss, target);
-        // 纯表现：发射动作与弹体生成同刻触发
-        AgaitolosAnimations.playCast(boss);
-        // 纯表现：掌心聚集 + 离手弹道（一个入口含两段，理由见 AgaitolosActionFx#skullCast）。
-        // 放在 fire 之后：弹体已是既成事实，粒子只做注脚，不会出现"有特效没弹体"
-        AgaitolosActionFx.skullCast(boss, target);
+        if (boss.rangedCooldownTicks > 0
+                || !boss.actions().start(AgaitolosActionState.Strike.CAST, target)) return;
         // 发射即起算冷却：基准 60 tick（原 RangedAttackGoal 的间隔）再按阶段折算
         boss.rangedCooldownTicks = AgaitolosPace.scaledCooldown(boss, AgaitolosSkullSkill.SKULL_COOLDOWN_TICKS);
     }

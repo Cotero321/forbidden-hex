@@ -67,6 +67,7 @@ public final class SpellVisualEventHandler {
         addBounded(active, new Active(event, now));
         addBounded(impacts, new Impact(event, now));
         SpellParticleBursts.onEvent(level, event);
+        com.example.akaishi.forbidden.forge.client.visual.ClientSpellFeedback.trigger(event);
         com.example.akaishi.forbidden.forge.magic.sound.SpellSoundHandler.INSTANCE.visual(event);
     }
 
@@ -84,6 +85,7 @@ public final class SpellVisualEventHandler {
         impacts.clear();
         links.clear();
         charge.clear();
+        com.example.akaishi.forbidden.forge.client.visual.ClientSpellFeedback.clear();
         ClientVisualBudget.beginTick(level);
         world = level;
     }
@@ -133,7 +135,7 @@ public final class SpellVisualEventHandler {
         // ② 载体主体
         for (Active value : active) {
             SpellVisualEvent spell = value.event();
-            Vec3 to = anchor(world, spell);
+            Vec3 to = anchor(world, spell, event.getPartialTick());
             var carrier = spell.visual().carrier();
             boolean beam = carrier == com.example.akaishi.forbidden.magic.visual.SpellCarrierForm.BEAM
                     || carrier == com.example.akaishi.forbidden.magic.visual.SpellCarrierForm.SALVO;
@@ -141,7 +143,7 @@ public final class SpellVisualEventHandler {
             float detail = ClientVisualBudget.detailScale(world, nearest);
             if (detail <= 0f) continue;
             float age = world.getGameTime() - value.started() + event.getPartialTick();
-            float alpha = Math.max(0, 1 - age / spell.lifeTicks());
+            float alpha = spell.alphaAt(age);
             pose.pushPose();
             pose.translate(to.x - camera.x, to.y - camera.y, to.z - camera.z);
             SpellVisualPainter.paintCarrier(pose, buffers, spell.visual(), spell.from().subtract(to),
@@ -158,7 +160,7 @@ public final class SpellVisualEventHandler {
         // ③ 命中冲击 + 余韵（自有寿命，比事件活得久）
         for (Impact value : impacts) {
             SpellVisualEvent spell = value.event();
-            Vec3 to = anchor(world, spell);
+            Vec3 to = anchor(world, spell, event.getPartialTick());
             float detail = ClientVisualBudget.detailScale(world, to);
             if (detail <= 0f) continue;
             float age = world.getGameTime() - value.started() + event.getPartialTick();
@@ -197,12 +199,20 @@ public final class SpellVisualEventHandler {
         Vec3 up = axis.cross(side).normalize();
         int steps = Math.max(4, Math.round(Math.min(16, (int) Math.ceil(d.length() * 2d)) * detail));
         double spread = Math.min(0.45d, d.length() * 0.09d);
-        var random = new java.util.Random(31L * link.fromId() + link.toId() * 17L + (int) age);
+        float cycle = age * 0.35f;
+        long frame = (long) Math.floor(cycle);
+        long seed = 31L * link.fromId() + link.toId() * 17L;
+        var previous = new java.util.Random(seed + frame);
+        var following = new java.util.Random(seed + frame + 1L);
+        float blend = com.example.akaishi.forbidden.magic.visual.SpellCircleAnimation.smooth(cycle - frame);
         Vec3 last = a;
         for (int i = 1; i <= steps; i++) {
+            double x = previous.nextDouble() * (1f - blend) + following.nextDouble() * blend - 0.5d;
+            double y = previous.nextDouble() * (1f - blend) + following.nextDouble() * blend - 0.5d;
+            double envelope = Math.sin(Math.PI * i / steps);
             Vec3 next = i == steps ? b : a.add(d.scale((double) i / steps))
-                    .add(side.scale((random.nextDouble() - 0.5d) * spread))
-                    .add(up.scale((random.nextDouble() - 0.5d) * spread));
+                    .add(side.scale(x * spread * envelope))
+                    .add(up.scale(y * spread * envelope));
             paintBoltSegment(pose, buffers, camera, last, next, link, alpha);
             last = next;
         }
@@ -240,11 +250,11 @@ public final class SpellVisualEventHandler {
      * 表现锚点：附着类（X4）挂在目标身上，其余落在真实命中点 ——
      * 与粒子层的锚点保持<b>同一口径</b>，避免"图形贴在目标身上、粒子却掉在地上"。
      */
-    private static Vec3 anchor(ClientLevel level, SpellVisualEvent event) {
+    private static Vec3 anchor(ClientLevel level, SpellVisualEvent event, float partialTick) {
         if (MagicIds.Delivery.ATTACH.equals(event.visual().deliveryId()) && event.targetId() > 0) {
             var target = level.getEntity(event.targetId());
             if (target != null) {
-                return target.position().add(0, target.getBbHeight() * 0.5, 0);
+                return target.getPosition(partialTick).add(0, target.getBbHeight() * 0.5, 0);
             }
         }
         return event.to();

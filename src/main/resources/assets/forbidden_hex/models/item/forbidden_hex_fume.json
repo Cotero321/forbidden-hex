@@ -1,4 +1,152 @@
 {
   "parent": "minecraft:item/generated",
-  "textures": { "layer0": "forbidden_hex:item/forbidden_hex_fume", "layer1": "forbidden_hex:item/forbidden_hex_fume_glass" }
+  "textures": {
+    "layer0": "minecraft:item/glass_bottle",
+    "layer1": "forbidden_hex:item/forbidden_hex_fume",
+    "layer2": "forbidden_hex:item/fume_marks/default"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.03125
+      },
+      "model": "forbidden_hex:item/fumes/earth_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.0625
+      },
+      "model": "forbidden_hex:item/fumes/winter_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.09375
+      },
+      "model": "forbidden_hex:item/fumes/dawn_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.125
+      },
+      "model": "forbidden_hex:item/fumes/vitality_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.15625
+      },
+      "model": "forbidden_hex:item/fumes/sun_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.1875
+      },
+      "model": "forbidden_hex:item/fumes/gloom_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.21875
+      },
+      "model": "forbidden_hex:item/fumes/swamp_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.25
+      },
+      "model": "forbidden_hex:item/fumes/dream_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.28125
+      },
+      "model": "forbidden_hex:item/fumes/white_thorn_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.3125
+      },
+      "model": "forbidden_hex:item/fumes/red_vein_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.34375
+      },
+      "model": "forbidden_hex:item/fumes/bloodwood_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.375
+      },
+      "model": "forbidden_hex:item/fumes/underpass_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.40625
+      },
+      "model": "forbidden_hex:item/fumes/water_mirror_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.4375
+      },
+      "model": "forbidden_hex:item/fumes/shriek_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.46875
+      },
+      "model": "forbidden_hex:item/fumes/madness_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.5
+      },
+      "model": "forbidden_hex:item/fumes/charm_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.53125
+      },
+      "model": "forbidden_hex:item/fumes/hallucination_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.5625
+      },
+      "model": "forbidden_hex:item/fumes/frost_poison_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.59375
+      },
+      "model": "forbidden_hex:item/fumes/heartbeat_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.625
+      },
+      "model": "forbidden_hex:item/fumes/curse_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.65625
+      },
+      "model": "forbidden_hex:item/fumes/heat_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.6875
+      },
+      "model": "forbidden_hex:item/fumes/bright_breath"
+    },
+    {
+      "predicate": {
+        "forbidden_hex:fume_kind": 0.71875
+      },
+      "model": "forbidden_hex:item/fumes/evil_breath"
+    },
+    {
+      "predicate": { "forbidden_hex:refined_fume": 1.0 },
+      "model": "forbidden_hex:item/forbidden_hex_refined_fume"
+    }
+  ]
 }

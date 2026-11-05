@@ -1,7 +1,7 @@
 package com.example.akaishi.forbidden.boss.agaitolos.skill;
 
 import com.example.akaishi.forbidden.boss.agaitolos.AgaitolosEntity;
-import com.example.akaishi.forbidden.boss.agaitolos.entity.AgaitolosWitherSkull;
+import com.example.akaishi.forbidden.boss.agaitolos.entity.AgaitolosHexOrb;
 import com.example.akaishi.forbidden.entity.AkaishiForbiddenEntities;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
@@ -10,7 +10,7 @@ import net.minecraft.world.phys.Vec3;
  * 一阶段远程攻击：召唤凋零头颅（设计文档 §0「远程攻击」/§1 第 20 条）。
  * <p>
  * 本类只负责「怎么发射」；命中结算（5 爆炸 + 凋零 III 2s + 2 真实伤害）在弹体
- * {@link AgaitolosWitherSkull} 内完成。伤害常量因此放在弹体类、发射参数放在本类，
+ * {@link AgaitolosHexOrb} 内完成。伤害常量因此放在弹体类、发射参数放在本类，
  * 两个类单向引用（本类 → 弹体），不互相引用。
  */
 public final class AgaitolosSkullSkill {
@@ -56,7 +56,7 @@ public final class AgaitolosSkullSkill {
      *   <li>{@code yawOffsetDegrees} —— 绕 Y 轴的扇面偏角（度）：0 = 原样瞄准（远程攻击）；
      *       -14 / 0 / +14 = 三重投掷的三发扇面；</li>
      *   <li>{@code armorKeptRatio} —— 破防比例：1.0 = 不破防（远程攻击 / 饱和轰炸，行为逐位不变）；
-     *       0.7 = 无视 30% 防御（三重投掷），落点在 {@code AgaitolosWitherSkull#onHitEntity}。</li>
+     *       0.7 = 无视 30% 防御（三重投掷），落点在 {@code AgaitolosHexOrb#onHitEntity}。</li>
      * </ul>
      *
      * @return 生成的弹体 —— <b>只</b>供调用方做一个纯表现标记（当前唯一消费点是
@@ -65,12 +65,12 @@ public final class AgaitolosSkullSkill {
      *         （本类的 {@link #fire} 与 {@code AgaitolosTripleThrowSkill#fireBeat}）忽略返回值，
      *         发射行为与改动前逐位相同。
      */
-    public static AgaitolosWitherSkull fireSpread(AgaitolosEntity boss, LivingEntity target,
+    public static AgaitolosHexOrb fireSpread(AgaitolosEntity boss, LivingEntity target,
                                                   float yawOffsetDegrees, float armorKeptRatio) {
         if (boss.level().isClientSide()) {
             return null;
         }
-        AgaitolosWitherSkull skull = new AgaitolosWitherSkull(AkaishiForbiddenEntities.AGAITOLOS_WITHER_SKULL.get(), boss.level());
+        AgaitolosHexOrb skull = new AgaitolosHexOrb(AkaishiForbiddenEntities.AGAITOLOS_HEX_ORB.get(), boss.level());
         // owner = BOSS：既是击杀归属，也是「是否被反弹」的判据来源（被反弹后 owner 会变成玩家）
         skull.setOwner(boss);
         // 不可破坏地形：dangerous=false 降低飞行惯性、取消对火方块的额外破坏。
@@ -80,7 +80,7 @@ public final class AgaitolosSkullSkill {
         if (armorKeptRatio < 1.0F) {
             skull.setArmorKeptRatio(armorKeptRatio);
         }
-        Vec3 origin = new Vec3(boss.getX(), boss.getEyeY(), boss.getZ());
+        Vec3 origin = com.example.akaishi.forbidden.boss.agaitolos.AgaitolosCastAnchors.origin(boss);
         // 瞄准目标身体中部而非脚底，避免目标贴地时弹体一路撞地板
         Vec3 aim = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D).subtract(origin);
         aim = rotateY(aim, yawOffsetDegrees);

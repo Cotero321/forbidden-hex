@@ -42,6 +42,7 @@ public final class SpellSoundCatalog {
             String singular = switch (group) { case "effects" -> "effect"; case "inks" -> "ink"; default -> "carrier"; };
             for (String id : ids(group)) events.add("spell." + singular + "." + id);
         }
+        for (String ink : ids("inks")) events.add("spell.ink." + ink + ".charge");
         for (String id : List.of("end", "interrupt", "shatter", "pulse")) events.add("spell." + id);
         return java.util.Collections.unmodifiableSet(events);
     }

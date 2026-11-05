@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "#forbidden_hex:magic_resistible",
+    "forbidden_hex:spell_psychic"
+  ]
+}

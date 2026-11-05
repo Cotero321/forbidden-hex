@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "forbidden_hex:forbidden_hex_deepslate_cinnabar_ore",
+    "forbidden_hex:forbidden_hex_deepslate_sulfur_ore",
+    "forbidden_hex:forbidden_hex_deepslate_silver_ore",
+    "forbidden_hex:forbidden_hex_deepslate_magic_stone_ore"
+  ]
+}

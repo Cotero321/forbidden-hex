@@ -1,7 +1,7 @@
 package com.example.akaishi.forbidden.magic.exec;
 
 import com.example.akaishi.forbidden.api.magic.exec.MagicContext;
-import com.example.akaishi.forbidden.magic.MagicDamageTypes;
+import com.example.akaishi.forbidden.magic.SpellDamage;
 import com.example.akaishi.forbidden.magic.table.MagicEffectDef;
 import com.example.akaishi.forbidden.magic.table.MagicEffectTable;
 import com.example.akaishi.forbidden.magic.table.MagicIds;
@@ -163,16 +163,7 @@ public final class ExecSupport {
         if (isFieldOrLinkCore(context)) {
             amount += primaryDamageBonus();
         }
-        boolean piercing = context.snapshot().operation() != null
-                ? context.snapshot().operation().traits().contains("piercing")
-                        || context.snapshot().operation().traits().contains("san_mental_piercing")
-                : hasWord(context, MagicWord.JIAN) || hasWord(context, MagicWord.ZHEN)
-                        || "san".equals(context.sourceId());
-        boolean mental = "san".equals(context.sourceId());
-        var source = mental ? MagicDamageTypes.psychic(context.level(), context.caster())
-                : piercing ? context.level().damageSources().indirectMagic(context.caster(), context.caster())
-                : MagicDamageTypes.source(context.level(), context.caster());
-        boolean hit = living.hurt(source, amount);
+        boolean hit = SpellDamage.hurt(context, living, amount);
         boolean followup = context.snapshot().plan() != null
                 ? context.snapshot().operation() != null
                         && context.snapshot().operation().traits().contains("followup_hit")
@@ -180,8 +171,11 @@ public final class ExecSupport {
         if (hit && followup) {
             int invulnerable = living.invulnerableTime;
             living.invulnerableTime = 0;
-            living.hurt(source, amount);
-            living.invulnerableTime = invulnerable;
+            try {
+                SpellDamage.hurt(context, living, amount);
+            } finally {
+                living.invulnerableTime = invulnerable;
+            }
         }
         return hit;
     }

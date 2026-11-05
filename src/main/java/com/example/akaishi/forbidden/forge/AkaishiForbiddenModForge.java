@@ -1,12 +1,16 @@
 package com.example.akaishi.forbidden.forge;
 
 import com.example.akaishi.forbidden.boss.agaitolos.AgaitolosEntity;
+import com.example.akaishi.forbidden.boss.chimera.ChimeraEntity;
+import com.example.akaishi.forbidden.boss.chimera.ChimeraHeadHitbox;
 import com.example.akaishi.forbidden.command.AkaishiSanityCommand;
 import com.example.akaishi.forbidden.entity.AkaishiForbiddenEntities;
 import com.example.akaishi.forbidden.AkaishiForbiddenMod;
 import com.example.akaishi.forbidden.forge.AkaishiAltarDrainHandler;
 import com.example.akaishi.forbidden.forge.boss.agaitolos.AgaitolosArenaEvents;
 import com.example.akaishi.forbidden.forge.boss.agaitolos.AgaitolosDoomHandler;
+import com.example.akaishi.forbidden.forge.ore.ForbiddenOreDataProvider;
+import com.example.akaishi.forbidden.forge.data.ForbiddenItemTagsProvider;
 import com.example.akaishi.config.ModConfig;
 import dev.architectury.platform.forge.EventBuses;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -22,6 +26,7 @@ import com.example.akaishi.forbidden.forge.sanity.AkaishiSanitySleepHandler;
 import com.example.akaishi.forbidden.forge.sanity.AkaishiSanityUnnameableHandler;
 import com.example.akaishi.forbidden.forge.sound.AkaishiAltarSoundMuter;
 import com.example.akaishi.forbidden.sanity.shadow.ShadowEntity;
+import com.example.akaishi.forbidden.familiar.entity.FamiliarEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
@@ -60,6 +65,21 @@ public final class AkaishiForbiddenModForge {
         modBus.addListener((net.minecraftforge.data.event.GatherDataEvent event) ->
                 event.getGenerator().addProvider(event.includeServer() || event.includeClient(),
                         new com.example.akaishi.forbidden.forge.brewing.BrewingDataProvider(event.getGenerator().getPackOutput())));
+        modBus.addListener((net.minecraftforge.data.event.GatherDataEvent event) ->
+                event.getGenerator().addProvider(event.includeServer() || event.includeClient(),
+                        new ForbiddenOreDataProvider(event.getGenerator().getPackOutput())));
+        modBus.addListener((net.minecraftforge.data.event.GatherDataEvent event) ->
+                event.getGenerator().addProvider(event.includeServer() || event.includeClient(),
+                        new com.example.akaishi.forbidden.forge.alchemy.AlchemyDataProvider(event.getGenerator().getPackOutput())));
+        modBus.addListener((net.minecraftforge.data.event.GatherDataEvent event) ->
+                event.getGenerator().addProvider(event.includeServer() || event.includeClient(),
+                        new com.example.akaishi.forbidden.forge.altar.SourceAltarDataProvider(event.getGenerator().getPackOutput())));
+        modBus.addListener((net.minecraftforge.data.event.GatherDataEvent event) ->
+                event.getGenerator().addProvider(event.includeServer(), new ForbiddenItemTagsProvider(
+                        event.getGenerator().getPackOutput(), event.getLookupProvider(), event.getExistingFileHelper())));
+        modBus.addListener((net.minecraftforge.data.event.GatherDataEvent event) ->
+                event.getGenerator().addProvider(event.includeServer(),
+                        new com.example.akaishi.forbidden.forge.magic.SpellDamageDataProvider(event.getGenerator().getPackOutput())));
         com.example.akaishi.forbidden.brewing.BrewingEntities.register(
                 com.example.akaishi.forbidden.forge.brewing.ForgeBrewingPotionProjectile::new,
                 com.example.akaishi.forbidden.forge.brewing.ForgeBrewingEffectCloud::new);
@@ -68,18 +88,28 @@ public final class AkaishiForbiddenModForge {
                         () -> com.example.akaishi.forbidden.brewing.client.BrewingClientSetup::register)));
         AkaishiForbiddenMod.init();
 
-        // 理智回复药水的酿造配方：addMix 是 Forge 补进原版 PotionBrewing 的 API（common 不可见），
-        // 且必须等药水注册完成，故放在 common setup（enqueueWork 内执行）
         FMLJavaModLoadingContext.get().getModEventBus().addListener(
                 (FMLCommonSetupEvent event) -> event.enqueueWork(AkaishiSanityPotionBrewing::register));
-        // 影怪属性供应商：非 Mob 的 LivingEntity 同样必须在此登记，否则实体构造时读不到 MAX_HEALTH 即崩
         FMLJavaModLoadingContext.get().getModEventBus().addListener(
                 (EntityAttributeCreationEvent event) ->
                         event.put(AkaishiForbiddenEntities.SHADOW.get(), ShadowEntity.createAttributes().build()));
-        // 阿盖托洛丝 BOSS 属性：自定义生物必须在此注册属性供应商，否则实体生成即崩（P3c 自本体迁入）
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(
+                (EntityAttributeCreationEvent event) ->
+                        event.put(AkaishiForbiddenEntities.FAMILIAR.get(), FamiliarEntity.createAttributes().build()));
         FMLJavaModLoadingContext.get().getModEventBus().addListener(
                 (EntityAttributeCreationEvent event) ->
                         event.put(AkaishiForbiddenEntities.AGAITOLOS.get(), AgaitolosEntity.createAttributes().build()));
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(
+                (EntityAttributeCreationEvent event) ->
+                        event.put(AkaishiForbiddenEntities.CHIMERA.get(), ChimeraEntity.createAttributes().build()));
+
+        modBus.addListener(com.example.akaishi.forbidden.forge.magic.SpellDamageEvents::attributes);
+        MinecraftForge.EVENT_BUS.register(com.example.akaishi.forbidden.forge.magic.SpellDamageEvents.INSTANCE);
+        MinecraftForge.EVENT_BUS.addListener(net.minecraftforge.eventbus.api.EventPriority.NORMAL, true,
+                (net.minecraftforge.event.entity.living.ShieldBlockEvent event) ->
+                com.example.akaishi.forbidden.boss.chimera.ChimeraSkillDirector.observeShieldBlock(
+                        event.getEntity(), event.getDamageSource(),
+                        () -> !event.isCanceled() && event.getBlockedDamage() >= event.getOriginalBlockedDamage()));
 
         // 理智系统·精神伤害减免：只处理 forbidden_hex:psychic 伤害（减伤口径在 common 的 SanityDamageGuard 内）
         MinecraftForge.EVENT_BUS.register(AkaishiSanityDamageHandler.INSTANCE);
@@ -126,8 +156,6 @@ public final class AkaishiForbiddenModForge {
             }
         });
 
-        // 客户端专属注册（渲染器 / HUD 元素 / 雾效 / 后处理）：在 FMLClientSetupEvent 中求值 ——
-        // 该事件晚于各注册表填充，AkaishiForbiddenEntities.*.get() 才能取到值；服务端不加载客户端类型
         FMLJavaModLoadingContext.get().getModEventBus().addListener(
                 (FMLClientSetupEvent event) -> event.enqueueWork(() ->
                         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> AkaishiForbiddenClientSetup::register)));
@@ -144,7 +172,6 @@ public final class AkaishiForbiddenModForge {
                     (RegisterKeyMappingsEvent event) -> AkaishiForbiddenClientSetup.registerKeyMapping(event));
             FMLJavaModLoadingContext.get().getModEventBus().addListener(
                     (RegisterGuiOverlaysEvent event) -> AkaishiForbiddenClientSetup.registerOverlays(event));
-            // 法杖部件模型：同样必须在构造阶段挂监听（ModelEvent 在资源加载时派发，晚挂即漏）
             FMLJavaModLoadingContext.get().getModEventBus().addListener(
                     (ModelEvent.RegisterAdditional event) -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
                             () -> () -> AkaishiForbiddenClientSetup.registerWandPartModels(event)));

@@ -16,7 +16,7 @@ public record WitchOvenRecipe(ResourceLocation id, BrewingIngredient input, Item
                               ItemStack fume, int cookingTicks, double fumeChance) implements Recipe<Container> {
     public WitchOvenRecipe {
         if (id == null || input == null || result == null || result.isEmpty() || result.getCount() > result.getMaxStackSize()
-                || fume == null || fume.isEmpty() || fume.getCount() > fume.getMaxStackSize() || cookingTicks < 1 || cookingTicks > 72000
+                || fume == null || fume.isEmpty() && fumeChance != 0 || fume.getCount() > fume.getMaxStackSize() || cookingTicks < 1 || cookingTicks > 72000
                 || !Double.isFinite(fumeChance) || fumeChance < 0 || fumeChance > 1) {
             throw new IllegalArgumentException("Invalid witch oven recipe");
         }
@@ -64,7 +64,7 @@ public record WitchOvenRecipe(ResourceLocation id, BrewingIngredient input, Item
         @Override public WitchOvenRecipe fromJson(ResourceLocation id, JsonObject json) {
             return new WitchOvenRecipe(id, BrewingIngredient.fromJson(json),
                     BrewingRecipeIO.stack(GsonHelper.getAsJsonObject(json, "result")),
-                    BrewingRecipeIO.stack(GsonHelper.getAsJsonObject(json, "fume")),
+                    json.has("fume") ? BrewingRecipeIO.stack(GsonHelper.getAsJsonObject(json, "fume")) : ItemStack.EMPTY,
                     GsonHelper.getAsInt(json, "cooking_time"), GsonHelper.getAsDouble(json, "fume_chance", 0.3));
         }
         @Override public WitchOvenRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {

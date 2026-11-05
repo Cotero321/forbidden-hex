@@ -77,6 +77,7 @@ public final class AgaitolosDiveMachine {
         // 死亡/复活/出场演出期间中断冲锋：不结算横扫（演出期间不该出手），也不让计时残留到下一条命
         if (boss.isDeadOrDying() || boss.isRespawning() || boss.isIntroPlaying()) {
             boss.diveTicks = 0;
+            boss.cancelVisualAction(AgaitolosAnimations.DIVE_SWEEP);
             return;
         }
         if (isDiving(boss)) {
@@ -145,14 +146,7 @@ public final class AgaitolosDiveMachine {
     /** 冲锋收尾：清零计时并结算一次横扫；有人落入范围才进冷却（口径沿用上一轮：被格挡也算"这一刀挥出去了"） */
     private static void finishDive(AgaitolosEntity boss) {
         boss.diveTicks = 0;
-        boolean swept = AgaitolosDiveSweepSkill.perform(boss);
-        // 纯表现：挥刀这一帧先落特效，再判冷却 —— 结算结果只决定"空挥还是命中"（特效强度），
-        // 不影响冷却口径（仍是 swept 决定），故顺序只关乎观感：让刀光与伤害同帧出现
-        AgaitolosActionFx.diveSweepImpact(boss, swept);
-        if (swept) {
-            // 冷却按阶段折算（二阶段起更短）：倍率表见 AgaitolosPace，阶段一恒为原值
-            boss.diveSweepCooldownTicks = AgaitolosPace.scaledCooldown(boss, AgaitolosDiveSweepSkill.SWEEP_COOLDOWN_TICKS);
-        }
+        boss.actions().beginDiveSweep();
     }
 
     /** 冲锋瞄准点：目标<b>身体中部</b>（脚 + 半身高）——瞄脚会让 BOSS 一路贴地，瞄眼睛又会悬太高 */

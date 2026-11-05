@@ -149,8 +149,32 @@ def resonance_loop(spec, stage, rate, rng):
     return result
 
 
+def charge_loop(spec, rate, rng):
+    """连续音色，不烘焙蓄力节奏；源包络由客户端按真实进度驱动。"""
+    duration = 4.0
+    count = int(duration * rate)
+    overlap = int(rate * 0.15)
+    air = noise(rng, count + overlap, 1250, rate)
+    for i in range(overlap):
+        mix = math.sin(math.pi * 0.5 * i / overlap) ** 2
+        air[i] = air[count + i] * (1.0 - mix) + air[i] * mix
+    partials = [(round(spec["frequency"] * ratio * duration) / duration, weight, index * 1.7, 1 + index % 2)
+                for index, (ratio, weight) in enumerate(zip(spec["ratios"], spec["weights"], strict=True))]
+    drive = spec.get("drive", 1.0)
+    result = array("f")
+    for i in range(count):
+        t = i / rate
+        drift = TAU * t / duration
+        body = sum(math.sin(TAU * frequency * t + spec["fm"] * math.sin(drift * cycles + phase)) * weight
+                   for frequency, weight, phase, cycles in partials)
+        result.append(math.tanh(body * drive) / drive + air[i] * spec["air"])
+    return result
+
+
 def source_sound(spec, stage, rate, rng):
-    if stage in ("charge", "sustain"):
+    if stage == "charge":
+        return charge_loop(spec["charge"], rate, rng)
+    if stage == "sustain":
         return resonance_loop(spec, stage, rate, rng)
     duration = 0.9
     count = int(duration * rate)
@@ -196,9 +220,78 @@ def stable_seed(base, key):
     return base ^ int.from_bytes(hashlib.sha256(key.encode()).digest()[:8], "little")
 
 
+def charge_gain(source, progress, ink_layer):
+    """与 SpellLoopSound.chargeGain 保持一致，试听仅额外放大四倍。"""
+    p = max(0.0, min(1.0, progress))
+    phase = TAU * (1.5 * p + 1.5 * p * p)
+    if source == "life":
+        shape = 0.76 + 0.24 * (0.5 + 0.5 * math.cos(phase)) ** 2
+    elif source == "dark":
+        shape = 0.70 + 0.30 * p * p
+    elif source == "white":
+        shape = 0.94 + 0.06 * math.cos(phase)
+    else:
+        shape = 0.84 + 0.10 * math.cos(phase) + 0.06 * (1.0 - p) * math.cos(phase * 1.5 + math.pi / 2.0)
+    focus = p * p * (3.0 - 2.0 * p)
+    return (0.09 + 0.15 * focus) * shape * (0.64 + 0.16 * focus if ink_layer else 0.72)
+
+
+def charge_previews(config, generated, rate):
+    folder = ROOT / "build/audio-preview/source-ink-charge"
+    folder.mkdir(parents=True, exist_ok=True)
+    sources = {"san": "灰 · 回旋锁定", "life": "绿 · 呼吸聚拢", "dark": "黑 · 内吸压缩", "white": "白 · 稳定合拢"}
+    inks = {"chi": "炽 · 温热饱和", "yuan": "渊 · 空洞低鸣", "man": "蔓 · 有机谐波", "rang": "壤 · 厚重共振",
+            "shi": "蚀 · 缓慢失谐", "xu": "序 · 纯净谐波", "hun": "混 · 受限扰动", "xing": "星 · 疏亮泛音",
+            "yao": "耀 · 明亮共鸣", "an": "黯 · 暗哑次谐波", "ju": "飓 · 流动气息"}
+    for source in config["sources"]:
+        base = generated[f"spell/source/{source}/charge"]
+        for ink in config["inks"]:
+            if ink == "xing" and source != "san":
+                continue
+            color = generated[f"spell/ink/{ink}/charge"]
+            values = array("h")
+            for i in range(round(rate * 3.3)):
+                tick = i * 20 // rate
+                p = min(1.0, tick / 60.0)
+                gain = min(1.0, (tick + 1) / 6.0) if tick < 60 else max(0.0, (65 - tick) / 6.0) ** 2
+                body = base[i % len(base)] * charge_gain(source, p, False)
+                body += color[i % len(color)] * charge_gain(source, p, True)
+                values.append(round(max(-32767, min(32767, body * gain * 4.0))))
+            with wave.open(str(folder / f"{source}_{ink}.wav"), "wb") as output:
+                output.setnchannels(1)
+                output.setsampwidth(2)
+                output.setframerate(rate)
+                output.writeframes(values.tobytes())
+    source_options = "".join(f'<option value="{key}">{label}</option>' for key, label in sources.items())
+    ink_options = "".join(f'<option value="{key}">{label}</option>' for key, label in inks.items())
+    page = """<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>源为形 · 墨为色 — 蓄力试听</title>
+<style>
+:root{color-scheme:dark;font:16px/1.7 system-ui,sans-serif}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#10151d;color:#e5e9ef}
+main{width:min(640px,88vw);padding:32px;border:1px solid #384453;border-radius:20px;background:#19212d;box-shadow:0 20px 70px #0005}
+h1{font-size:26px;margin:0 0 8px}p{color:#aebbc9}section{display:flex;gap:20px;flex-wrap:wrap;margin:24px 0}
+label{flex:1;min-width:220px}select{display:block;width:100%;margin-top:8px;padding:12px;background:#111923;color:inherit;border:1px solid #53657b;border-radius:8px;font:inherit}
+audio{width:100%;margin:12px 0}small{color:#aebbc9}
+</style><main><h1>源为形 · 墨为色</h1><p>源控制收束节奏，墨提供音色。只试听蓄力，不含释放。</p>
+<section><label>源<select id="source">SOURCE_OPTIONS</select></label><label>墨<select id="ink">INK_OPTIONS</select></label></section>
+<audio id="audio" controls preload="metadata"></audio><p id="selection" aria-live="polite"></p>
+<small>3 秒蓄力 + 0.3 秒淡出；按游戏的 20 tick/秒包络渲染。试听放大四倍，不等同于游戏最终响度或空间衰减。星墨仅可选灰源。</small>
+</main><script>
+const source=document.querySelector('#source'),ink=document.querySelector('#ink'),audio=document.querySelector('#audio');
+function update(){for(const option of ink.options)option.disabled=option.value==='xing'&&source.value!=='san';
+if(ink.selectedOptions[0].disabled)ink.value='chi';audio.pause();audio.src=`${source.value}_${ink.value}.wav`;
+document.querySelector('#selection').textContent=`${source.selectedOptions[0].textContent} × ${ink.selectedOptions[0].textContent}`;}
+source.addEventListener('change',update);ink.addEventListener('change',update);update();
+</script></html>"""
+    (folder / "index.html").write_text(page.replace("SOURCE_OPTIONS", source_options).replace("INK_OPTIONS", ink_options), encoding="utf-8")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--verify", action="store_true", help="Check catalog, resources, codec and decoded peaks")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--verify", action="store_true", help="Check catalog, resources, codec and decoded peaks")
+    mode.add_argument("--charge-only", action="store_true", help="Regenerate only source and ink charge loops")
     args = parser.parse_args()
     encoder = shutil.which("ffmpeg")
     if encoder is None:
@@ -216,6 +309,8 @@ def main():
         singular = {"effects": "effect", "inks": "ink", "carriers": "carrier"}[group]
         for name, spec in config[group].items():
             jobs[f"spell.{singular}.{name}"] = ("transient", spec, None)
+    for name, spec in config["inks"].items():
+        jobs[f"spell.ink.{name}.charge"] = ("ink_charge", spec, "charge")
     for name, spec in {
         "end": {"kind": "chime", "frequency": 370, "duration": 0.50},
         "interrupt": {"kind": "cut", "frequency": 155, "duration": 0.42},
@@ -227,12 +322,14 @@ def main():
     reports = {}
     generated = {}
     for event, (mode, spec, stage) in jobs.items():
-        variants = 1 if mode == "source" else 2
+        variants = 1 if mode in ("source", "ink_charge") else 2
         paths = []
         for variant in range(variants):
             key = event.replace(".", "/") + (f"_{variant + 1}" if variants > 1 else "")
             target = ASSETS / "sounds" / f"{key}.ogg"
             paths.append({"name": f"forbidden_hex:{key}", "attenuation_distance": 24})
+            if args.charge_only and stage != "charge":
+                continue
             if args.verify:
                 if not target.is_file():
                     raise ValueError(f"Missing audio: {target}")
@@ -254,9 +351,22 @@ def main():
                 if peak >= 0.99 or peak < 0.01:
                     raise ValueError(f"Unsafe/silent decoded peak {peak}: {target}")
                 reports[key] = {"seconds": round(len(values) / rate, 3), "peak": round(peak, 5)}
+                if stage == "charge":
+                    if len(values) != rate * 4:
+                        raise ValueError(f"Charge loop is not four seconds: {target}")
+                    step = math.sqrt(sum((values[i] - values[i - 1]) ** 2 for i in range(1, len(values))) / (len(values) - 1))
+                    jump = abs(values[0] - values[-1])
+                    if jump > max(0.012, step * 5.0):
+                        raise ValueError(f"Charge loop has a discontinuous boundary: {target}: {jump} vs {step}")
+                    reports[key]["boundary_step_ratio"] = round(jump / max(step, 0.000001), 3)
                 continue
             rng = random.Random(stable_seed(seed, key))
-            samples = source_sound(spec, stage, rate, rng) if mode == "source" else transient(spec, variant, rate, rng)
+            if mode == "source":
+                samples = source_sound(spec, stage, rate, rng)
+            elif mode == "ink_charge":
+                samples = charge_loop(spec["charge"], rate, rng)
+            else:
+                samples = transient(spec, variant, rate, rng)
             encoded = pcm(samples)
             encode(encoded, target, rate, encoder)
             generated[key] = encoded
@@ -275,7 +385,8 @@ def main():
         sound_json.write_text(json.dumps(existing, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         previews = ROOT / "build/audio-preview"
         previews.mkdir(parents=True, exist_ok=True)
-        for source_id in config["sources"]:
+        charge_previews(config, generated, rate)
+        for source_id in (() if args.charge_only else config["sources"]):
             snippets = [generated[f"spell/source/{source_id}/charge"]]
             for effect, ink in (("damage", "chi"), ("ward", "yao"), ("mind", "yuan"), ("gather", "ju")):
                 snippets.append(array("h", [0] * int(rate * 0.35)))

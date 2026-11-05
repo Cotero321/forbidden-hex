@@ -1,0 +1,13 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "forge:obj",
+  "model": "forbidden_hex:models/block/forbidden_hex_source_altar_imported_formed_1.obj",
+  "automatic_culling": false,
+  "flip_v": false,
+  "emissive_ambient": false,
+  "render_type": "minecraft:cutout",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "forbidden_hex:block/forbidden_hex_source_altar_imported_bottom"
+  }
+}

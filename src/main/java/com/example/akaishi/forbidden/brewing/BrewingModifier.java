@@ -70,7 +70,17 @@ public record BrewingModifier(BrewingIngredient ingredient, Kind kind, int value
             case HIDE_PARTICLES -> hide = true;
             case PRESSURE_PLATES -> pressure = true;
         }
-        return new BrewingPotionData(capacity, strength, duration, delivery, hide, pressure, effects, base.effectCosts());
+        return new BrewingPotionData(capacity, strength, duration, delivery, hide, pressure, effects,
+                base.effectCosts(), base.customEffects(), base.rulesVersion());
+    }
+
+    public BrewingPotionData applyMaximum(BrewingPotionData base) {
+        if (kind == Kind.STRENGTH && value <= base.strength()
+                || kind == Kind.DURATION && value <= Math.max(1, base.duration())) return base;
+        if (kind == Kind.DELIVERY && base.delivery() != BrewingPotionData.Delivery.DRINK) {
+            throw new IllegalArgumentException("Only one delivery material is allowed");
+        }
+        return apply(base);
     }
 
     public static BrewingModifier fromJson(JsonObject json) {

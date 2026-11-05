@@ -1,0 +1,30 @@
+{
+  "type": "forbidden_hex:forbidden_hex_alchemy",
+  "bottles": 0,
+  "equivalents": 9,
+  "ingredient": {
+    "item": "forbidden_hex:forbidden_hex_raw_silver_block"
+  },
+  "mode": 0,
+  "outputs": [
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_crude_silver_dust",
+      "max": 1,
+      "min": 1
+    },
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_stone_fragment",
+      "max": 1,
+      "min": 1
+    },
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_tiny_silver_dust",
+      "max": 1,
+      "min": 1
+    }
+  ],
+  "process": "crushing"
+}

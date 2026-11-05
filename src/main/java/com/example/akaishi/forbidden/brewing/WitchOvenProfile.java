@@ -11,5 +11,5 @@ public record WitchOvenProfile(int queues, double fumeBonus, double fumeChanceCa
         }
     }
 
-    public double chance(WitchOvenRecipe recipe) { return Math.min(fumeChanceCap, recipe.fumeChance() + fumeBonus); }
+    public double chance(WitchOvenRecipe recipe) { return recipe.fume().isEmpty() ? 0 : Math.min(fumeChanceCap, recipe.fumeChance() + fumeBonus); }
 }

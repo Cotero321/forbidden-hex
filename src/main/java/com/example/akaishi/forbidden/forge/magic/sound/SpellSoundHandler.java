@@ -39,7 +39,7 @@ public final class SpellSoundHandler {
     public static final SpellSoundHandler INSTANCE = new SpellSoundHandler();
     private record Voice(SoundInstance sound, long expires) { }
     private record RetiringLoop(SpellLoopSound sound, long expires) { }
-    private final Map<UUID, SpellLoopSound> loops = new LinkedHashMap<>();
+    private final Map<UUID, List<SpellLoopSound>> loops = new LinkedHashMap<>();
     private final List<RetiringLoop> retiring = new ArrayList<>();
     private final List<Voice> voices = new ArrayList<>();
     private final Map<String, Long> recent = new HashMap<>();
@@ -59,7 +59,9 @@ public final class SpellSoundHandler {
 
     public void clear() {
         var manager = Minecraft.getInstance().getSoundManager();
-        for (SpellLoopSound loop : loops.values()) { loop.halt(); manager.stop(loop); }
+        for (var layers : loops.values()) {
+            for (SpellLoopSound loop : layers) { loop.halt(); manager.stop(loop); }
+        }
         for (RetiringLoop tail : retiring) { tail.sound().halt(); manager.stop(tail.sound()); }
         for (Voice voice : voices) manager.stop(voice.sound());
         loops.clear(); retiring.clear(); voices.clear(); recent.clear(); knownEntities.clear();
@@ -73,19 +75,22 @@ public final class SpellSoundHandler {
         switch (event.phase()) {
             case CHARGE, CHANNEL, VOLLEY -> {
                 if (!enabled() || !near(event.position())) return;
-                SpellLoopSound loop = loops.get(event.instance());
+                List<SpellLoopSound> layers = loops.get(event.instance());
                 boolean charge = event.phase() == SpellSoundEvent.Phase.CHARGE;
-                if (loop != null && (loop.isStopped() || loop.charging() != charge)) {
+                if (layers != null && layers.stream().anyMatch(loop -> loop.isStopped() || loop.charging() != charge)) {
                     stopLoop(event.instance());
-                    loop = null;
+                    layers = null;
                 }
-                if (loop == null && loops.size() < maxLoops()
-                        && totalVoices() < ForbiddenVisualConfig.SPELL_SOUND_VOICES.get()) {
-                    loop = new SpellLoopSound(level, visual, null, event);
-                    loops.put(event.instance(), loop);
-                    Minecraft.getInstance().getSoundManager().play(loop);
+                int required = charge ? 2 : 1;
+                if (layers == null && loops.size() < maxLoops()
+                        && totalVoices() + required <= ForbiddenVisualConfig.SPELL_SOUND_VOICES.get()) {
+                    SpellLoopSound source = new SpellLoopSound(level, visual, null, event);
+                    layers = charge ? List.of(source, new SpellLoopSound(level, visual, null, event, true)) : List.of(source);
+                    loops.put(event.instance(), layers);
+                    var manager = Minecraft.getInstance().getSoundManager();
+                    layers.forEach(manager::play);
                 }
-                if (loop != null) loop.refresh(event);
+                if (layers != null) layers.forEach(loop -> loop.refresh(event));
             }
             case RELEASE, SEGMENT -> {
                 if (event.phase() == SpellSoundEvent.Phase.RELEASE) stopLoop(event.instance());
@@ -185,12 +190,14 @@ public final class SpellSoundHandler {
     private static int maxLoops() { return Math.max(1, ForbiddenVisualConfig.SPELL_SOUND_VOICES.get() / 3); }
 
     private void stopLoop(UUID id) {
-        SpellLoopSound loop = loops.remove(id);
-        if (loop == null) return;
-        if (loop.isStopped()) Minecraft.getInstance().getSoundManager().stop(loop);
-        else {
-            loop.fade();
-            retiring.add(new RetiringLoop(loop, world.getGameTime() + SpellLoopSound.FADE_TICKS + 2L));
+        List<SpellLoopSound> layers = loops.remove(id);
+        if (layers == null) return;
+        for (SpellLoopSound loop : layers) {
+            if (loop.isStopped()) Minecraft.getInstance().getSoundManager().stop(loop);
+            else {
+                loop.fade();
+                retiring.add(new RetiringLoop(loop, world.getGameTime() + SpellLoopSound.FADE_TICKS + 2L));
+            }
         }
     }
 
@@ -212,14 +219,18 @@ public final class SpellSoundHandler {
         });
         recent.entrySet().removeIf(entry -> now - entry.getValue() > 120L);
         var manager = Minecraft.getInstance().getSoundManager();
-        Iterator<Map.Entry<UUID, SpellLoopSound>> iterator = loops.entrySet().iterator();
+        Iterator<Map.Entry<UUID, List<SpellLoopSound>>> iterator = loops.entrySet().iterator();
         while (iterator.hasNext()) {
-            var entry = iterator.next();
-            var loop = entry.getValue();
-            if (loop.isStopped() || loop.fading() && !manager.isActive(loop)) {
-                loop.halt(); manager.stop(loop); iterator.remove();
-            } else if (!loop.fading() && now - loop.created() > 6L && !manager.isActive(loop)) {
-                manager.stop(loop); manager.play(loop);
+            var layers = iterator.next().getValue();
+            if (layers.stream().anyMatch(loop -> loop.isStopped() || loop.fading() && !manager.isActive(loop))) {
+                for (SpellLoopSound loop : layers) { loop.halt(); manager.stop(loop); }
+                iterator.remove();
+            } else {
+                for (SpellLoopSound loop : layers) {
+                    if (!loop.fading() && now - loop.created() > 6L && !manager.isActive(loop)) {
+                        manager.stop(loop); manager.play(loop);
+                    }
+                }
             }
         }
         retiring.removeIf(tail -> {
@@ -244,7 +255,7 @@ public final class SpellSoundHandler {
             if (!loops.containsKey(entity.getUUID()) && loops.size() < maxLoops()
                     && totalVoices() < ForbiddenVisualConfig.SPELL_SOUND_VOICES.get()) {
                 SpellLoopSound loop = new SpellLoopSound(world, visual, entity, null);
-                loops.put(entity.getUUID(), loop);
+                loops.put(entity.getUUID(), List.of(loop));
                 manager.play(loop);
                 if (first && entity.tickCount < 12 && field) release(visual, entity.position(), 0.7f);
             }
@@ -259,10 +270,10 @@ public final class SpellSoundHandler {
 
     public boolean hasPlayingLoop() {
         var manager = Minecraft.getInstance().getSoundManager();
-        return loops.values().stream().anyMatch(loop -> !loop.isStopped() && manager.isActive(loop));
+        return loops.values().stream().flatMap(List::stream).anyMatch(loop -> !loop.isStopped() && manager.isActive(loop));
     }
-    public int activeLoops() { return loops.size(); }
+    public int activeLoops() { return loops.values().stream().mapToInt(List::size).sum(); }
     public int retiringLoops() { return retiring.size(); }
     public int activeVoices() { return voices.size(); }
-    public int totalVoices() { return voices.size() + loops.size() + retiring.size(); }
+    public int totalVoices() { return voices.size() + activeLoops() + retiring.size(); }
 }

@@ -357,7 +357,7 @@ public final class AgaitolosSkillDirector {
     private boolean isBusy(AgaitolosEntity boss) {
         return boss.isDeadOrDying() || boss.isRespawning() || boss.isIntroPlaying()
                 || boss.isDiving() || boss.isGuarding() || boss.isCharging()
-                || boss.isPhaseThreeBusy();
+                || boss.isPhaseThreeBusy() || boss.isPerformingAction();
     }
 
     // ---------------------------------------------------------------- 保命招硬闸（格挡，2026-09-21 补）

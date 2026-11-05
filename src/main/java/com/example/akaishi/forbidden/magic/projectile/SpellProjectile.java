@@ -136,22 +136,12 @@ public class SpellProjectile extends WitherSkull {
             return;
         }
         super.tick();
-        if (this.level().isClientSide() && !this.isRemoved() && !this.entityData.get(DATA_EFFECT).isEmpty()) {
-            // 尾迹：形取「墨 × 投射物载体」、色取墨、数量按墨个性（炽密、渊稀）缩放
-            String inkId = this.entityData.get(DATA_INK_ID);
-            com.example.akaishi.forbidden.magic.visual.SpellCarrierForm carrier =
-                    com.example.akaishi.forbidden.magic.visual.SpellCarrierForm.ORB;
-            int count = Math.max(1, Math.round(2f * AkaishiMagicParticles.emitMul(inkId, carrier)));
-            AkaishiMagicParticles.trail(this.level(),
-                    MagicSource.byIdOrDefault(this.entityData.get(DATA_SOURCE_ID)),
-                    inkId, carrier, this.entityData.get(DATA_INK_RGB),
-                    this.getX(), this.getY() + this.getBbHeight() * 0.5d, this.getZ(), count, 0.05);
-            if (this.tickCount % 2 == 0) {
-                Vec3 motion = this.getDeltaMovement().scale(-0.04d);
-                AkaishiMagicParticles.photon(this.level(), this.entityData.get(DATA_INK_RGB),
-                        this.getX(), this.getY() + this.getBbHeight() * 0.5d, this.getZ(),
-                        motion.x, motion.y, motion.z, 0.8f, 1f);
-            }
+        if (this.level().isClientSide() && !this.isRemoved() && !this.entityData.get(DATA_EFFECT).isEmpty()
+                && this.tickCount % 3 == 0 && AkaishiMagicParticles.allowLocal(this.level(), getX(), getY(), getZ())) {
+            MagicSource source = MagicSource.byIdOrDefault(this.entityData.get(DATA_SOURCE_ID));
+            var options = new com.example.akaishi.forbidden.magic.particle.SpellMoteOptions(
+                    AkaishiMagicParticles.variantOf(source), this.entityData.get(DATA_INK_RGB));
+            this.level().addParticle(options, getX(), getY(), getZ(), 0d, 0d, 0d);
         }
     }
 

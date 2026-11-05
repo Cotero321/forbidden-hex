@@ -5,7 +5,17 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "forbidden_hex.refmap.json",
   "mixins": [
-    "PlayerFoodExhaustionMixin"
+    "PlayerFoodExhaustionMixin",
+    "BrewingCloudImmunityMixin",
+    "BrewingFluidWalkingMixin",
+    "BrewingDrugResponseMixin",
+    "BrewingPerceptionMixin",
+    "BrewingJumpControlMixin",
+    "BrewingSprintControlMixin",
+    "BrewingEffectLifecycleMixin",
+    "BrewingSleepMovementMixin",
+    "SourceAltarBlockChangeMixin",
+    "SourceAltarBeaconChangeMixin"
   ],
   "client": [
     "PostChainAccess",

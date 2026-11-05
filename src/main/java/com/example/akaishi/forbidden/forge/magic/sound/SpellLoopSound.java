@@ -26,10 +26,17 @@ final class SpellLoopSound extends AbstractTickableSoundInstance {
     private int fading;
     private float fadeVolume;
     private final boolean charging;
+    private final boolean inkLayer;
+    private final String sourceId;
     private final float basePitch;
 
     SpellLoopSound(ClientLevel world, SpellVisual visual, Entity entity, SpellSoundEvent event) {
-        super(AkaishiForbiddenSounds.spell("spell.source."
+        this(world, visual, entity, event, false);
+    }
+
+    SpellLoopSound(ClientLevel world, SpellVisual visual, Entity entity, SpellSoundEvent event, boolean inkLayer) {
+        super(AkaishiForbiddenSounds.spell(inkLayer ? "spell.ink."
+                        + SpellSoundCatalog.known("inks", visual.inkId(), "xu") + ".charge" : "spell.source."
                         + SpellSoundCatalog.known("sources", visual.sourceId(), "san")
                         + (event != null && event.phase() == SpellSoundEvent.Phase.CHARGE ? ".charge" : ".sustain")),
                 SoundSource.PLAYERS, RandomSource.create(entity != null ? entity.getUUID().getLeastSignificantBits()
@@ -38,10 +45,12 @@ final class SpellLoopSound extends AbstractTickableSoundInstance {
         this.entity = entity;
         this.event = event;
         this.charging = event != null && event.phase() == SpellSoundEvent.Phase.CHARGE;
+        this.inkLayer = inkLayer;
+        this.sourceId = SpellSoundCatalog.known("sources", visual.sourceId(), "san");
         this.created = world.getGameTime();
         this.refreshed = created;
-        this.basePitch = Mth.clamp(0.86f + (float) Math.log(SpellSoundCatalog.frequency(visual.effectId()) / 180f) * 0.13f,
-                0.72f, 1.3f);
+        this.basePitch = charging ? 1f : Mth.clamp(0.86f
+                + (float) Math.log(SpellSoundCatalog.frequency(visual.effectId()) / 180f) * 0.13f, 0.72f, 1.3f);
         this.pitch = basePitch;
         this.looping = true;
         this.attenuation = Attenuation.LINEAR;
@@ -76,7 +85,7 @@ final class SpellLoopSound extends AbstractTickableSoundInstance {
         float progress = charging ? Mth.clamp((world.getGameTime() - event.started())
                 / (float) Math.max(1L, event.phaseEnd() - event.started()), 0f, 1f) : 1f;
         float target = (entity instanceof SpellCircleEntity ? 0.14f : entity != null ? 0.11f
-                : charging ? 0.12f + 0.13f * progress : 0.22f);
+                : charging ? chargeGain(sourceId, progress, inkLayer) : 0.22f);
         float gain = Math.min(1f, ++age / 6f);
         if (fading > 0) {
             float remaining = --fading / (float) FADE_TICKS;
@@ -86,5 +95,20 @@ final class SpellLoopSound extends AbstractTickableSoundInstance {
             volume = target * gain * ForbiddenVisualConfig.SPELL_SOUND_VOLUME.get().floatValue();
         }
         pitch = basePitch;
+    }
+
+    /** 源决定收束轮廓，两层共享包络，墨只改变音色与混合权重。 */
+    static float chargeGain(String source, float progress, boolean inkLayer) {
+        float p = Mth.clamp(progress, 0f, 1f);
+        double phase = Math.PI * 2d * (1.5d * p + 1.5d * p * p);
+        float shape = switch (source) {
+            case "life" -> 0.76f + 0.24f * (float) Math.pow(0.5d + 0.5d * Math.cos(phase), 2d);
+            case "dark" -> 0.70f + 0.30f * p * p;
+            case "white" -> 0.94f + 0.06f * (float) Math.cos(phase);
+            default -> 0.84f + 0.10f * (float) Math.cos(phase)
+                    + 0.06f * (1f - p) * (float) Math.cos(phase * 1.5d + Math.PI / 2d);
+        };
+        float focus = p * p * (3f - 2f * p);
+        return (0.09f + 0.15f * focus) * shape * (inkLayer ? 0.64f + 0.16f * focus : 0.72f);
     }
 }

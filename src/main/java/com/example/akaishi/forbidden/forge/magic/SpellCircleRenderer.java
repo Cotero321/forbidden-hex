@@ -1,6 +1,9 @@
 package com.example.akaishi.forbidden.forge.magic;
 
 import com.example.akaishi.forbidden.forge.magic.visual.SpellGeometry;
+import com.example.akaishi.forbidden.forge.magic.visual.SpellSourceVfx;
+import com.example.akaishi.forbidden.magic.table.MagicSource;
+import com.example.akaishi.forbidden.magic.particle.AkaishiMagicParticles;
 import com.example.akaishi.forbidden.forge.magic.visual.SpellVfx;
 import com.example.akaishi.forbidden.forge.magic.visual.SpellVisualPainter;
 import com.example.akaishi.forbidden.magic.circle.SpellCircleEntity;
@@ -14,6 +17,8 @@ import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix4f;
+
+import java.util.Objects;
 
 /**
  * 法阵渲染器（设计记忆 §36.2 / §7）。
@@ -83,6 +88,10 @@ public class SpellCircleRenderer extends EntityRenderer<SpellCircleEntity> {
                     overallAlpha * 0.28f, overallAlpha * 0.82f,
                     SpellVisualPainter.red(visual.inkRgb()), SpellVisualPainter.green(visual.inkRgb()),
                     SpellVisualPainter.blue(visual.inkRgb()));
+            poseStack.translate(0f, 0f, 0.04f);
+            SpellSourceVfx.paint(poseStack, buffers, MagicSource.byIdOrDefault(visual.sourceId()),
+                    visual.sourceRgb(), visual.inkRgb(), time, baseRadius * 0.92f,
+                    overallAlpha * 0.60f, detail);
             poseStack.popPose();
             return;
         }
@@ -115,7 +124,46 @@ public class SpellCircleRenderer extends EntityRenderer<SpellCircleEntity> {
         SpellGeometry.ringBand(consumer, matrix, Math.max(0.01f, radius - 0.08f), radius,
                 Math.max(16, Math.round(BOUNDARY_SEGMENTS * detail)),
                 0f, 360f, alpha * 0.2f, alpha, r, g, b);
+        poseStack.translate(0f, 0f, 0.025f);
+        SpellSourceVfx.paint(poseStack, buffers, MagicSource.byIdOrDefault(visual.sourceId()),
+                visual.sourceRgb(), ink, time, radius * 0.98f, alpha * 0.65f, detail);
+        if (detail > 0.5f) {
+            float phase = time * 0.55f - (float) Math.floor(time * 0.55f);
+            float pulseRadius = radius * (0.30f + 0.65f * phase);
+            SpellGeometry.ringBand(consumer, poseStack.last().pose(), pulseRadius * 0.99f, pulseRadius,
+                    Math.max(16, Math.round(32 * detail)), -time * 22f, 360f,
+                    alpha * (1f - phase) * 0.25f, alpha * (1f - phase) * 0.07f, r, g, b);
+        }
         poseStack.popPose();
+        if (detail > 0.72f) paintNodes(poseStack, buffers, visual, radius, alpha, time);
+    }
+
+    private static void paintNodes(PoseStack pose, MultiBufferSource buffers, SpellVisual visual,
+            float radius, float alpha, float time) {
+        if (radius <= 0f || alpha <= 0.01f) return;
+        var consumer = buffers.getBuffer(Objects.requireNonNull(SpellGeometry.energyType()));
+        int photon = AkaishiMagicParticles.photonRgb(visual.inkRgb());
+        float size = Math.min(0.12f, radius * 0.05f);
+        for (int i = 0; i < 4; i++) {
+            double angle = Math.toRadians(time * 8f + i * 90f);
+            float height = Math.min(0.40f, radius * 0.16f)
+                    * (0.75f + 0.25f * (float) Math.sin(time * 2.2f + i * 1.5f));
+            pose.pushPose();
+            pose.translate(Math.cos(angle) * radius * 0.84f, GROUND_LIFT + height * 0.5f,
+                    Math.sin(angle) * radius * 0.84f);
+            for (int side = 0; side < 2; side++) {
+                SpellGeometry.texturedRibbon(consumer, pose.last().pose(), 0f, 1f, 0f,
+                        side == 0 ? 1f : 0f, 0f, side == 0 ? 0f : 1f,
+                        height * 0.5f, size * 0.08f, alpha * 0.22f,
+                        SpellVisualPainter.red(visual.sourceRgb()), SpellVisualPainter.green(visual.sourceRgb()),
+                        SpellVisualPainter.blue(visual.sourceRgb()));
+            }
+            pose.translate(0f, height * 0.5f, 0f);
+            pose.mulPose(Objects.requireNonNull(Axis.YP.rotationDegrees(time * 48f + i * 45f)));
+            SpellGeometry.crystal(consumer, pose, size * 0.65f, size, alpha * 0.65f,
+                    SpellVisualPainter.red(photon), SpellVisualPainter.green(photon), SpellVisualPainter.blue(photon));
+            pose.popPose();
+        }
     }
 
     @Override

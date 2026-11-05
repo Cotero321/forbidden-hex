@@ -12,6 +12,11 @@ import java.util.List;
 public final class SpellPlanTooltips {
     private SpellPlanTooltips() {}
     public static void append(List<Component> lines, SpellPlan plan, boolean expanded, float extra) {
+        if (expanded && plan.operations().stream().anyMatch(op -> op.power() > 0f && !"ward".equals(op.effectId()))) {
+            var type = com.example.akaishi.forbidden.magic.MagicDamageTypes.forInk(plan.input().mainInkId());
+            lines.add(key("damage_type", Component.translatable("damage_type.forbidden_hex." + type.location().getPath())));
+            lines.add(key("xing".equals(plan.input().mainInkId()) ? "psychic_defense" : "magic_defense"));
+        }
         for (var op : plan.operations()) {
             String value = value(op);
             lines.add(key("operation", Component.translatable("item.forbidden_hex.magic_core.op." + op.effectId()), value));
@@ -20,8 +25,18 @@ public final class SpellPlanTooltips {
                 int pulses = com.example.akaishi.forbidden.magic.exec.MagicPulseTiming.perSegment(plan, op);
                 lines.add(key("pulses", pulses));
                 if (op.effectId().equals(MagicIds.Effect.WARD)) lines.add(key("ward_capacity"));
-                else if (op.power() > 0f) lines.add(key("upper", fmt(op.power() * plan.schedule().segments()
-                        * pulses * (op.traits().contains("followup_hit") ? 2 : 1))));
+                else if (op.power() > 0f) {
+                    float hit = op.power();
+                    if (MagicIds.Effect.FIELD.equals(op.effectId()) || MagicIds.Effect.LINK.equals(op.effectId()))
+                        hit += com.example.akaishi.forbidden.magic.exec.ExecSupport.primaryDamageBonus();
+                    if ("san".equals(plan.input().sourceId())) {
+                        var effect = MagicEffectTable.get(op.effectId());
+                        float ratio = effect == null || effect.baseP() <= 0f ? 0f : op.magnitude() / effect.baseP();
+                        hit *= 1f + com.example.akaishi.forbidden.magic.SpellDamage.sanBonusRatio(ratio);
+                    }
+                    lines.add(key("upper", fmt(hit * plan.schedule().segments()
+                            * pulses * (op.traits().contains("followup_hit") ? 2 : 1))));
+                }
                 if (op.effectId().equals(MagicIds.Effect.LINK)) lines.add(key("link_limits",
                         com.example.akaishi.forbidden.magic.link.MagicLinks.MIN_RINGS,
                         Math.min(plan.target().limit(), com.example.akaishi.forbidden.magic.link.MagicLinks.MAX_RINGS),

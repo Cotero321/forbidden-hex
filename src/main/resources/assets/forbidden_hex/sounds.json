@@ -660,5 +660,104 @@
         "stream": true
       }
     ]
+  },
+  "spell.ink.chi.charge": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.chi.charge",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/chi/charge",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.yuan.charge": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.yuan.charge",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/yuan/charge",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.man.charge": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.man.charge",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/man/charge",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.rang.charge": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.rang.charge",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/rang/charge",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.shi.charge": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.shi.charge",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/shi/charge",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.xu.charge": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.xu.charge",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/xu/charge",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.hun.charge": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.hun.charge",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/hun/charge",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.xing.charge": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.xing.charge",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/xing/charge",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.yao.charge": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.yao.charge",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/yao/charge",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.an.charge": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.an.charge",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/an/charge",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "spell.ink.ju.charge": {
+    "subtitle": "subtitles.forbidden_hex.spell.ink.ju.charge",
+    "sounds": [
+      {
+        "name": "forbidden_hex:spell/ink/ju/charge",
+        "attenuation_distance": 24
+      }
+    ]
   }
 }

@@ -1,0 +1,196 @@
+{
+  "variants": {
+    "facing=east,formed=false,part=0": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 90
+    },
+    "facing=east,formed=false,part=1": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 90
+    },
+    "facing=east,formed=false,part=2": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 90
+    },
+    "facing=east,formed=false,part=3": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 90
+    },
+    "facing=east,formed=false,part=4": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 90
+    },
+    "facing=east,formed=false,part=5": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 90
+    },
+    "facing=east,formed=true,part=0": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_0",
+      "y": 90
+    },
+    "facing=east,formed=true,part=1": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_1",
+      "y": 90
+    },
+    "facing=east,formed=true,part=2": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_2",
+      "y": 90
+    },
+    "facing=east,formed=true,part=3": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_3",
+      "y": 90
+    },
+    "facing=east,formed=true,part=4": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_4",
+      "y": 90
+    },
+    "facing=east,formed=true,part=5": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_5",
+      "y": 90
+    },
+    "facing=north,formed=false,part=0": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 0
+    },
+    "facing=north,formed=false,part=1": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 0
+    },
+    "facing=north,formed=false,part=2": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 0
+    },
+    "facing=north,formed=false,part=3": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 0
+    },
+    "facing=north,formed=false,part=4": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 0
+    },
+    "facing=north,formed=false,part=5": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 0
+    },
+    "facing=north,formed=true,part=0": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_0",
+      "y": 0
+    },
+    "facing=north,formed=true,part=1": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_1",
+      "y": 0
+    },
+    "facing=north,formed=true,part=2": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_2",
+      "y": 0
+    },
+    "facing=north,formed=true,part=3": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_3",
+      "y": 0
+    },
+    "facing=north,formed=true,part=4": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_4",
+      "y": 0
+    },
+    "facing=north,formed=true,part=5": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_5",
+      "y": 0
+    },
+    "facing=south,formed=false,part=0": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 180
+    },
+    "facing=south,formed=false,part=1": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 180
+    },
+    "facing=south,formed=false,part=2": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 180
+    },
+    "facing=south,formed=false,part=3": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 180
+    },
+    "facing=south,formed=false,part=4": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 180
+    },
+    "facing=south,formed=false,part=5": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 180
+    },
+    "facing=south,formed=true,part=0": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_0",
+      "y": 180
+    },
+    "facing=south,formed=true,part=1": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_1",
+      "y": 180
+    },
+    "facing=south,formed=true,part=2": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_2",
+      "y": 180
+    },
+    "facing=south,formed=true,part=3": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_3",
+      "y": 180
+    },
+    "facing=south,formed=true,part=4": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_4",
+      "y": 180
+    },
+    "facing=south,formed=true,part=5": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_5",
+      "y": 180
+    },
+    "facing=west,formed=false,part=0": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 270
+    },
+    "facing=west,formed=false,part=1": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 270
+    },
+    "facing=west,formed=false,part=2": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 270
+    },
+    "facing=west,formed=false,part=3": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 270
+    },
+    "facing=west,formed=false,part=4": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 270
+    },
+    "facing=west,formed=false,part=5": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar",
+      "y": 270
+    },
+    "facing=west,formed=true,part=0": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_0",
+      "y": 270
+    },
+    "facing=west,formed=true,part=1": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_1",
+      "y": 270
+    },
+    "facing=west,formed=true,part=2": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_2",
+      "y": 270
+    },
+    "facing=west,formed=true,part=3": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_3",
+      "y": 270
+    },
+    "facing=west,formed=true,part=4": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_4",
+      "y": 270
+    },
+    "facing=west,formed=true,part=5": {
+      "model": "forbidden_hex:block/forbidden_hex_source_altar_imported_formed_5",
+      "y": 270
+    }
+  }
+}

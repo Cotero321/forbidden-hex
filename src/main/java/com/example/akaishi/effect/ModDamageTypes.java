@@ -4,6 +4,7 @@ import com.example.akaishi.AkaishiMod;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.damagesource.DamageType;
 
 /**
@@ -29,6 +30,9 @@ public final class ModDamageTypes {
      * （见 {@code AgaitolosCombat#PSYCHIC} 的注释）。
      */
     public static final ResourceKey<DamageType> PSYCHIC = ResourceKey.create(
+            Registries.DAMAGE_TYPE, new ResourceLocation(AkaishiMod.MOD_ID, "psychic"));
+
+    public static final TagKey<DamageType> PSYCHIC_TYPES = TagKey.create(
             Registries.DAMAGE_TYPE, new ResourceLocation(AkaishiMod.MOD_ID, "psychic"));
 
     private ModDamageTypes() {

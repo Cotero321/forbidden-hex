@@ -1,0 +1,21 @@
+{
+  "values": [
+    "forbidden_hex:forbidden_hex_wand_core_rate_rough",
+    "forbidden_hex:forbidden_hex_wand_core_rate",
+    "forbidden_hex:forbidden_hex_wand_core_rate_perfect",
+    "forbidden_hex:forbidden_hex_wand_core_convert_rough",
+    "forbidden_hex:forbidden_hex_wand_core_convert",
+    "forbidden_hex:forbidden_hex_wand_core_convert_perfect",
+    "forbidden_hex:forbidden_hex_wand_core_domain_rough",
+    "forbidden_hex:forbidden_hex_wand_core_domain",
+    "forbidden_hex:forbidden_hex_wand_core_domain_perfect",
+    "forbidden_hex:forbidden_hex_wand_core_san",
+    "forbidden_hex:forbidden_hex_wand_core_life",
+    "forbidden_hex:forbidden_hex_wand_core_dark",
+    "forbidden_hex:forbidden_hex_wand_core_white",
+    "forbidden_hex:forbidden_hex_wand_core_perpetual",
+    "forbidden_hex:forbidden_hex_wand_core_tidal",
+    "forbidden_hex:forbidden_hex_wand_core_collapse",
+    "forbidden_hex:forbidden_hex_wand_core_bulwark"
+  ]
+}

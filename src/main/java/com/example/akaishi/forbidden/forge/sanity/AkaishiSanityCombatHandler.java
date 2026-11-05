@@ -8,6 +8,7 @@ import com.example.akaishi.forbidden.sanity.SanityServiceImpl;
 import com.example.akaishi.forbidden.sanity.SanityState;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.CombatRules;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -77,6 +78,14 @@ public final class AkaishiSanityCombatHandler {
     private record Pending(long tick, float restore, float incoming, float absorption, boolean psychic) {
     }
 
+    /** 0 SAN 的整体精神化优先于普通法术的分量减伤；由最终伤害阶段统一结算一次。 */
+    public static boolean convertsToPsychic(Player victim, DamageSource source) {
+        if (!ModConfig.sanityEnabled || source.is(ModDamageTypes.PSYCHIC_TYPES)) return false;
+        SanityState state = SanityServiceImpl.state(victim);
+        return state != null && (state.lowSanPsychic()
+                || SanityPenalties.isLowSanPsychic(SanityPenalties.tierOf(state)));
+    }
+
     @SubscribeEvent
     public void onLivingHurt(LivingHurtEvent event) {
         if (event.getEntity().level().isClientSide || !ModConfig.sanityEnabled) {
@@ -106,9 +115,9 @@ public final class AkaishiSanityCombatHandler {
         int tier = SanityPenalties.tierOf(state);
         // 2a) 易伤：40% 档及以下受到伤害 ×1.2
         amount *= SanityPenalties.incomingMultiplier(tier);
-        boolean psychicSource = event.getSource().is(ModDamageTypes.PSYCHIC);
-        boolean psychic = !psychicSource
-                && (state.lowSanPsychic() || SanityPenalties.isLowSanPsychic(tier));
+        boolean psychicSource = event.getSource().is(ModDamageTypes.PSYCHIC_TYPES);
+        pending.remove(victim.getUUID());
+        boolean psychic = convertsToPsychic(victim, event.getSource());
         if (psychic) {
             // 2b) 0% 档精神化：暂存原始量与吸收量，最终值在 LivingDamageEvent 绝对设定
             pending.put(victim.getUUID(), new Pending(now, 0f,

@@ -16,6 +16,14 @@ public record SpellVisualEvent(SpellVisual visual, Vec3 from, Vec3 to, int targe
         return Double.isFinite(position.x) && Double.isFinite(position.y) && Double.isFinite(position.z);
     }
 
+    public float alphaAt(float ageTicks) {
+        if (!Float.isFinite(ageTicks) || ageTicks < 0f || ageTicks >= lifeTicks) return 0f;
+        float attack = Math.min(2f, lifeTicks * 0.16f);
+        float release = Math.min(8f, lifeTicks * 0.55f);
+        return SpellCircleAnimation.smooth(ageTicks / attack)
+                * SpellCircleAnimation.smooth((lifeTicks - ageTicks) / release);
+    }
+
     public void write(FriendlyByteBuf buf) {
         visual.write(buf);
         buf.writeDouble(from.x).writeDouble(from.y).writeDouble(from.z);

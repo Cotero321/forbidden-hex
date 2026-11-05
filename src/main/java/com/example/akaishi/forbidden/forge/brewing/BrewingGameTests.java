@@ -132,7 +132,9 @@ public final class BrewingGameTests {
         List<WitchOvenRecipe> ovens = helper.getLevel().getRecipeManager().getAllRecipesFor(BrewingRecipes.OVEN.get());
         helper.assertTrue(ovens.size() >= 22, "Document oven recipes did not load");
         for (WitchOvenRecipe recipe : ovens) {
-            helper.assertTrue(Math.abs(recipe.fumeChance() - 0.3) < 0.00001, "Base oven chance differs from design");
+            if (recipe.fume().isEmpty()) helper.assertTrue(recipe.fumeChance() == 0 && recipe.result().is(
+                    com.example.akaishi.forbidden.alchemy.AlchemyMaterials.item("quicklime")), "Only quicklime may explicitly produce no fume");
+            else helper.assertTrue(Math.abs(recipe.fumeChance() - 0.3) < 0.00001, "Base oven chance differs from design");
             FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
             try {
                 new WitchOvenRecipe.Serializer().toNetwork(buffer, recipe);
@@ -301,7 +303,12 @@ public final class BrewingGameTests {
         helper.setBlock(POT.below().below(), Blocks.NETHERRACK);
         helper.setBlock(POT.below(), Blocks.FIRE);
         helper.setBlock(POT, BrewingBlocks.CRUCIBLE.get());
-        return (CrucibleBlockEntity) helper.getBlockEntity(POT);
+        CrucibleBlockEntity pot = (CrucibleBlockEntity) helper.getBlockEntity(POT);
+        CompoundTag legacy = new CompoundTag();
+        legacy.putInt("BrewingVersion", 1);
+        legacy.putBoolean("SlotsEnabled", false);
+        pot.load(legacy);
+        return pot;
     }
 
     private static void prepareDust(GameTestHelper helper, CrucibleBlockEntity pot) {

@@ -15,6 +15,16 @@ public final class SpellPlanSelfCheck {
 
     public static List<String> inspect() {
         List<String> failures = new ArrayList<>();
+        check(com.example.akaishi.forbidden.magic.MagicDamageTypes.INK_TYPES.keySet().equals(
+                new java.util.HashSet<>(com.example.akaishi.forbidden.magic.table.MagicInkTable.order())),
+                "spell subtype ink coverage", failures);
+        check(com.example.akaishi.forbidden.magic.MagicDamageTypes.forInk("yuan").location().getPath().equals("spell_water"),
+                "abyss ink uses water damage", failures);
+        check(Math.abs(com.example.akaishi.forbidden.magic.SpellDamage.sanBonusRatio(1f) - 0.1f) < 0.0001f
+                && Math.abs(com.example.akaishi.forbidden.magic.SpellDamage.sanBonusRatio(2f) - 0.2f) < 0.0001f
+                && Math.abs(com.example.akaishi.forbidden.magic.SpellDamage.sanBonusRatio(8f) - 0.4f) < 0.0001f
+                && com.example.akaishi.forbidden.magic.SpellDamage.sanBonusRatio(Float.NaN) == 0f,
+                "SAN linear psychic bonus cap", failures);
         check(!compile("chi", "life").ok(), "empty accepted", failures);
         rejected(compile("chi", "life", "cha"), "no_effect", failures);
         rejected(SpellPlanCompiler.compile(new SpellInput(List.of("tou"), List.of(), "chi", "life", 0, 0)),
@@ -56,9 +66,9 @@ public final class SpellPlanSelfCheck {
         rejected(compile("xing", "life", "tou"), "star_requires_san", failures);
         var star = compile("xing", "san", "tou");
         check(star.ok() && star.plan().features().contains("star_exclusive")
-                && star.plan().features().contains("san_mental_piercing")
+                && star.plan().features().contains("san_psychic_bonus")
                 && star.plan().features().contains("star_damage_1_75")
-                && star.plan().operations().get(0).traits().contains("san_mental_piercing"), "star SAN features", failures);
+                && star.plan().operations().get(0).traits().contains("san_psychic_bonus"), "star SAN features", failures);
         var san = compile("chi", "san", "tou");
         check(Math.abs(star.plan().operations().get(0).power() / san.plan().operations().get(0).power() - 1.75f) < 0.0001f,
                 "star output multiplier", failures);

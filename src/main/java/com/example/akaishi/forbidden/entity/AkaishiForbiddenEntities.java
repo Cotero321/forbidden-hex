@@ -2,11 +2,15 @@ package com.example.akaishi.forbidden.entity;
 
 import com.example.akaishi.AkaishiMod;
 import com.example.akaishi.forbidden.boss.agaitolos.AgaitolosEntity;
+import com.example.akaishi.forbidden.boss.chimera.ChimeraEntity;
+import com.example.akaishi.forbidden.boss.chimera.ChimeraHeadHitbox;
+import com.example.akaishi.forbidden.boss.agaitolos.entity.AgaitolosHexOrb;
 import com.example.akaishi.forbidden.boss.agaitolos.entity.AgaitolosWitherSkull;
 import com.example.akaishi.forbidden.magic.circle.SpellCircleEntity;
 import com.example.akaishi.forbidden.magic.projectile.SpellProjectile;
 import com.example.akaishi.forbidden.sanity.shadow.ShadowBolt;
 import com.example.akaishi.forbidden.sanity.shadow.ShadowEntity;
+import com.example.akaishi.forbidden.familiar.entity.FamiliarEntity;
 import dev.architectury.registry.registries.RegistrarManager;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
@@ -40,15 +44,21 @@ public final class AkaishiForbiddenEntities {
 
     /** 阿盖托洛丝【下界本源】BOSS 实体；碰撞箱 0.9×2.2（P3c 自本体迁入，id 不变） */
     public static RegistrySupplier<EntityType<AgaitolosEntity>> AGAITOLOS;
+    public static RegistrySupplier<EntityType<ChimeraEntity>> CHIMERA;
+    public static RegistrySupplier<EntityType<ChimeraHeadHitbox>> CHIMERA_HEAD;
+    public static RegistrySupplier<EntityType<com.example.akaishi.forbidden.boss.chimera.ChimeraSkillDirector.MagicOrb>> CHIMERA_ORB;
 
     /** 阿盖托洛丝的远程弹体：凋零头颅（继承原版 WitherSkull，只替换命中结算） */
     public static RegistrySupplier<EntityType<AgaitolosWitherSkull>> AGAITOLOS_WITHER_SKULL;
+    public static RegistrySupplier<EntityType<AgaitolosHexOrb>> AGAITOLOS_HEX_ORB;
 
     /** 法术弹体（设计记忆 §19.3 的 X2 投射）：继承原版 WitherSkull，渲染复用原版凋零头渲染器 */
     public static RegistrySupplier<EntityType<SpellProjectile>> SPELL_BOLT;
 
     /** 法阵（设计记忆 §36.2 / X5 布场）：贴地印记，渲染由原版粒子承担，实体本身不渲染 */
     public static RegistrySupplier<EntityType<SpellCircleEntity>> SPELL_CIRCLE;
+    /** One owner-bound entity type; template-specific models and behavior are data-driven. */
+    public static RegistrySupplier<EntityType<FamiliarEntity>> FAMILIAR;
 
     private AkaishiForbiddenEntities() {
     }
@@ -63,7 +73,6 @@ public final class AkaishiForbiddenEntities {
                         //   取 0.7 × 1.8：与实测同量级并留少量余量；深度不参与原版碰撞箱（宽/高二值）。
                         //   模型若有改动，这里与 ShadowEntity 的近战距离常量要一起看。
                         .sized(0.7F, 1.8F)
-                        // 影怪会瞬移：追踪范围略大、同步间隔取 2，避免瞬移后位姿抖动
                         .clientTrackingRange(10)
                         .updateInterval(2)
                         .build("shadow"));
@@ -71,7 +80,6 @@ public final class AkaishiForbiddenEntities {
         SHADOW_BOLT = entity("shadow_bolt",
                 () -> EntityType.Builder
                         .<ShadowBolt>of(ShadowBolt::new, MobCategory.MISC)
-                        // 与凋零头同尺寸，直接复用原版 WitherSkullRenderer 的模型与贴图
                         .sized(0.3125F, 0.3125F)
                         .clientTrackingRange(8)
                         .updateInterval(2)
@@ -91,14 +99,27 @@ public final class AkaishiForbiddenEntities {
                         .updateInterval(3)
                         .build("agaitolos"));
 
+        CHIMERA = entity("chimera", () -> EntityType.Builder.<ChimeraEntity>of(ChimeraEntity::new, MobCategory.MONSTER).sized(2.4F, 3.6F).clientTrackingRange(16).updateInterval(2).build("chimera"));
+        CHIMERA_HEAD = entity("chimera_head", () -> EntityType.Builder.<ChimeraHeadHitbox>of(ChimeraHeadHitbox::new, MobCategory.MISC).sized(1.3F, 1.1F).clientTrackingRange(16).updateInterval(1).build("chimera_head"));
+        CHIMERA_ORB = entity("chimera_orb", () -> EntityType.Builder.<com.example.akaishi.forbidden.boss.chimera.ChimeraSkillDirector.MagicOrb>of(
+                com.example.akaishi.forbidden.boss.chimera.ChimeraSkillDirector.MagicOrb::new, MobCategory.MISC)
+                .sized(0.4F, 0.4F).clientTrackingRange(8).updateInterval(1).build("chimera_orb"));
+
         AGAITOLOS_WITHER_SKULL = entity("agaitolos_wither_skull",
                 () -> EntityType.Builder
                         .<AgaitolosWitherSkull>of(AgaitolosWitherSkull::new, MobCategory.MISC)
-                        // 尺寸与追踪参数逐项对齐原版 EntityType.WITHER_SKULL（5/16 格、范围 4、间隔 10）
                         .sized(0.3125F, 0.3125F)
                         .clientTrackingRange(4)
                         .updateInterval(10)
                         .build("agaitolos_wither_skull"));
+
+        AGAITOLOS_HEX_ORB = entity("agaitolos_hex_orb",
+                () -> EntityType.Builder
+                        .<AgaitolosHexOrb>of(AgaitolosHexOrb::new, MobCategory.MISC)
+                        .sized(0.3125F, 0.3125F)
+                        .clientTrackingRange(8)
+                        .updateInterval(2)
+                        .build("agaitolos_hex_orb"));
 
         // 法术弹体：尺寸与渲染器均对齐原版凋零头（零新增贴图，见 SpellProjectile 类注释）。
         // 追踪范围取 8：弹体飞行仅 0.5~2s、射程约 12 格，8 已覆盖可见范围，无需更大。
@@ -121,6 +142,14 @@ public final class AkaishiForbiddenEntities {
                         .clientTrackingRange(10)
                         .updateInterval(2)
                         .build("spell_circle"));
+
+        FAMILIAR = entity("familiar",
+                () -> EntityType.Builder
+                        .<FamiliarEntity>of(FamiliarEntity::new, MobCategory.CREATURE)
+                        .sized(0.7F, 0.9F)
+                        .clientTrackingRange(10)
+                        .updateInterval(2)
+                        .build("familiar"));
     }
 
     @SuppressWarnings("unchecked")

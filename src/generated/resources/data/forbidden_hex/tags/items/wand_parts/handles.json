@@ -1,0 +1,24 @@
+{
+  "values": [
+    "forbidden_hex:forbidden_hex_wand_handle_wood",
+    "forbidden_hex:forbidden_hex_wand_handle_bone",
+    "forbidden_hex:forbidden_hex_wand_handle_iron",
+    "forbidden_hex:forbidden_hex_wand_handle_gold",
+    "forbidden_hex:forbidden_hex_wand_handle_diamond",
+    "forbidden_hex:forbidden_hex_wand_handle_netherite",
+    "forbidden_hex:forbidden_hex_wand_handle_san_rough",
+    "forbidden_hex:forbidden_hex_wand_handle_san",
+    "forbidden_hex:forbidden_hex_wand_handle_san_perfect",
+    "forbidden_hex:forbidden_hex_wand_handle_life_rough",
+    "forbidden_hex:forbidden_hex_wand_handle_life",
+    "forbidden_hex:forbidden_hex_wand_handle_life_perfect",
+    "forbidden_hex:forbidden_hex_wand_handle_dark_rough",
+    "forbidden_hex:forbidden_hex_wand_handle_dark",
+    "forbidden_hex:forbidden_hex_wand_handle_dark_perfect",
+    "forbidden_hex:forbidden_hex_wand_handle_white_rough",
+    "forbidden_hex:forbidden_hex_wand_handle_white",
+    "forbidden_hex:forbidden_hex_wand_handle_white_perfect",
+    "forbidden_hex:forbidden_hex_wand_handle_store",
+    "forbidden_hex:forbidden_hex_wand_handle_cycle"
+  ]
+}

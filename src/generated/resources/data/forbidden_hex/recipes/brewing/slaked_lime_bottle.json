@@ -1,0 +1,35 @@
+{
+  "type": "forbidden_hex:crucible",
+  "bottles": {
+    "output": 4,
+    "returns": 0
+  },
+  "heat": "fire",
+  "kind": "transformation",
+  "output_count": 4,
+  "result": {
+    "item": "forbidden_hex:forbidden_hex_slaked_lime_bottle"
+  },
+  "steps": [
+    {
+      "ingredient": {
+        "item": "forbidden_hex:forbidden_hex_quicklime"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "forbidden_hex:forbidden_hex_quicklime"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "forbidden_hex:forbidden_hex_quicklime"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "forbidden_hex:forbidden_hex_quicklime"
+      }
+    }
+  ]
+}

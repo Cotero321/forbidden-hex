@@ -49,6 +49,63 @@ public final class VisualSystemGameTests {
     private VisualSystemGameTests() { }
 
     @GameTest(template = "brewing_empty")
+    public static void spellInkMaterialCoverage(GameTestHelper helper) {
+        var materials = com.example.akaishi.forbidden.magic.visual.SpellInkMaterial.ALL;
+        helper.assertTrue(materials.keySet().equals(com.example.akaishi.forbidden.magic.table.MagicInkTable.all().keySet()),
+                "Spell ink material closure differs from actual inks");
+        for (var material : materials.values()) {
+            helper.assertTrue(Float.isFinite(material.flowSpeed()) && material.flowSpeed() > 0f
+                            && material.turbulence() >= 0f && material.turbulence() <= 0.25f
+                            && material.trailWidth() > 0f && material.trailWidth() <= 1.25f
+                            && material.fadePower() > 0f,
+                    "Unbounded spell material parameters");
+        }
+        helper.assertTrue(materials.get("yuan").rise() < 0f && (materials.get("yuan").edgeRgb() & 255)
+                > (materials.get("yuan").edgeRgb() >> 16 & 255), "Water ink must settle and retain blue highlights");
+        helper.assertTrue(com.example.akaishi.forbidden.magic.visual.SpellInkMaterial.get(null)
+                == com.example.akaishi.forbidden.magic.visual.SpellInkMaterial.get("unknown"), "Unknown ink fallback differs");
+        helper.succeed();
+    }
+
+    @GameTest(template = "brewing_empty")
+    public static void spellCarrierEnvelope(GameTestHelper helper) {
+        var visual = com.example.akaishi.forbidden.magic.visual.SpellVisual.assemble("yin", "instant",
+                "chi", "san", 1f, 0f, 1f, List.of("yin"));
+        for (int ticks : new int[]{1, 6, 8, 20, 100}) {
+            var event = new com.example.akaishi.forbidden.magic.visual.SpellVisualEvent(visual,
+                    net.minecraft.world.phys.Vec3.ZERO, net.minecraft.world.phys.Vec3.ZERO, -1, ticks);
+            helper.assertTrue(event.alphaAt(0f) == 0f && event.alphaAt(ticks) == 0f,
+                    "Carrier envelope has a hard lifecycle boundary");
+            helper.assertTrue(event.alphaAt(-1f) == 0f && event.alphaAt(Float.NaN) == 0f
+                    && event.alphaAt(Float.POSITIVE_INFINITY) == 0f, "Invalid age reached rendering");
+            float previous = 0f;
+            for (int sample = 0; sample <= ticks * 400; sample++) {
+                float age = sample / 400f;
+                float alpha = event.alphaAt(age);
+                helper.assertTrue(Float.isFinite(alpha) && alpha >= 0f && alpha <= 1f,
+                        "Carrier opacity escaped bounds");
+                helper.assertTrue(Math.abs(alpha - previous) < 0.04f, "Carrier envelope jumped");
+                if (age <= Math.min(2f, ticks * 0.16f)) {
+                    helper.assertTrue(alpha >= previous, "Carrier attack is not monotone");
+                }
+                if (age > ticks - Math.min(8f, ticks * 0.55f)) {
+                    helper.assertTrue(alpha <= previous + 0.0001f, "Carrier release is not monotone");
+                }
+                previous = alpha;
+            }
+            helper.assertTrue(event.alphaAt(ticks * 0.4f) > 0.95f, "Carrier lost its readable hold");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "brewing_empty")
+    public static void spellCameraImpulseBoundaries(GameTestHelper helper) {
+        helper.assertTrue(com.example.akaishi.forbidden.magic.visual.SpellFeedback.contractCheck(),
+                "Spell impulse exceeded duration, strength or cooldown");
+        helper.succeed();
+    }
+
+    @GameTest(template = "brewing_empty")
     public static void materialParameterBoundaries(GameTestHelper helper) {
         VisualMaterial parsed = VisualMaterial.parse(JsonParser.parseString(
                 "{\"uniforms\":{\"FlowSpeed\":-4,\"PulseStrength\":1,\"EdgeSoftness\":0}}").getAsJsonObject());

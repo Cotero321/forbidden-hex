@@ -61,21 +61,35 @@ public final class CrucibleBlock extends BaseEntityBlock {
                     else if (!player.getInventory().add(waterBucket)) player.drop(waterBucket, false);
                 }
             } else player.displayClientMessage(pot.status(), true);
-        } else {
-            if (held.isEmpty() && !player.isShiftKeyDown()) pot.commitRecipe(player);
-            player.displayClientMessage(pot.status().copy().append(" · ").append(pot.recipeStatus()), true);
-            if (player.isShiftKeyDown()) {
-                var steps = pot.steps();
-                for (int i = 0; i < steps.size(); i++) {
-                    player.sendSystemMessage(net.minecraft.network.chat.Component.literal((i + 1) + ". ").append(steps.get(i).getHoverName()));
+        } else if (held.is(Items.POTION)
+                && net.minecraft.world.item.alchemy.PotionUtils.getPotion(held) == net.minecraft.world.item.alchemy.Potions.WATER
+                && net.minecraft.world.item.alchemy.PotionUtils.getCustomEffects(held).isEmpty()) {
+            if (pot.fillWater(BrewingPotionData.VOLUME, false) == BrewingPotionData.VOLUME) {
+                pot.fillWater(BrewingPotionData.VOLUME, true);
+                if (!player.getAbilities().instabuild) {
+                    held.shrink(1);
+                    ItemStack bottle = new ItemStack(Items.GLASS_BOTTLE);
+                    if (held.isEmpty()) player.setItemInHand(hand, bottle);
+                    else if (!player.getInventory().add(bottle)) player.drop(bottle, false);
                 }
-            }
+            } else player.displayClientMessage(pot.status(), true);
+        } else if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+            dev.architectury.registry.menu.MenuRegistry.openExtendedMenu(serverPlayer, pot);
         }
         return InteractionResult.CONSUME;
     }
+    @Override public java.util.List<ItemStack> getDrops(BlockState state, net.minecraft.world.level.storage.loot.LootParams.Builder builder) {
+        java.util.List<ItemStack> drops = super.getDrops(state, builder);
+        var blockEntity = builder.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.BLOCK_ENTITY);
+        if (blockEntity instanceof CrucibleBlockEntity pot && pot.preservesBatchOnBreak()) {
+            for (ItemStack drop : drops) if (drop.is(asItem())) pot.saveToItem(drop);
+        }
+        return drops;
+    }
+
     @Override public void onRemove(BlockState state, Level level, BlockPos pos, BlockState replacement, boolean moving) {
         if (!state.is(replacement.getBlock()) && !level.isClientSide && level.getBlockEntity(pos) instanceof CrucibleBlockEntity pot) {
-            for (ItemStack output : pot.takeOutputs()) Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), output);
+            for (ItemStack output : pot.takeContents()) Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), output);
         }
         super.onRemove(state, level, pos, replacement, moving);
     }

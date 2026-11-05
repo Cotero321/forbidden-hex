@@ -1,0 +1,35 @@
+{
+  "type": "forbidden_hex:forbidden_hex_alchemy",
+  "bottles": 0,
+  "equivalents": 1,
+  "ingredient": [
+    {
+      "item": "minecraft:iron_ore"
+    },
+    {
+      "item": "minecraft:deepslate_iron_ore"
+    }
+  ],
+  "mode": 0,
+  "outputs": [
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_crude_iron_dust",
+      "max": 1,
+      "min": 1
+    },
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_stone_fragment",
+      "max": 1,
+      "min": 1
+    },
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_tiny_iron_dust",
+      "max": 1,
+      "min": 1
+    }
+  ],
+  "process": "crushing"
+}

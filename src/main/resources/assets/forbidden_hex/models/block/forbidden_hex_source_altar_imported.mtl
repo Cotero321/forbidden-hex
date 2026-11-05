@@ -1,0 +1,14 @@
+newmtl texture_0
+Kd 1 1 1
+Ka 0 0 0
+map_Kd forbidden_hex:block/forbidden_hex_source_altar_imported_top
+
+newmtl texture_1
+Kd 1 1 1
+Ka 0 0 0
+map_Kd forbidden_hex:block/forbidden_hex_source_altar_imported_middle
+
+newmtl texture_2
+Kd 1 1 1
+Ka 0 0 0
+map_Kd forbidden_hex:block/forbidden_hex_source_altar_imported_bottom

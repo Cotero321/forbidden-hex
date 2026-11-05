@@ -85,6 +85,7 @@ public final class AgaitolosPhaseThreeState {
     private int grabHoldTicks;
     private boolean grabStruck;
     private UUID grabTargetId;
+    private long grabHurtSequence;
 
     /** 投技②：剩余 tick / 劈击是否已落地 / 目标 */
     private int smashTicks;
@@ -161,8 +162,7 @@ public final class AgaitolosPhaseThreeState {
         if (this.tripleThrowTicks <= 0) {
             return;
         }
-        // 起手那一 tick 记 elapsed = 0（动画从 0 起算），故先算 elapsed 再递减剩余
-        int elapsed = AgaitolosTripleThrowSkill.DURATION_TICKS - this.tripleThrowTicks;
+        int elapsed = AgaitolosTripleThrowSkill.DURATION_TICKS - this.tripleThrowTicks + 1;
         if (this.tripleThrowFiredBeats < AgaitolosTripleThrowSkill.BEAT_TICKS.length
                 && elapsed >= AgaitolosTripleThrowSkill.BEAT_TICKS[this.tripleThrowFiredBeats]) {
             AgaitolosTripleThrowSkill.fireBeat(boss, boss.getTarget(), this.tripleThrowFiredBeats);
@@ -224,6 +224,7 @@ public final class AgaitolosPhaseThreeState {
         this.grabHoldTicks = AgaitolosGrabSkill.HOLD_TICKS;
         this.grabStruck = false;
         this.grabTargetId = target.getUUID();
+        this.grabHurtSequence = boss.appliedHurtSequence;
         this.grabSweepCooldownTicks = AgaitolosPace.scaledCooldown(boss, AgaitolosGrabSkill.SWEEP_COOLDOWN_TICKS);
         AgaitolosAnimations.playGrabSweep(boss);
         return true;
@@ -234,7 +235,7 @@ public final class AgaitolosPhaseThreeState {
      * <p><b>四条出口（缺一条就存在"永久锁住玩家"的风险）</b>：
      * <ol>
      *   <li><b>超时</b>：{@link AgaitolosGrabSkill#HOLD_TICKS} 期满（= clip 长度）；</li>
-     *   <li><b>BOSS 受击</b>：{@code hurtTime > 0}。分两段语义 —— 那一刀<b>落地前</b>挨打 = 整招作废（松手、不结算）；
+     *   <li><b>BOSS 受击</b>：起手后新增实际承伤。分两段语义 —— 那一刀<b>落地前</b>挨打 = 整招作废（松手、不结算）；
      *       <b>落地后</b>挨打 = 只是提前松手（伤害已经造成）；</li>
      *   <li><b>目标死亡 / 丢失 / 被拉开</b>：超过 {@link #HOLD_BREAK_DISTANCE} 视为被外力搬走，直接松手；</li>
      *   <li><b>阶段变化</b>：离开阶段三（含读档后阶段字段变化）立刻松手。</li>
@@ -251,6 +252,7 @@ public final class AgaitolosPhaseThreeState {
         // 出口 ③ 目标没了 / 跑远；出口 ④ 阶段变化
         if (target == null || boss.distanceTo(target) > HOLD_BREAK_DISTANCE || !isPhaseThree(boss)) {
             this.endGrab();
+            boss.cancelVisualAction(AgaitolosAnimations.GRAB_SWEEP);
             return;
         }
         int elapsed = AgaitolosGrabSkill.HOLD_TICKS - this.grabHoldTicks + 1;
@@ -265,8 +267,9 @@ public final class AgaitolosPhaseThreeState {
             AgaitolosPhaseThreeSounds.grabSweepStrike(boss);
         }
         // b. 出口 ② BOSS 受击：出刀前 = 断招（上面没结算）；出刀后 = 提前松手
-        if (boss.hurtTime > 0) {
+        if (boss.appliedHurtSequence != this.grabHurtSequence) {
             this.endGrab();
+            boss.cancelVisualAction(AgaitolosAnimations.GRAB_SWEEP);
             return;
         }
         // c. 钉住（锁位移 + 跟随），再推计时
@@ -432,11 +435,11 @@ public final class AgaitolosPhaseThreeState {
     private boolean canStart(AgaitolosEntity boss, AgaitolosSkillDirector.Move move, int cooldownTicks) {
         return cooldownTicks <= 0 && !boss.isScytheSealed() && !boss.isDeadOrDying() && !boss.isRespawning()
                 && !boss.isIntroPlaying() && !boss.isGuarding() && !boss.isCharging() && !boss.isDiving()
-                && !this.isBusy();
+                && !this.isBusy() && !boss.isPerformingAction();
     }
 
     /** 整段中止：清掉全部进行中状态（并按需撤掉同步位），冷却原样保留 */
-    private void abortAll(AgaitolosEntity boss) {
+    void abortAll(AgaitolosEntity boss) {
         this.tripleThrowTicks = 0;
         this.tripleThrowFiredBeats = 0;
         this.bombardTicks = 0;

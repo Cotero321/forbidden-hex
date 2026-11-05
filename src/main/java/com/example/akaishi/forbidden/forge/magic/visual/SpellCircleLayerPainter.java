@@ -28,7 +28,7 @@ public final class SpellCircleLayerPainter {
         for (int index = 0; index < SpellCircleLayers.LAYER_COUNT; index++) {
             SpellCircleLayers.Layer layer = layers.layer(index);
             float phase = index * 1.37f;
-            float pulse = 0.82f + 0.18f * (float) Math.sin(time * 3.2f + phase);
+            float pulse = 0.88f + 0.12f * (float) Math.sin(time * 2.2f * visual.body().pulseMul() + phase);
             float spin = SpellCircleAnimation.spin(index, time);
             float occupiedAlpha = layer.occupied() ? 0.82f : 0.18f;
             float layerProgress = SpellCircleAnimation.layerProgress(index, progress);
@@ -51,11 +51,13 @@ public final class SpellCircleLayerPainter {
             green = green * inkMix + SpellVisualPainter.green(visual.sourceRgb()) * (1f - inkMix);
             blue = blue * inkMix + SpellVisualPainter.blue(visual.sourceRgb()) * (1f - inkMix);
 
+            float written = SpellCircleAnimation.smooth(layerProgress);
+            float innerWritten = SpellCircleAnimation.smooth((layerProgress - 0.10f) / 0.90f);
             SpellGeometry.ringBand(consumer, matrix, radius * 0.981f, radius,
-                    segments, 0f, 360f, layerAlpha * 0.48f, layerAlpha * 0.78f, red, green, blue);
+                    segments, 90f, 360f * written, layerAlpha * 0.48f, layerAlpha * 0.78f, red, green, blue);
             SpellGeometry.ringBand(consumer, matrix, radius * 0.900f, radius * 0.916f,
-                    segments, 0f, 360f, layerAlpha * 0.28f, layerAlpha * 0.54f,
-                    red, green, blue);
+                    segments, -90f, -360f * innerWritten, layerAlpha * innerWritten * 0.28f,
+                    layerAlpha * innerWritten * 0.54f, red, green, blue);
             paintSlots(consumer, matrix, layer, radius, layerAlpha, segments);
             SpellCircleArt.engraving(consumer, matrix, layer, radius, layerAlpha, detail);
             poseStack.popPose();
@@ -98,10 +100,29 @@ public final class SpellCircleLayerPainter {
                 float angle = connector * 90f;
                 var from = SpellCircleAnimation.point(layer, time, ground, baseRadius, progress, angle, 0.94f);
                 var to = SpellCircleAnimation.point(layer + 1, time, ground, baseRadius, progress, angle, 0.94f);
+                var direction = to.subtract(from);
+                if (direction.lengthSqr() > 1.0e-8d) {
+                    var center = from.lerp(to, 0.5d);
+                    var along = direction.normalize();
+                    var side = along.cross(Math.abs(along.y) > 0.9d
+                            ? new net.minecraft.world.phys.Vec3(1, 0, 0) : new net.minecraft.world.phys.Vec3(0, 1, 0)).normalize();
+                    var up = along.cross(side).normalize();
+                    poseStack.pushPose();
+                    poseStack.translate(center.x, center.y, center.z);
+                    for (var edge : new net.minecraft.world.phys.Vec3[]{side, up}) {
+                        SpellGeometry.texturedRibbon(consumer, poseStack.last().pose(),
+                                (float) along.x, (float) along.y, (float) along.z,
+                                (float) edge.x, (float) edge.y, (float) edge.z,
+                                (float) direction.length() * 0.5f, beadRadius * 0.18f,
+                                alpha * visible * 0.16f, red, green, blue);
+                    }
+                    poseStack.popPose();
+                }
                 for (int bead = 0; bead < 2; bead++) {
-                    float travel = (time * 0.32f + bead * 0.5f + connector * 0.17f) % 1f;
+                    float travel = (time * 0.24f * visual.body().pulseMul() + bead * 0.5f + connector * 0.17f) % 1f;
                     var point = from.lerp(to, travel);
                     float glow = (float) Math.sin(Math.PI * travel);
+                    glow *= glow;
                     poseStack.pushPose();
                     poseStack.translate(point.x, point.y, point.z);
                     SpellGeometry.cage(consumer, poseStack, beadRadius, beadRadius * 0.25f, 6,
@@ -114,9 +135,10 @@ public final class SpellCircleLayerPainter {
 
     private static void paintPulse(MultiBufferSource buffers, PoseStack poseStack, SpellVisual visual,
             float time, float alpha, float radius) {
-        float phase = (time * 0.42f) % 1f;
+        float phase = (time * 0.32f * visual.body().pulseMul()) % 1f;
         float pulseRadius = radius * (0.28f + phase * 0.76f);
-        float pulseAlpha = alpha * (1f - phase) * 0.52f;
+        float pulseAlpha = alpha * SpellCircleAnimation.smooth(phase / 0.18f)
+                * SpellCircleAnimation.smooth((1f - phase) / 0.70f) * 0.38f;
         if (pulseAlpha <= 0.01f) return;
         VertexConsumer pulse = buffers.getBuffer(SpellGeometry.textureType(SpellVfx.RING_PULSE));
         poseStack.pushPose();

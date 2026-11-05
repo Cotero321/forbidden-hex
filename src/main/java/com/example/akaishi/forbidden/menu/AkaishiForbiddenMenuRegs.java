@@ -28,6 +28,7 @@ public final class AkaishiForbiddenMenuRegs {
     /** 合并母神祭坛菜单类型（结构等级展示 + 单物品供奉槽） */
     public static RegistrySupplier<MenuType<AkaishiMotherAltarMenu>> CHISHI_MOTHER_ALTAR;
     public static RegistrySupplier<MenuType<AkaishiInscriptionTableMenu>> INSCRIPTION_TABLE;
+    public static RegistrySupplier<MenuType<SourceAltarMenu>> SOURCE_ALTAR;
 
     private AkaishiForbiddenMenuRegs() {
     }
@@ -63,5 +64,15 @@ public final class AkaishiForbiddenMenuRegs {
                 .register(new ResourceLocation(AkaishiMod.MOD_ID, "forbidden_hex_mother_altar"), () -> motherAltarType);
         EnvExecutor.runInEnv(Env.CLIENT, () -> () ->
                 MenuRegistry.registerScreenFactory(motherAltarType, AkaishiMotherAltarScreen::new));
+        MenuType<SourceAltarMenu> sourceType = MenuRegistry.ofExtended((syncId, inv, buf) -> {
+            BlockPos pos = buf.readBlockPos();
+            var entity = inv.player.level().getBlockEntity(pos);
+            return new SourceAltarMenu(syncId, inv, pos,
+                    entity instanceof com.example.akaishi.forbidden.altar.SourceAltarBlockEntity altar ? altar : null);
+        });
+        SOURCE_ALTAR = RegistrarManager.get(AkaishiMod.MOD_ID).get(Registries.MENU)
+                .register(new ResourceLocation(AkaishiMod.MOD_ID, "forbidden_hex_source_altar"), () -> sourceType);
+        EnvExecutor.runInEnv(Env.CLIENT, () -> () ->
+                MenuRegistry.registerScreenFactory(sourceType, SourceAltarScreen::new));
     }
 }

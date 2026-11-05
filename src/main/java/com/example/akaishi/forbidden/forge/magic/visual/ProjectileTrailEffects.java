@@ -49,6 +49,7 @@ public final class ProjectileTrailEffects {
 
     private final Map<UUID, Trail> trails = new LinkedHashMap<>();
     private final List<Burst> bursts = new ArrayList<>();
+    private final List<Burst> hexBursts = new ArrayList<>();
     private final MultiBufferSource.BufferSource buffers = MultiBufferSource.immediate(new BufferBuilder(8192));
     private ClientLevel world;
 
@@ -67,6 +68,7 @@ public final class ProjectileTrailEffects {
                 || !ForbiddenVisualConfig.PROJECTILE_TRAILS.get()
                 || trail.brewing && !ForbiddenVisualConfig.BREWING_EFFECTS.get());
         bursts.removeIf(burst -> now - burst.started() >= BURST_TICKS);
+        hexBursts.removeIf(burst -> now - burst.started() >= BURST_TICKS);
         if (!ForbiddenVisualConfig.BREWING_EFFECTS.get()) bursts.clear();
         int limit = trailLimit();
         while (trails.size() > limit) trails.remove(trails.keySet().iterator().next());
@@ -81,9 +83,11 @@ public final class ProjectileTrailEffects {
                 observe(entity, visual.inkRgb(), visual.sourceRgb(),
                         Math.max(0.035f, Math.min(0.22f, visual.baseSize() * 0.13f)),
                         Math.min(0.85f, visual.brightness() * 0.65f), false, now, limit);
+            } else if (entity instanceof com.example.akaishi.forbidden.boss.agaitolos.entity.AgaitolosHexOrb) {
+                observe(entity, 0xDDB76A, 0x8963B8, 0.065f, 0.72f, false, now, limit);
             } else if (entity instanceof BrewingPotionProjectile projectile && ForbiddenVisualConfig.BREWING_EFFECTS.get()) {
                 BrewingPotionData.read(projectile.getItem()).filter(data -> !data.hideParticles()).ifPresent(data ->
-                        observe(entity, data.effects().get(0).getEffect().getColor(), 0xCFEEE4,
+                        observe(entity, data.color(), 0xCFEEE4,
                                 0.035f, 0.45f, true, now, limit));
             }
         }
@@ -106,6 +110,18 @@ public final class ProjectileTrailEffects {
         trail.path.add(entity.position(), now, trailLifetime());
     }
 
+    public void hexOrbBurst(com.example.akaishi.forbidden.boss.agaitolos.entity.AgaitolosHexOrb orb) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (!(orb.level() instanceof ClientLevel level) || level != minecraft.level) return;
+        syncWorld(level);
+        int limit = Math.min(32, ForbiddenVisualConfig.MAX_BURSTS.get());
+        if (limit <= 0 || com.example.akaishi.forbidden.forge.client.visual.ClientVisualBudget.detailScale(
+                orb.position().distanceToSqr(minecraft.gameRenderer.getMainCamera().getPosition())) <= 0f) return;
+        while (hexBursts.size() >= limit) hexBursts.remove(0);
+        trails.remove(orb.getUUID());
+        hexBursts.add(new Burst(orb.position(), 0xDDB76A, level.getGameTime()));
+    }
+
     public void shatter(BrewingPotionProjectile projectile) {
         Minecraft minecraft = Minecraft.getInstance();
         if (!(projectile.level() instanceof ClientLevel level) || level != minecraft.level
@@ -115,7 +131,7 @@ public final class ProjectileTrailEffects {
             Vec3 point = projectile.position();
             double range = ForbiddenVisualConfig.EFFECT_DISTANCE.get();
             if (point.distanceToSqr(minecraft.gameRenderer.getMainCamera().getPosition()) > range * range) return;
-            int rgb = data.effects().get(0).getEffect().getColor();
+            int rgb = data.color();
             int limit = ForbiddenVisualConfig.MAX_BURSTS.get();
             if (limit > 0) {
                 while (bursts.size() >= limit) bursts.remove(0);
@@ -162,6 +178,23 @@ public final class ProjectileTrailEffects {
                 pose.popPose();
             }
         }
+        for (Burst burst : hexBursts) {
+            float age = (float) (now - burst.started()) / BURST_TICKS;
+            float detail = com.example.akaishi.forbidden.forge.client.visual.ClientVisualBudget.detailScale(
+                    burst.position().distanceToSqr(camera));
+            if (age < 0f || age >= 1f || detail <= 0f) continue;
+            float fade = (1f - age) * (1f - age);
+            pose.pushPose();
+            pose.translate(burst.position().x - camera.x, burst.position().y - camera.y,
+                    burst.position().z - camera.z);
+            SpellVisualPainter.flatQuad(buffers, pose, SpellVfx.NOVA, event.getCamera().rotation(),
+                    0.12f + age * 0.7f, fade * 0.8f, 0xFFF1C7);
+            SpellVisualPainter.flatQuad(buffers, pose, SpellVfx.RING_PULSE, event.getCamera().rotation(),
+                    0.15f + age * 1.05f, fade * 0.65f, burst.rgb());
+            if (detail > 0.5f) SpellVisualPainter.flatQuad(buffers, pose, SpellVfx.WISP,
+                    event.getCamera().rotation(), 0.2f + age * 0.8f, fade * 0.18f, 0x8963B8);
+            pose.popPose();
+        }
         buffers.endBatch();
     }
 
@@ -171,6 +204,9 @@ public final class ProjectileTrailEffects {
         List<Vec3> points = new ArrayList<>(history.size());
         List<Float> fades = new ArrayList<>(history.size());
         int lifetime = trailLifetime();
+        var material = com.example.akaishi.forbidden.magic.visual.SpellInkMaterial.get(
+                !trail.brewing && trail.entity instanceof SpellProjectile projectile ? projectile.visual().inkId() : null);
+        float width = trail.width * (trail.brewing ? 1f : material.trailWidth());
         Vec3 first = history.get(0).position();
         double range = ForbiddenVisualConfig.EFFECT_DISTANCE.get();
         boolean visible = false;
@@ -178,7 +214,9 @@ public final class ProjectileTrailEffects {
             double age = now - sample.tick();
             float fade = (float) Math.max(0d, 1d - age / lifetime);
             points.add(sample.position());
-            fades.add(fade * fade);
+            float tail = com.example.akaishi.forbidden.magic.visual.SpellCircleAnimation.smooth(
+                    (sample.tick() - history.get(0).tick()) / 2f);
+            fades.add(trail.brewing ? fade * fade : (float) Math.pow(fade, material.fadePower()) * tail);
             visible |= sample.position().distanceToSqr(camera) <= range * range;
         }
         if (!visible) return;
@@ -214,11 +252,40 @@ public final class ProjectileTrailEffects {
                 u1 = u0 + (history.get(i).tick() - history.get(i - 1).tick()) / 4f;
             }
             strip(consumer, matrix, from.subtract(first), to.subtract(first), sides.get(i - 1), sides.get(i),
-                    trail.width * 2.4f, fades.get(i - 1), fades.get(i), trail.alpha * 0.2f,
+                    width * 2.4f, fades.get(i - 1), fades.get(i), trail.alpha * 0.2f,
                     trail.auraRgb, u0, u1);
             strip(consumer, matrix, from.subtract(first), to.subtract(first), sides.get(i - 1), sides.get(i),
-                    trail.width, fades.get(i - 1), fades.get(i), trail.alpha,
+                    width, fades.get(i - 1), fades.get(i), trail.alpha,
                     trail.coreRgb, u0, u1);
+        }
+        double closest = Double.POSITIVE_INFINITY;
+        for (Vec3 point : points) closest = Math.min(closest, point.distanceToSqr(camera));
+        float detail = com.example.akaishi.forbidden.forge.client.visual.ClientVisualBudget.detailScale(closest);
+        detail = Math.min(detail, closest > 1024d ? 0.5f : closest > 256d ? 0.72f : 1f);
+        if (!trail.brewing && detail > 0.5f) {
+            VertexConsumer core = buffers.getBuffer(java.util.Objects.requireNonNull(SpellGeometry.energyType()));
+            int photon = com.example.akaishi.forbidden.magic.particle.AkaishiMagicParticles.photonRgb(trail.coreRgb);
+            for (int i = 1; i < points.size(); i++) {
+                Vec3 from = points.get(i - 1).subtract(first);
+                Vec3 to = java.util.Objects.requireNonNull(points.get(i).subtract(first));
+                if (from.distanceToSqr(to) < 1.0e-8d) continue;
+                strip(core, matrix, from, to, sides.get(i - 1), sides.get(i), width * 0.18f,
+                        fades.get(i - 1), fades.get(i), trail.alpha * 0.65f, photon, 0f, 1f);
+                if (detail > 0.72f) {
+                    for (int sign = -1; sign <= 1; sign += 2) {
+                        double phase0 = (now - history.get(i - 1).tick()) * material.flowSpeed() * 0.45d;
+                        double phase1 = (now - history.get(i).tick()) * material.flowSpeed() * 0.45d;
+                        double offset0 = sign * width * Math.sqrt(fades.get(i - 1))
+                                * (0.62d + material.turbulence() * Math.sin(phase0));
+                        double offset1 = sign * width * Math.sqrt(fades.get(i))
+                                * (0.62d + material.turbulence() * Math.sin(phase1));
+                        strip(core, matrix, from.add(java.util.Objects.requireNonNull(sides.get(i - 1).scale(offset0))),
+                                to.add(java.util.Objects.requireNonNull(sides.get(i).scale(offset1))),
+                                sides.get(i - 1), sides.get(i), width * 0.08f,
+                                fades.get(i - 1), fades.get(i), trail.alpha * 0.32f, trail.auraRgb, 0f, 1f);
+                    }
+                }
+            }
         }
         pose.popPose();
     }
@@ -254,6 +321,7 @@ public final class ProjectileTrailEffects {
         if (world == level) return;
         trails.clear();
         bursts.clear();
+        hexBursts.clear();
         com.example.akaishi.forbidden.forge.client.visual.ClientVisualBudget.beginTick(level);
         world = level;
     }

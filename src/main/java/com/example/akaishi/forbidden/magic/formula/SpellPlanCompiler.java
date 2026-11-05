@@ -77,8 +77,8 @@ public final class SpellPlanCompiler {
         features.add("composition_execution");
         if (source == MagicSource.SAN) {
             features.add("san_power_1_3");
-            features.add("san_mental_piercing");
-            info(diagnostics, "san_mental_piercing", -1, "SAN damage uses registered forbidden_hex:psychic: bypasses armor, resistance and enchantments; retains absorption, invulnerability and COG psychic guard");
+            features.add("san_psychic_bonus");
+            info(diagnostics, "san_psychic_bonus", -1, "main ink selects spell subtype; SAN adds psychic damage: D * min(0.1 * effect power ratio, 0.4); retains absorption, invulnerability and COG psychic guard");
         }
         if (inks.contains(MagicIds.Ink.XING)) {
             features.add("star_exclusive");
@@ -168,7 +168,7 @@ public final class SpellPlanCompiler {
             Set<String> traits = new LinkedHashSet<>();
             boolean damaging = MagicIds.Effect.DAMAGE.equals(id) || MagicIds.Effect.FIELD.equals(id)
                     || MagicIds.Effect.LINK.equals(id);
-            if (damaging && source == MagicSource.SAN) traits.add("san_mental_piercing");
+            if (damaging && source == MagicSource.SAN) traits.add("san_psychic_bonus");
             if (damaging && (words.contains(MagicWord.JIAN) || words.contains(MagicWord.ZHEN))) traits.add("piercing");
             if (damaging && starInk) {
                 magnitude *= 1.75f;

@@ -227,27 +227,65 @@ public final class AgaitolosActionFx {
 
     // ---------------------------------------------------------------- 语义入口
 
-    /**
-     * 普攻命中：正面一道弧形刃痕 + 一记原版 {@code SWEEP_ATTACK}。
-     * <p>
-     * <b>为什么既画采样弧又放 SWEEP_ATTACK</b>：采样弧负责<b>朝向与颜色</b>（沿 BOSS 正面铺点，
-     * 用识别色青蓝），{@code SWEEP_ATTACK} 是原版唯一的"挥砍轨迹"粒子（原版横扫之刃同款），
-     * 负责<b>形状</b>——它由客户端绘制成一个固定的弧片，给出"刀已经挥完"的瞬时读数。
-     * 二者缺一个都会退化成"一圈发光点"或"凭空的白色弧"。
-     * <p>
-     * 挂在 {@code AgaitolosEntity#doHurtTarget} 命中分支（与 {@code playAttack} 同刻）：
-     * 那里是"这一刀真的造成了伤害"的唯一语义点；挂在动画触发处会让空挥也冒特效。
-     */
+    /** 服务端确认命中后的局部微闪；镰刃轨迹由客户端实际骨骼矩阵绘制。 */
     public static void meleeSlash(AgaitolosEntity boss) {
-        if (!(boss.level() instanceof ServerLevel level)) {
+        if (!(boss.level() instanceof ServerLevel level)) return;
+        LivingEntity target = boss.getTarget();
+        if (target == null) return;
+        level.sendParticles(ParticleTypes.ENCHANTED_HIT, target.getX(),
+                target.getY() + target.getBbHeight() * 0.55D, target.getZ(),
+                4, 0.08D, 0.12D, 0.08D, 0.02D);
+    }
+
+    /**
+     * 高速踢击的落点表现：脚下短弧、躯干核闪和贴地冲击点。
+     * <p>踢击没有镰刃轨迹，必须用独立的低位信号把它和普通移动区分开；
+     * 该入口只在服务端命中帧调用，伤害与格挡判定仍由 {@code AgaitolosKickSkill} 独占。
+     */
+    public static void kickImpact(AgaitolosEntity boss, LivingEntity target) {
+        if (!(boss.level() instanceof ServerLevel level) || target == null) return;
+        double y = target.getY() + 0.08D;
+        for (int i = 0; i < 6; ++i) {
+            double angle = Math.PI * (-0.72D + 1.44D * i / 5.0D);
+            level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
+                    target.getX() + Math.cos(angle) * 0.9D, y,
+                    target.getZ() + Math.sin(angle) * 0.9D,
+                    1, 0.04D, 0.04D, 0.04D, 0.035D);
+        }
+        level.sendParticles(ParticleTypes.ENCHANTED_HIT, target.getX(),
+                target.getY() + target.getBbHeight() * 0.48D, target.getZ(),
+                7, 0.16D, 0.22D, 0.16D, 0.035D);
+        level.sendParticles(ParticleTypes.CLOUD, target.getX(), y, target.getZ(),
+                5, 0.55D, 0.08D, 0.55D, 0.035D);
+    }
+
+    /**
+     * 瞬击的起点/落点断环。起点由调用方在传送前保存，落点使用传送后的实体坐标，
+     * 使原版实体同步的瞬移也有清晰的视觉因果；失败时只放极轻的起手雾，不伪装成成功传送。
+     */
+    public static void blinkTransition(AgaitolosEntity boss, Vec3 departure, boolean success) {
+        if (!(boss.level() instanceof ServerLevel level) || departure == null) return;
+        if (!success) {
+            level.sendParticles(ParticleTypes.PORTAL, departure.x, departure.y + 0.9D, departure.z,
+                    4, 0.18D, 0.32D, 0.18D, 0.02D);
             return;
         }
-        double yaw = facingYaw(boss);
-        emitArc(level, boss, yaw, SLASH_ARC_DEGREES, SLASH_ARC_RADIUS, SLASH_ARC_HEIGHT_RATIO,
-                SLASH_ARC_FORWARD, SLASH_ARC_POINTS, ParticleTypes.SOUL_FIRE_FLAME, 1);
-        level.sendParticles(ParticleTypes.SWEEP_ATTACK, boss.getX(),
-                boss.getY() + boss.getBbHeight() * SLASH_ARC_HEIGHT_RATIO, boss.getZ(),
-                1, 0.0D, 0.0D, 0.0D, 0.0D);
+        emitBlinkBurst(level, departure);
+        emitBlinkBurst(level, boss.position());
+    }
+
+    private static void emitBlinkBurst(ServerLevel level, Vec3 at) {
+        for (int i = 0; i < 8; ++i) {
+            double angle = Math.PI * 2.0D * i / 8.0D;
+            level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
+                    at.x + Math.cos(angle) * 0.65D, at.y + 0.9D,
+                    at.z + Math.sin(angle) * 0.65D,
+                    1, 0.04D, 0.14D, 0.04D, 0.025D);
+        }
+        level.sendParticles(ParticleTypes.PORTAL, at.x, at.y + 0.9D, at.z,
+                12, 0.28D, 0.48D, 0.28D, 0.04D);
+        level.sendParticles(ParticleTypes.END_ROD, at.x, at.y + 0.95D, at.z,
+                3, 0.12D, 0.16D, 0.12D, 0.02D);
     }
 
     /**
@@ -326,12 +364,6 @@ public final class AgaitolosActionFx {
         if (!(boss.level() instanceof ServerLevel level)) {
             return;
         }
-        double yaw = facingYaw(boss);
-        emitArc(level, boss, yaw, SWEEP_ARC_DEGREES, SWEEP_ARC_RADIUS, SWEEP_ARC_HEIGHT_RATIO,
-                0.0D, SWEEP_ARC_POINTS, ParticleTypes.SOUL_FIRE_FLAME, 1);
-        level.sendParticles(ParticleTypes.SWEEP_ATTACK, boss.getX(),
-                boss.getY() + boss.getBbHeight() * SWEEP_ARC_HEIGHT_RATIO, boss.getZ(),
-                1, 0.0D, 0.0D, 0.0D, 0.0D);
         if (!hit) {
             return;
         }

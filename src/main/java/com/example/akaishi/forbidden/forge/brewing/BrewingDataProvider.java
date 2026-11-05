@@ -42,7 +42,7 @@ public final class BrewingDataProvider implements DataProvider {
             recipes();
             plants();
             for (String name : List.of("wood_ash", "grass_ash", "fume", "brewed_potion", "transmutation_dust",
-                    "refined_herb_paste", "rune_stone", "charged_rune_stone")) item(name);
+                    "slaked_lime_bottle", "refined_herb_paste", "rune_stone", "charged_rune_stone")) item(name);
             for (String material : MATERIALS) item(material);
             template();
         } catch (IOException error) { return CompletableFuture.failedFuture(error); }
@@ -81,8 +81,19 @@ public final class BrewingDataProvider implements DataProvider {
         for (int i = 0; i < BrewingPlants.TREES.size(); i++) oven(id(BrewingPlants.TREES.get(i) + "_sapling"), "wood_ash", TREE_FUMES[i]);
         for (int i = 0; i < MATERIALS.size(); i++) if (HERB_FUMES[i] != null) oven(id(MATERIALS.get(i)), "grass_ash", HERB_FUMES[i]);
         JsonArray dust = new JsonArray();
-        for (String name : List.of("redstone", "glowstone_dust", "gunpowder", "sugar")) dust.add(step("item", "minecraft:" + name));
-        crucible("transmutation_dust", dust, List.of(id("transmutation_dust")));
+        JsonObject anyFume = step("item", id("fume"));
+        anyFume.addProperty("nbt", "{forbidden_hex_fume:'*'}");
+        dust.add(anyFume);
+        dust.add(step("item", "minecraft:egg"));
+        dust.add(step("tag", "forge:seeds"));
+        dust.add(step("item", "minecraft:bone_meal"));
+        crucible("transmutation_dust", dust, List.of(id("transmutation_dust")), 4);
+        JsonArray lime = new JsonArray();
+        for (int i = 0; i < 4; i++) lime.add(step("item", id("quicklime")));
+        JsonObject slakedLime = json("{\"type\":\"forbidden_hex:crucible\",\"kind\":\"transformation\",\"heat\":\"fire\","
+                + "\"result\":{\"item\":\"" + id("slaked_lime_bottle") + "\"},\"output_count\":4,\"bottles\":{\"output\":4,\"returns\":0}}");
+        slakedLime.add("steps", lime);
+        save("data/forbidden_hex/recipes/brewing/slaked_lime_bottle.json", slakedLime);
         JsonArray trees = new JsonArray();
         trees.add(step("tag", "minecraft:saplings"));
         conversionTail(trees);
@@ -99,10 +110,13 @@ public final class BrewingDataProvider implements DataProvider {
         steps.add(step("item", id("transmutation_dust")));
     }
     private void crucible(String name, JsonArray steps, List<String> results) {
+        crucible(name, steps, results, 1);
+    }
+    private void crucible(String name, JsonArray steps, List<String> results, int count) {
         JsonObject recipe = json("{\"type\":\"forbidden_hex:crucible\",\"kind\":\"transformation\",\"heat\":\"fire\"}");
         recipe.add("steps", steps);
         JsonArray pool = new JsonArray();
-        for (String item : results) pool.add(json("{\"item\":\"" + item + "\",\"count\":1}"));
+        for (String item : results) pool.add(json("{\"item\":\"" + item + "\",\"count\":" + count + "}"));
         recipe.add("results", pool);
         save("data/forbidden_hex/recipes/brewing/" + name + ".json", recipe);
     }
@@ -253,7 +267,9 @@ public final class BrewingDataProvider implements DataProvider {
     }
 
     private void item(String name) {
-        if (!List.of("wood_ash", "grass_ash", "fume", "brewed_potion").contains(name)) {
+        if (name.equals("slaked_lime_bottle")) {
+            itemModel(name, json("{\"parent\":\"minecraft:item/generated\",\"textures\":{\"layer0\":\"" + NS + "item/" + PREFIX + name + "\",\"layer1\":\"minecraft:item/potion\"}}"));
+        } else if (!List.of("wood_ash", "grass_ash", "fume", "brewed_potion").contains(name)) {
             itemModel(name, json("{\"parent\":\"minecraft:item/generated\",\"textures\":{\"layer0\":\"" + NS + "item/" + PREFIX + name + "\"}}"));
         }
     }

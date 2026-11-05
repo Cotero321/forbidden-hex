@@ -60,7 +60,7 @@ public final class SpellParticleBursts {
                 burst(level, options, at, heavy, spreadOf(visual, 0.35));
             }
             case ORB -> {
-                along(level, options, event.from(), at, 7, 2);      // 飞行残迹
+                along(level, options, event.from(), at, 7, 2);
                 burst(level, options, at, heavy, spreadOf(visual, 0.40));
             }
             case SALVO -> {

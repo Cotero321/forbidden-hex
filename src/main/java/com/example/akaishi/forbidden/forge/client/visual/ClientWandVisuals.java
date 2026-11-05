@@ -38,6 +38,8 @@ public final class ClientWandVisuals {
     private static MagicSource source;
     private static int inkRgb = 0xFFFFFF;
     private static String inkId = "";
+    private static List<String> slotWords = List.of();
+    private static List<String> slotInks = List.of();
     private static float chargeTicks;
     private static float segmentTicks;
     private static int selectedSlot = -2;
@@ -87,11 +89,21 @@ public final class ClientWandVisuals {
             chargeTicks = 0f;
             segmentTicks = 1f;
             channel = valid && MagicIds.Delivery.CHANNEL.equals(summary.result().delivery().deliveryId());
+            slotWords = List.of();
+            slotInks = List.of();
             if (valid) {
                 List<String> inks = new ArrayList<>();
+                List<String> wordsBySlot = new ArrayList<>();
+                List<String> inksBySlot = new ArrayList<>();
                 for (int wordSlot = 0; wordSlot < MagicCoreItem.SLOTS; wordSlot++) {
-                    if (!MagicCoreItem.word(core, wordSlot).isEmpty()) inks.add(MagicCoreItem.ink(core, wordSlot));
+                    String word = MagicCoreItem.word(core, wordSlot);
+                    String wordInk = MagicCoreItem.ink(core, wordSlot);
+                    wordsBySlot.add(word);
+                    inksBySlot.add(wordInk);
+                    if (!word.isEmpty()) inks.add(wordInk);
                 }
+                slotWords = List.copyOf(wordsBySlot);
+                slotInks = List.copyOf(inksBySlot);
                 var plan = SpellPlanAdapter.adjusted(summary.result(), WandModifiers.resolve(wand, source, inks,
                         WandItem.extra(wand, source), 1));
                 chargeTicks = plan.delivery().castTimeSeconds() * 20f;
@@ -122,6 +134,8 @@ public final class ClientWandVisuals {
     public static MagicSource source() { return source; }
     public static int inkRgb() { return inkRgb; }
     public static String inkId() { return inkId; }
+    public static List<String> slotWords() { return slotWords; }
+    public static List<String> slotInks() { return slotInks; }
     public static boolean valid() { return valid; }
     public static boolean denied() { return failureTicks > 0; }
     public static MagicCastState state() { return TIMELINE.state(); }
@@ -139,6 +153,8 @@ public final class ClientWandVisuals {
         assembly = "";
         selectedSlot = -2;
         source = null;
+        slotWords = List.of();
+        slotInks = List.of();
         valid = false;
         channel = false;
         chargeTicks = 0f;

@@ -1,6 +1,10 @@
 package com.example.akaishi.forbidden.forge.magic.visual;
 
+import com.example.akaishi.forbidden.magic.particle.MagicInkStyle;
 import com.example.akaishi.forbidden.magic.table.MagicIds;
+import com.example.akaishi.forbidden.magic.table.MagicInkTable;
+import com.example.akaishi.forbidden.magic.table.MagicSource;
+import com.example.akaishi.forbidden.magic.visual.SpellCircleAnimation;
 import com.example.akaishi.forbidden.magic.visual.SpellCarrierForm;
 import com.example.akaishi.forbidden.magic.visual.SpellGeometryKind;
 import com.example.akaishi.forbidden.magic.visual.SpellVisual;
@@ -13,6 +17,8 @@ import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import net.minecraft.world.phys.Vec3;
+
+import java.util.Objects;
 
 /**
  * 把一份 {@link SpellVisual} <b>组装</b>成实际的几何（设计记忆 §7 / §19.5 / §19.3）。
@@ -74,7 +80,7 @@ public final class SpellVisualPainter {
         paint(poseStack, buffers, visual, time, alphaMul, currentDetail(poseStack), true);
     }
 
-    private static void paint(PoseStack poseStack, MultiBufferSource buffers, SpellVisual visual,
+    public static void paint(PoseStack poseStack, MultiBufferSource buffers, SpellVisual visual,
             float time, float alphaMul, float detail) {
         paint(poseStack, buffers, visual, time, alphaMul, detail, false);
     }
@@ -112,6 +118,10 @@ public final class SpellVisualPainter {
                 alpha * 0.30f * bright, 0f, red(aura), green(aura), blue(aura));
         // ③ 墨色主体（内层）：形态由 E 决定，负责"这是什么法术"
         paintForm(consumer, poseStack, visual.effectId(), form, time, size, alpha * bright, complexity, pulseRate, accent, detail);
+        if (carrier.form() != SpellCarrierForm.FIELD) {
+            SpellSourceVfx.paint(poseStack, buffers, MagicSource.byIdOrDefault(visual.sourceId()),
+                    aura, accent, time, size * 1.35f, alpha * 0.72f, detail);
+        }
         poseStack.popPose();
     }
 
@@ -125,55 +135,18 @@ public final class SpellVisualPainter {
             Vec3 line, float time, float alphaMul, Quaternionf billboard, float detail) {
         if (detail <= 0f) return;
         SpellVisualSpecs.Carrier carrier = visual.carrierSpec();
-        VertexConsumer consumer = buffers.getBuffer(SpellGeometry.energyType());
         float r = red(visual.inkRgb());
         float g = green(visual.inkRgb());
         float b = blue(visual.inkRgb());
         float alpha = clamp(alphaMul * visual.brightness(), 0f, 1f);
-        float length = (float) line.length();
         boolean beam = carrier.form() == SpellCarrierForm.BEAM || carrier.form() == SpellCarrierForm.SALVO;
-        if (beam) {
-            int strands = detail > 0.72f ? (carrier.sustained() ? 2 : carrier.staggered() ? 3 : 1) : 1;
-            int beads = detailCount(carrier.staggered() ? 6 : carrier.sustained() ? 12 : 8, detail, 4);
-            float radius = carrier.staggered() ? 0.045f : carrier.sustained() ? 0.075f : 0.055f;
-            for (int strand = 0; strand < strands; strand++) {
-                poseStack.pushPose();
-                float offset = (strand - (strands - 1) / 2f) * (carrier.sustained() ? 0.14f : 0.11f);
-                poseStack.translate(offset, 0f, 0f);
-                SpellGeometry.beadLine(consumer, poseStack, (float) line.x, (float) line.y,
-                        (float) line.z, 0f, 0f, 0f, beads, radius, alpha,
-                        r, g, b);
-                poseStack.popPose();
-            }
-            // 光丝缀饰：沿线铺几片光带贴图，给串珠"丝缕"质感（纹样交给贴图，走向仍由串珠承担）
-            VertexConsumer filament = buffers.getBuffer(SpellGeometry.textureType(SpellVfx.FILAMENT));
-            int filaments = detail <= 0.5f ? 0 : detailCount(
-                    Math.min(24, Math.max(2, Math.round(length / 0.9f))), detail, 1);
-            for (int i = 0; i < filaments; i++) {
-                float t = (i + 0.5f) / filaments;
-                poseStack.pushPose();
-                poseStack.translate((float) line.x * t, (float) line.y * t, (float) line.z * t);
-                poseStack.mulPose(billboard);
-                float size = 0.16f + 0.05f * (float) Math.sin(time * 9f + i * 1.7f);
-                SpellGeometry.texturedQuad(filament, poseStack.last().pose(), size,
-                        alpha * 0.75f, r, g, b);
-                poseStack.popPose();
-            }
-            if (carrier.staggered()) {
-                poseStack.pushPose();
-                poseStack.translate(0f, 0.12f * (float) Math.sin(time * 8f), 0f);
-                poseStack.mulPose(billboard);
-                paint(poseStack, buffers, visual, time + length * 0.04f, alphaMul * 0.8f, detail);
-                poseStack.popPose();
-            }
-            // 词模块挂载到束流：每个词在时间轴上占一个节点，连发会形成错开的词符脉冲。
-            if (detail > 0.72f) {
-                paintWordModules(buffers.getBuffer(SpellGeometry.energyType()), poseStack, visual, line,
-                        time, alpha, carrier.staggered(), billboard);
-            }
+        if (beam && detail > 0.72f) {
+            paintWordModules(buffers, poseStack, visual, line,
+                    time, alpha, carrier.staggered(), billboard);
         }
         // 载体专属贴图层：给"用什么把法术送出去"一个可见的纹样（顶点色几何画不出纹样）
         paintCarrierLayers(poseStack, buffers, visual, line, time, alpha, billboard);
+        if (beam) paintBeamFlow(poseStack, buffers, visual, line, time, alpha, detail);
         poseStack.pushPose();
         // 落点这一侧<b>一律面向相机</b>：E 的形态几何（弧 / 尖刺 / 环）本质是平面图形，
         // 不面向相机时从多数角度看就是"一条线" —— 这正是"结丝（LINK + 束）"看起来很差的原因。
@@ -188,12 +161,11 @@ public final class SpellVisualPainter {
         if (carrier.form() != SpellCarrierForm.ORB) {
             paint(poseStack, buffers, visual, time, alphaMul, detail);
         }
-        if (!beam && detail > 0.72f && !visual.glyphs().isEmpty()) {
-            // X4 附着 / X6 回响 / X2 投射物：词符围绕载体中心显示。
-            SpellGeometry.runeRing(buffers.getBuffer(SpellGeometry.energyType()), poseStack.last().pose(), visual.glyphs(),
-                    Math.max(0.12f, visual.baseSize() * 0.55f),
-                    Math.max(0.035f, visual.baseSize() * 0.10f), time * 18f,
-                    alpha * 0.9f, r, g, b);
+        if (!beam && detail > 0.72f) {
+            paintWordRing(poseStack, buffers, visual.slotWords(), visual.slotInks(), visual.inkRgb(),
+                    Math.max(0.18f, visual.baseSize() * 0.68f),
+                    Math.max(0.07f, visual.baseSize() * 0.13f), time * 9f,
+                    alpha * 0.72f, 1f);
         }
         poseStack.popPose();
     }
@@ -252,16 +224,73 @@ public final class SpellVisualPainter {
                 // FIELD（X5）：由法阵实体渲染器整程负责，事件层对它不派发，这里不会走到
             }
         }
-        // 持续段的"重音"：引导 / 布场每秒结算一段 —— 视觉上也该有节拍，
-        // 否则持续施法看起来只是"一直亮着"，玩家读不出"又结算了一段"
         if (visual.carrierSpec().sustained()) {
-            float segmentPhase = time - (float) Math.floor(time);       // 0..1（每秒一轮）
-            float accent = 1f - segmentPhase;                            // 刚过段界最亮
-            if (accent > 0.02f) {
-                flatQuad(buffers, poseStack, SpellVfx.RING_PULSE, billboard,
-                        size * (0.90f + 1.50f * (1f - accent)), alpha * 0.55f * accent * accent, ink);
+            float cycles = time * 0.65f * visual.body().pulseMul();
+            float phase = cycles - (float) Math.floor(cycles);
+            float accent = SpellCircleAnimation.smooth(phase / 0.18f)
+                    * SpellCircleAnimation.smooth((1f - phase) / 0.65f);
+            flatQuad(buffers, poseStack, SpellVfx.RING_PULSE, billboard,
+                    size * (0.90f + 1.25f * phase), alpha * 0.30f * accent, ink);
+        }
+    }
+
+    private static void paintBeamFlow(PoseStack pose, MultiBufferSource buffers, SpellVisual visual,
+            Vec3 line, float time, float alpha, float detail) {
+        double length = line.length();
+        if (length < 0.02d) return;
+        float size = visual.baseSize() * visual.carrierSpec().sizeMul();
+        int photon = com.example.akaishi.forbidden.magic.particle.AkaishiMagicParticles.photonRgb(visual.inkRgb());
+        ribbon(buffers, pose, line, size * 0.018f, alpha * 0.55f, photon, SpellGeometry.WHITE, 0f);
+        if (detail <= 0.5f) return;
+        Vec3 axis = line.scale(1d / length);
+        Vec3 side = Objects.requireNonNull(axis.cross(Math.abs(axis.y) > 0.9d
+                ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0)).normalize());
+        Vec3 up = Objects.requireNonNull(axis.cross(side).normalize());
+        MagicInkStyle style = MagicInkStyle.get(visual.inkId());
+        boolean link = MagicIds.Effect.LINK.equals(visual.effectId());
+        boolean ordered = MagicIds.Ink.XU.equals(visual.inkId());
+        int steps = Math.max(10, Math.min(detail > 0.72f ? 64 : 32, (int) Math.ceil(length * 5d)));
+        int strands = detail > 0.72f ? 2 : 1;
+        double radius = Math.min(0.11d, size * 0.075d) * (ordered ? 0.5d : style.spreadMul());
+        double turns = ordered ? 0d : link ? 2.4d : 0.65d + Math.abs(style.swirl()) * 0.45d;
+        double speed = (2.2d + style.drag() * 2d) * visual.body().pulseMul();
+        VertexConsumer flow = buffers.getBuffer(SpellGeometry.energyType());
+        Matrix4f matrix = pose.last().pose();
+        for (int strand = 0; strand < strands; strand++) {
+            Vec3 previous = Vec3.ZERO;
+            float previousAlpha = 0f;
+            int color = strand == 0 ? visual.inkRgb() : visual.sourceRgb();
+            for (int i = 0; i <= steps; i++) {
+                double t = (double) i / steps;
+                double angle = t * Math.PI * 2d * turns + time * speed + strand * Math.PI;
+                double envelope = Math.sin(t * Math.PI) * radius;
+                Vec3 next = line.scale(t).add(side.scale(Math.cos(angle) * envelope))
+                        .add(up.scale(Math.sin(angle) * envelope));
+                float edge = SpellCircleAnimation.smooth((float) t * 8f)
+                        * SpellCircleAnimation.smooth((float) (1d - t) * 8f);
+                float traveling = 0.72f + 0.28f * (float) Math.cos(t * Math.PI * 6d + time * speed * 1.8d);
+                float opacity = alpha * edge * traveling * 0.58f;
+                if (i > 0) {
+                    flowSegment(flow, matrix, previous, next, side, size * 0.014f,
+                            previousAlpha, opacity, color);
+                    flowSegment(flow, matrix, previous, next, up, size * 0.014f,
+                            previousAlpha, opacity, color);
+                }
+                previous = next;
+                previousAlpha = opacity;
             }
         }
+    }
+
+    private static void flowSegment(VertexConsumer consumer, Matrix4f matrix, Vec3 from, Vec3 to,
+            Vec3 side, float width, float fromAlpha, float toAlpha, int color) {
+        Vec3 edge = side.scale(width);
+        Vec3 a = from.subtract(edge), b = from.add(edge), c = to.add(edge), d = to.subtract(edge);
+        float r = red(color), g = green(color), blue = blue(color);
+        SpellGeometry.vertex(consumer, matrix, (float) a.x, (float) a.y, (float) a.z, 0f, 0f, r, g, blue, fromAlpha);
+        SpellGeometry.vertex(consumer, matrix, (float) b.x, (float) b.y, (float) b.z, 0f, 1f, r, g, blue, fromAlpha);
+        SpellGeometry.vertex(consumer, matrix, (float) c.x, (float) c.y, (float) c.z, 1f, 1f, r, g, blue, toAlpha);
+        SpellGeometry.vertex(consumer, matrix, (float) d.x, (float) d.y, (float) d.z, 1f, 0f, r, g, blue, toAlpha);
     }
 
     /**
@@ -356,34 +385,47 @@ public final class SpellVisualPainter {
         poseStack.popPose();
     }
 
-    private static void paintWordModules(VertexConsumer consumer, PoseStack poseStack, SpellVisual visual,
+    private static void paintWordModules(MultiBufferSource buffers, PoseStack poseStack, SpellVisual visual,
             Vec3 line, float time, float alpha, boolean staggered, Quaternionf billboard) {
-        String glyphs = visual.glyphs();
-        if (glyphs == null || glyphs.isEmpty()) {
-            return;
-        }
-        int[] codePoints = glyphs.codePoints().toArray();
-        int count = codePoints.length;
-        int nodes = Math.min(16, Math.max(1, count));
+        int nodes = Math.min(8, visual.slotWords().size());
         for (int i = 0; i < nodes; i++) {
-            float t = nodes == 1 ? 0.5f : (float) i / (nodes - 1);
-            float phase = staggered ? (time * 2.5f + i * 0.18f) % 1f : t;
-            float x = (float) line.x * phase;
-            float y = (float) line.y * phase;
-            float z = (float) line.z * phase;
+            String word = visual.slotWords().get(i);
+            if (word.isEmpty()) continue;
+            float phase = staggered ? (time * 1.6f + i * 0.18f) % 1f : (i + 1f) / (nodes + 1f);
+            float fade = SpellCircleAnimation.smooth(phase / 0.14f)
+                    * SpellCircleAnimation.smooth((1f - phase) / 0.14f);
             poseStack.pushPose();
-            poseStack.translate(x, y, z);
-            // 词符是"平面纹样"：必须先面向相机（否则沿束飞的一串词符从侧面看就是一根根竖线），
-            // 再在**画面内**自转 —— 这样"每个词都不一样、而且看得出在转"。
+            poseStack.translate(line.x * (1f - phase), line.y * (1f - phase), line.z * (1f - phase));
             poseStack.mulPose(billboard);
-            poseStack.mulPose(Axis.ZP.rotationDegrees(time * 40f + i * 31f));
-            int code = codePoints[i];
-            float mark = 0.045f + Math.floorMod(code, 4) * 0.012f;
-            SpellGeometry.runeMark(consumer, poseStack.last().pose(), code, mark,
-                    alpha * (staggered ? 0.75f : 0.9f), red(visual.inkRgb()),
-                    green(visual.inkRgb()), blue(visual.inkRgb()));
+            float tilt = 5f * (float) Math.sin(time * 1.5f + i);
+            poseStack.mulPose(Axis.ZP.rotationDegrees(tilt));
+            SpellCircleArt.glyph(net.minecraft.client.Minecraft.getInstance().font, buffers, poseStack,
+                    word, 0.12f, alpha * fade * 0.68f, wordInk(visual.slotInks(), i, visual.inkRgb()));
             poseStack.popPose();
         }
+    }
+
+    public static void paintWordRing(PoseStack poseStack, MultiBufferSource buffers,
+            java.util.List<String> words, java.util.List<String> inks, int fallbackInk,
+            float radius, float height, float angle, float alpha, float reveal) {
+        int count = Math.min(8, words.size());
+        for (int slot = 0; slot < count; slot++) {
+            String word = words.get(slot);
+            if (word.isEmpty()) continue;
+            float opacity = alpha * SpellCircleAnimation.smooth((reveal * 1.2f - slot * 0.04f) / 0.7f);
+            double radians = Math.toRadians(angle + slot * 360f / count);
+            poseStack.pushPose();
+            poseStack.translate(Math.cos(radians) * radius, Math.sin(radians) * radius, 0.01f);
+            poseStack.mulPose(Axis.ZP.rotationDegrees(angle + slot * 360f / count - 90f));
+            SpellCircleArt.glyph(net.minecraft.client.Minecraft.getInstance().font, buffers, poseStack,
+                    word, height, opacity, wordInk(inks, slot, fallbackInk));
+            poseStack.popPose();
+        }
+    }
+
+    private static int wordInk(java.util.List<String> inks, int slot, int fallback) {
+        var ink = slot < inks.size() ? MagicInkTable.get(inks.get(slot)) : null;
+        return ink == null ? fallback : ink.rgb();
     }
 
     /** 便利重载：不额外压透明度 */
@@ -460,7 +502,7 @@ public final class SpellVisualPainter {
 
             case VORTEX -> SpellGeometry.spiralArms(consumer, poseStack.last().pose(),
                     Math.max(0.05f, size * 0.15f + expand * 0.3f), size, detail,
-                    1.1f, 10, spin, a, r, g, b);
+                    1.1f, detailCount(24, geometryDetail, 10), spin, a, r, g, b);
 
             case ARC -> {
                 // 两道对着的弧：像"一刀斩过"留下的两半，而不是一整圈
@@ -525,7 +567,8 @@ public final class SpellVisualPainter {
                 for (int i = 0; i < layers; i++) {
                     float phase = (time * 0.7f + (float) i / layers) % 1f;
                     float radius = size * (0.35f + 0.95f * phase) + expand * 0.3f;
-                    float ringAlpha = a * (1f - phase) * 0.9f;
+                    float ringAlpha = a * SpellCircleAnimation.smooth(phase / 0.18f)
+                            * (1f - phase) * (1f - phase) * 0.9f;
                     SpellGeometry.ringBand(consumer, poseStack.last().pose(),
                             radius - size * 0.05f, radius, segments, spin, 360f,
                             ringAlpha * 0.3f, ringAlpha, r, g, b);

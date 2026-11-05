@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "forbidden_hex:forbidden_hex_tiny_quartz_dust"
+    },
+    {
+      "item": "forbidden_hex:forbidden_hex_tiny_quartz_dust"
+    },
+    {
+      "item": "forbidden_hex:forbidden_hex_tiny_quartz_dust"
+    },
+    {
+      "item": "forbidden_hex:forbidden_hex_tiny_quartz_dust"
+    }
+  ],
+  "result": {
+    "item": "forbidden_hex:forbidden_hex_crude_quartz_dust"
+  }
+}

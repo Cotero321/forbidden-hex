@@ -345,6 +345,67 @@ public class AgaitolosEntity extends Monster implements GeoEntity, RangedAttackM
      */
     int perchTransitionTicks; // 由 AgaitolosPerchMachine 协作类读写
 
+    private static final EntityDataAccessor<CompoundTag> DATA_VISUAL_ACTION =
+            SynchedEntityData.defineId(AgaitolosEntity.class, EntityDataSerializers.COMPOUND_TAG);
+    private final AgaitolosActionState actionState = new AgaitolosActionState(this);
+    long appliedHurtSequence;
+
+    void cancelVisualAction(String clip) {
+        if (entityData.get(DATA_VISUAL_ACTION).getString("Clip").equals(clip)) {
+            startVisualAction("boss_idle", 1);
+        }
+    }
+
+    public boolean isPerformingAction() {
+        String clip = getVisualAction();
+        return actionState.busy() || !clip.equals("boss_idle") && !clip.equals("boss_move");
+    }
+
+    AgaitolosActionState actions() {
+        return actionState;
+    }
+
+    public void startVisualAction(String clip, int duration) {
+        startVisualActionAt(clip, duration, 0, false);
+    }
+
+    void startVisualActionAt(String clip, int duration, int age, boolean holdDive) {
+        if (level().isClientSide()) return;
+        CompoundTag action = new CompoundTag();
+        action.putString("Clip", clip);
+        action.putLong("Start", level().getGameTime() - Math.max(0, age));
+        action.putInt("Duration", Math.max(1, Math.min(1200, duration)));
+        action.putBoolean("HoldDive", holdDive);
+        action.putDouble("Rate", 1.0);
+        entityData.set(DATA_VISUAL_ACTION, action);
+    }
+
+    void setVisualActionRate(double rate) {
+        if (level().isClientSide()) return;
+        CompoundTag action = entityData.get(DATA_VISUAL_ACTION).copy();
+        action.putDouble("Rate", Math.max(0.1, Math.min(4, rate)));
+        entityData.set(DATA_VISUAL_ACTION, action);
+    }
+
+    public String getVisualAction() {
+        if (isDeadOrDying() || isRespawning() || isIntroPlaying()) return "boss_idle";
+        CompoundTag action = entityData.get(DATA_VISUAL_ACTION);
+        if (getVisualActionAge(0f) < action.getInt("Duration")) return action.getString("Clip");
+        return getDeltaMovement().horizontalDistanceSqr() > 0.0009 ? "boss_move" : "boss_idle";
+    }
+
+    public double getVisualActionAge(float partialTick) {
+        CompoundTag action = entityData.get(DATA_VISUAL_ACTION);
+        double rate = action.contains("Rate") ? action.getDouble("Rate") : 1.0;
+        if (!Double.isFinite(rate) || rate <= 0) rate = 1.0;
+        double age = Math.max(0, level().getGameTime() - action.getLong("Start") + partialTick) * rate;
+        return action.getBoolean("HoldDive") ? Math.min(8, age) : age;
+    }
+
+    public long getVisualActionStart() {
+        return entityData.get(DATA_VISUAL_ACTION).getLong("Start");
+    }
+
     public AgaitolosEntity(EntityType<? extends AgaitolosEntity> type, Level level) {
         super(type, level);
         // 低空飞行移动控制器。原版 Mob 没有 createMoveControl() 钩子（凋灵/幻翼也都是构造器里直接赋值），故在此替换
@@ -383,6 +444,7 @@ public class AgaitolosEntity extends Monster implements GeoEntity, RangedAttackM
         this.entityData.define(DATA_PERCH_STATE, PERCH_STATE_AIRBORNE);
         // 轰炸默认 false：读档重建的实体不从存档恢复"正在轰炸"（进行中状态一律不落盘，见 AgaitolosPhaseThreeState）
         this.entityData.define(DATA_BOMBARDING, Boolean.FALSE);
+        this.entityData.define(DATA_VISUAL_ACTION, new CompoundTag());
     }
 
     /** 当前阶段（服务端读权威值，客户端读同步值） */
@@ -412,6 +474,8 @@ public class AgaitolosEntity extends Monster implements GeoEntity, RangedAttackM
 
     /** 架势由决策层经 {@link AgaitolosGuardCharge#startGuard} 开启、由 {@link AgaitolosGuardCharge#tickGuardState} 与 {@link #endGuard()} 收合，技能不自持计时 */
     void setGuarding(boolean guarding) { // 包私有：由 AgaitolosGuardCharge / AgaitolosNbtCodec 协作类写
+        if (guarding && !isGuarding()) startVisualAction("boss_block", 24);
+        if (!guarding && isGuarding() && getVisualAction().equals("boss_block")) startVisualAction("boss_idle", 1);
         this.entityData.set(DATA_GUARDING, guarding);
     }
 
@@ -427,6 +491,8 @@ public class AgaitolosEntity extends Monster implements GeoEntity, RangedAttackM
 
     /** 蓄力由决策层经 {@link AgaitolosGuardCharge#startCharge} 开启、由 {@link AgaitolosGuardCharge#tickChargeState} / {@link AgaitolosGuardCharge#finishCharge} 收合（同架势） */
     void setCharging(boolean charging) { // 包私有：由 AgaitolosGuardCharge / AgaitolosNbtCodec 协作类写
+        if (charging && !isCharging()) startVisualAction("boss_curse_reverse", 240);
+        if (!charging) cancelVisualAction(AgaitolosAnimations.CHARGE);
         this.entityData.set(DATA_CHARGING, charging);
     }
 
@@ -453,6 +519,8 @@ public class AgaitolosEntity extends Monster implements GeoEntity, RangedAttackM
 
     /** 轰炸同步位只由 {@code AgaitolosPhaseThreeState} 开合（起手立、期满/整段中止撤），技能不自持计时 */
     void setBombarding(boolean bombarding) {
+        if (bombarding && !isBombarding()) startVisualAction("boss_saturation_barrage", 1200);
+        if (!bombarding && isBombarding()) startVisualAction("boss_idle", 1);
         this.entityData.set(DATA_BOMBARDING, bombarding);
     }
 
@@ -558,7 +626,17 @@ public class AgaitolosEntity extends Monster implements GeoEntity, RangedAttackM
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
+        actionState.cancel();
+        phaseThree.abortAll(this);
+        startVisualAction("boss_idle", 1);
         AgaitolosNbtCodec.load(this, tag);
+        if (isCharging()) {
+            startVisualActionAt("boss_curse_reverse", 240, Math.max(0, 240 - chargeTicks), false);
+        } else if (isGuarding()) {
+            startVisualActionAt("boss_block", 24, Math.max(0, 24 - guardTicks), false);
+        } else if (isDiving()) {
+            startVisualActionAt("boss_dive_sweep", 30, 8, true);
+        }
     }
 
     // ---------------------------------------------------------------- 随在场玩家数增强（§0 第 71 行 / §1 定案表第 11 条）
@@ -612,6 +690,7 @@ public class AgaitolosEntity extends Monster implements GeoEntity, RangedAttackM
         // 放在决策层之前，保证"本 tick 刚结束的状态"已释放全局动作锁，决策层不会白等一拍。
         // 抓取态（投技①）的钉住动作也在这里逐 tick 执行，故它不持有任何玩家侧状态。
         this.phaseThree.tick(this);
+        this.actionState.tick();
         // ---- 地面档：只切"垂直高度档位"（空中 2 格 / 贴地 0 格），不碰任何招式状态 ----
         // 放在状态推进之后、决策层之前：本 tick 切出来的档位会被下一 tick 的
         // AgaitolosMoveControl ③ 读到（moveControl.tick 在 super.aiStep() 内已跑过，故当帧不生效，

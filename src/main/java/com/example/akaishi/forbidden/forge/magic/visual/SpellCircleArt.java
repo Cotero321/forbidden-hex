@@ -441,9 +441,9 @@ public final class SpellCircleArt {
         poses.popPose();
     }
 
-    private static void glyph(Font font, MultiBufferSource buffers, PoseStack poses, String word,
+    public static void glyph(Font font, MultiBufferSource buffers, PoseStack poses, String word,
             float height, float alpha, int color) {
-        if (alpha <= 0.01f) return;
+        if (!Float.isFinite(height) || height <= 0f || !Float.isFinite(alpha) || alpha <= 0.01f) return;
         Component glyph = MagicGlyphs.component(word);
         if (glyph.getString().isEmpty()) return;
         float scale = height / 12f;

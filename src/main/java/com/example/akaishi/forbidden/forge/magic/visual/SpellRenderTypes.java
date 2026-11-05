@@ -19,6 +19,11 @@ public final class SpellRenderTypes {
         return material(VisualMaterials.FLOW, texture);
     }
 
+    public static RenderType volume(boolean glow) {
+        return glow ? RenderType.entityTranslucentEmissive(SpellGeometry.WHITE)
+                : RenderType.entityTranslucent(SpellGeometry.WHITE);
+    }
+
     public static RenderType material(ResourceLocation materialId, ResourceLocation texture) {
         return VisualRenderTypes.material(materialId, texture);
     }

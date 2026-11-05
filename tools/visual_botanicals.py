@@ -40,6 +40,13 @@ PATTERNS = {
 
 
 def save(image, folder, name):
+    plant_items = set(PALETTES) | {'mandrake_root'} | {f'{plant}_seeds' for plant in PALETTES}
+    plant_blocks = {f'{plant}_crop_{stage}{suffix}' for plant in PALETTES
+                    for stage in range(4) for suffix in ('', '_uv')}
+    tree_blocks = {f'{tree}_{part}' for tree in TREE
+                   for part in ('sapling', 'sapling_uv', 'leaves', 'leaves_uv', 'log', 'log_top', 'log_uv')}
+    if (folder == 'item' and name in plant_items) or (folder == 'block' and name in plant_blocks | tree_blocks):
+        raise ValueError('Plant textures are hand-authored in Aseprite; legacy generation must not overwrite them.')
     destination = ASSETS / folder / f'forbidden_hex_{name}.png'
     destination.parent.mkdir(parents=True, exist_ok=True)
     image.save(destination)
@@ -96,16 +103,6 @@ def crops():
             item = mature.copy()
             ImageDraw.Draw(item).line((6, 13, 9, 13), fill='#b69a68')
         save(item, 'item', item_name)
-        seeds = Image.new('RGBA', (16, 16))
-        draw = ImageDraw.Draw(seeds)
-        seed_color = ('#ab8151', '#8d6a44', '#aa986c', '#c1aa78', '#6c6650')[list(PATTERNS).index(name) % 5]
-        for index, (x, y) in enumerate(((4, 4), (10, 6), (6, 10))):
-            long = name in ('ergot', 'foxglove', 'glint_weed', 'parasitic_vine')
-            draw.ellipse((x, y, x + (1 if long else 2), y + (3 if long else 2)), fill=seed_color, outline='#493e30')
-            draw.point((x + 1, y + 1), fill=PALETTES[name][2])
-        if name == 'datura':
-            draw.line((9, 4, 12, 9), fill='#79674b')
-        save(seeds, 'item', name + '_seeds')
 
 
 TREE = {
@@ -237,7 +234,5 @@ def materials():
 
 
 if __name__ == '__main__':
-    crops()
-    trees()
     materials()
-    print('Authored 13 crops x 4 stages, seeds/harvests, 5 tree sets and 6 materials.')
+    print('Authored 6 materials. Plant textures are maintained separately in Aseprite.')

@@ -4,29 +4,30 @@
   "kind": "transformation",
   "results": [
     {
-      "count": 1,
+      "count": 4,
       "item": "forbidden_hex:forbidden_hex_transmutation_dust"
     }
   ],
   "steps": [
     {
       "ingredient": {
-        "item": "minecraft:redstone"
+        "item": "forbidden_hex:forbidden_hex_fume"
+      },
+      "nbt": "{forbidden_hex_fume:'*'}"
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:egg"
       }
     },
     {
       "ingredient": {
-        "item": "minecraft:glowstone_dust"
+        "tag": "forge:seeds"
       }
     },
     {
       "ingredient": {
-        "item": "minecraft:gunpowder"
-      }
-    },
-    {
-      "ingredient": {
-        "item": "minecraft:sugar"
+        "item": "minecraft:bone_meal"
       }
     }
   ]

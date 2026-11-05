@@ -77,13 +77,9 @@ public final class AgaitolosPhaseTwoSkills {
                 || target == null || !target.isAlive() || !AgaitolosBlinkSkill.canBlink(boss, target)) {
             return false;
         }
-        if (AgaitolosBlinkSkill.perform(boss, target)) {
-            boss.blinkCooldownTicks = AgaitolosPace.scaledCooldown(boss, AgaitolosBlinkSkill.BLINK_COOLDOWN_TICKS);
-            return true;
-        }
-        // 落点校验没过：只吃短重试窗口，且<b>不算起手</b>（决策层据此只给一个短重试节拍，不空等整拍）
-        boss.blinkCooldownTicks = AgaitolosBlinkSkill.BLINK_FAILED_RETRY_TICKS;
-        return false;
+        if (!boss.actions().start(AgaitolosActionState.Strike.BLINK, target)) return false;
+        boss.blinkCooldownTicks = AgaitolosPace.scaledCooldown(boss, AgaitolosBlinkSkill.BLINK_COOLDOWN_TICKS);
+        return true;
     }
 
     /**
@@ -104,10 +100,8 @@ public final class AgaitolosPhaseTwoSkills {
                 || !AgaitolosKickSkill.isWithinKickRange(boss, target)) {
             return false;
         }
-        if (AgaitolosKickSkill.perform(boss, target)) {
-            boss.kickCooldownTicks = AgaitolosPace.scaledCooldown(boss, AgaitolosKickSkill.KICK_COOLDOWN_TICKS);
-            return true;
-        }
-        return false;
+        if (!boss.actions().start(AgaitolosActionState.Strike.KICK, target)) return false;
+        boss.kickCooldownTicks = AgaitolosPace.scaledCooldown(boss, AgaitolosKickSkill.KICK_COOLDOWN_TICKS);
+        return true;
     }
 }

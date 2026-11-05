@@ -1,0 +1,11 @@
+{
+  "type": "forbidden_hex:witch_oven",
+  "cooking_time": 200,
+  "fume_chance": 0,
+  "ingredient": {
+    "item": "forbidden_hex:forbidden_hex_limestone_dust"
+  },
+  "result": {
+    "item": "forbidden_hex:forbidden_hex_quicklime"
+  }
+}

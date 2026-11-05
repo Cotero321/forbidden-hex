@@ -1,0 +1,30 @@
+{
+  "type": "forbidden_hex:forbidden_hex_alchemy",
+  "bottles": 0,
+  "equivalents": 9,
+  "ingredient": {
+    "item": "minecraft:raw_gold_block"
+  },
+  "mode": 0,
+  "outputs": [
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_crude_gold_dust",
+      "max": 1,
+      "min": 1
+    },
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_stone_fragment",
+      "max": 1,
+      "min": 1
+    },
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_tiny_gold_dust",
+      "max": 1,
+      "min": 1
+    }
+  ],
+  "process": "crushing"
+}

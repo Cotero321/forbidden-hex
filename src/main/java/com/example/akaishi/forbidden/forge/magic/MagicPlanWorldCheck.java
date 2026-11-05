@@ -53,8 +53,12 @@ public final class MagicPlanWorldCheck {
             MagicPipeline.actionFor(sanContext).fire(mental, mental.position(), new Vec3(0, 0, 1));
             MagicPipeline.actionFor(starContext).fire(star, star.position(), new Vec3(0, 0, 1));
             float normalDamage = 100 - normal.getHealth(), mentalDamage = 100 - mental.getHealth(), starDamage = 100 - star.getHealth();
-            require(normalDamage > 0 && mentalDamage > normalDamage && Math.abs(starDamage / mentalDamage - 1.75f) < 0.001f,
-                    "real hurt / armor / star multiplier failed");
+            float expectedSan = sanContext.snapshot().power() * (1f + SpellDamage.sanBonusRatio(SpellDamage.powerRatio(sanContext)));
+            float expectedStar = starContext.snapshot().power() * (1f + SpellDamage.sanBonusRatio(SpellDamage.powerRatio(starContext)));
+            require(Math.abs(normalDamage - normalContext.snapshot().power()) < 0.001f
+                    && Math.abs(mentalDamage - expectedSan) < 0.001f
+                    && Math.abs(starDamage - expectedStar) < 0.001f,
+                    "real spell / SAN psychic component / star merge failed");
             require(MagicDamageTypes.psychic(level, caster).is(com.example.akaishi.effect.ModDamageTypes.PSYCHIC), "psychic type missing");
             var ward = context(level, caster, "rang", "life", "hu");
             var applied = MagicPipeline.castResult(ward);

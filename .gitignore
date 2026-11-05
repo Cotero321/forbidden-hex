@@ -16,6 +16,7 @@ out
 # gradle
 build
 .gradle
+.gradle-home/
 
 # other
 eclipse
@@ -29,6 +30,13 @@ run-data
 .cursor
 .aider*
 .cache
+.agents/
+.codex/
+AGENTS.md
+package.json
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
 
 # Local tool and editor preferences
 .occai/
@@ -38,6 +46,12 @@ run-data
 /logs/
 __pycache__/
 *.py[cod]
+*.log
+*.tmp
+*.temp
+*.bak
+*.orig
+*.swp
 
 # OS
 Thumbs.db
@@ -52,3 +66,22 @@ README.txt
 CREDITS.txt
 LICENSE.txt
 changelog.txt
+
+# AI tool runtime and local-only state
+.codex/*.sqlite
+.codex/*.sqlite-*
+.codex/installation_id
+.codex/.sandbox/
+.codex/.tmp/
+.codex/tmp/
+.playwright-cli/
+
+# Generated review/export artifacts
+/artifacts/
+
+# Local exports and editor backups
+*.blend1
+*.blend2
+*.schem
+*.litematic
+*.nbt

@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "forbidden_hex:forbidden_hex_source_altar",
+    "forbidden_hex:forbidden_hex_offering_pedestal",
+    "forbidden_hex:forbidden_hex_candelabrum",
+    "forbidden_hex:forbidden_hex_large_candelabrum",
+    "forbidden_hex:forbidden_hex_sacred_candelabrum"
+  ]
+}

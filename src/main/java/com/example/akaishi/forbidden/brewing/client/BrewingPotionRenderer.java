@@ -21,7 +21,7 @@ public final class BrewingPotionRenderer extends ThrownItemRenderer<BrewingPotio
         super.render(entity, yaw, partialTick, pose, buffers, light);
         if (!ForbiddenVisualConfig.BREWING_EFFECTS.get() || entity.tickCount < 2) return;
         BrewingPotionData.read(entity.getItem()).filter(data -> !data.hideParticles()).ifPresent(data -> {
-            int rgb = data.effects().get(0).getEffect().getColor();
+            int rgb = data.color();
             float breath = 0.8f + 0.2f * (float) Math.sin((entity.tickCount + partialTick) * 0.35f);
             SpellVisualPainter.flatQuad(buffers, pose, SpellVfx.HALO, entityRenderDispatcher.cameraOrientation(),
                     0.2f, 0.16f * breath, rgb);

@@ -1,10 +1,13 @@
 package com.example.akaishi.forbidden.mixin;
 
 import com.example.akaishi.forbidden.sanity.SanityPenalties;
+import com.example.akaishi.forbidden.boss.chimera.ChimeraEntity;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.Redirect;
 
 /**
  * 阈值惩罚·饱食度消耗 +100%（80% 档及以下）：把 {@code Player#causeFoodExhaustion(float)} 的入参翻倍。
@@ -26,9 +29,21 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 @Mixin(Player.class)
 public class PlayerFoodExhaustionMixin {
 
+    @Redirect(method = "actuallyHurt", at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/world/entity/player/Player;setHealth(F)V"))
+    private void forbiddenHex$settleGreedDamage(Player victim, float health, DamageSource source, float amount) {
+        float previousHealth = victim.getHealth();
+        victim.setHealth(health);
+        ChimeraEntity.settleGreedHealthDamage(victim, source, previousHealth);
+    }
+
     @ModifyVariable(method = "causeFoodExhaustion", at = @At("HEAD"), argsOnly = true, ordinal = 0)
     private float akaishi$sanityExhaustionMultiplier(float amount) {
         float multiplier = SanityPenalties.exhaustionMultiplier(SanityPenalties.tierOf((Player) (Object) this));
+        if (com.example.akaishi.forbidden.brewing.BrewingStatusEffects.has((Player) (Object) this,
+                com.example.akaishi.forbidden.brewing.BrewingEffectType.DRUNK)) multiplier *= 1.5F;
+        multiplier *= com.example.akaishi.forbidden.brewing.BrewingFumePharmacology
+                .exhaustionMultiplier((Player) (Object) this);
         return multiplier == 1f ? amount : amount * multiplier;
     }
 }

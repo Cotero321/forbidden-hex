@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    "forbidden_hex:forbidden_hex_cinnabar_ore",
+    "forbidden_hex:forbidden_hex_deepslate_cinnabar_ore",
+    "forbidden_hex:forbidden_hex_sulfur_ore",
+    "forbidden_hex:forbidden_hex_deepslate_sulfur_ore",
+    "forbidden_hex:forbidden_hex_silver_ore",
+    "forbidden_hex:forbidden_hex_deepslate_silver_ore",
+    "forbidden_hex:forbidden_hex_silver_block",
+    "forbidden_hex:forbidden_hex_raw_silver_block"
+  ]
+}

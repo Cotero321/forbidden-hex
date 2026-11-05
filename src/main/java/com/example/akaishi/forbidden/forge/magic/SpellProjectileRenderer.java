@@ -1,6 +1,7 @@
 package com.example.akaishi.forbidden.forge.magic;
 
 import com.example.akaishi.AkaishiMod;
+import com.example.akaishi.forbidden.forge.client.visual.ClientVisualBudget;
 import com.example.akaishi.forbidden.forge.magic.visual.SpellGeometry;
 import com.example.akaishi.forbidden.forge.magic.visual.SpellVfx;
 import com.example.akaishi.forbidden.forge.magic.visual.SpellVisualPainter;
@@ -17,6 +18,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -26,16 +28,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 凋零头是一个<b>固定模型</b> —— 它无法表达"这一发是火墨的尖刺还是渊墨的涡旋"。
  * 现在弹体的外观同样走 {@link SpellVisualPainter} 的组装：
  * 形态由核心 E 决定、配色由源与墨决定、体积由威力决定。
- *
- * <p><b>为什么整枚自转</b>：弹体在飞，若形态静止会看成"贴图没跟上"。
- * 自转让正交三环的笼状结构产生明显的空间感，
- * 而且这个自转是<b>渲染层自己加的</b>，不占用实体的朝向（弹体朝向仍由飞行方向决定，
- * 只是我们不用它）。
  */
 public class SpellProjectileRenderer extends EntityRenderer<SpellProjectile> {
-
-    /** 自转角速度（度/秒）——快一点才有"高速旋转的能量球"的观感 */
-    private static final float SPIN_PER_SECOND = 220f;
 
     /** 环绕微光的颗数（绕弹体旋转的小光点） */
     private static final int ORBIT_MOTES = 3;
@@ -95,7 +89,11 @@ public class SpellProjectileRenderer extends EntityRenderer<SpellProjectile> {
     @Override
     public boolean shouldRender(SpellProjectile entity, Frustum frustum,
             double camX, double camY, double camZ) {
-        float radius = Math.max(0.5f, entity.visual().baseSize());
+        if (ClientVisualBudget.detailScale(entity.distanceToSqr(camX, camY, camZ)) <= 0f) return false;
+        SpellVisual visual = entity.visual();
+        float bodySize = visual.baseSize() * visual.carrierSpec().sizeMul()
+                * visual.body().sizeMul() * visual.modifier().sizeMul();
+        float radius = Math.max(0.5f, Math.max(bodySize * 3f, visual.baseSize() * 2f));
         return frustum.isVisible(entity.getBoundingBox().inflate(radius));
     }
 
@@ -107,38 +105,45 @@ public class SpellProjectileRenderer extends EntityRenderer<SpellProjectile> {
         if (visual == null || visual.effectId().isEmpty()) {
             return;
         }
+        double distanceSquared = entity.distanceToSqr(Objects.requireNonNull(
+                net.minecraft.client.Minecraft.getInstance().gameRenderer.getMainCamera().getPosition()));
+        float detail = ClientVisualBudget.detailScale(distanceSquared);
+        if (detail <= 0f) return;
+        detail = Math.min(detail, distanceSquared > 1024d ? 0.5f : distanceSquared > 256d ? 0.72f : 1f);
         float time = (entity.tickCount + partialTick) / 20f;
+        Vec3 motion = entity.getDeltaMovement();
+        org.joml.Quaternionf billboard = entityRenderDispatcher.cameraOrientation();
         poseStack.pushPose();
-        poseStack.mulPose(Axis.YP.rotationDegrees(time * SPIN_PER_SECOND));
-        SpellVisualPainter.paint(poseStack, buffers, visual, time);
+        poseStack.mulPose(billboard);
+        if (motion.lengthSqr() > 1.0e-6d) {
+            var direction = new org.joml.Vector3f((float) motion.x, (float) motion.y, (float) motion.z);
+            new org.joml.Quaternionf(billboard).conjugate().transform(direction);
+            if (direction.x * direction.x + direction.y * direction.y > 1.0e-6f) {
+                poseStack.mulPose(Axis.ZP.rotation((float) Math.atan2(direction.y, direction.x) - (float) Math.PI / 2f));
+            }
+        }
+        SpellVisualPainter.paint(poseStack, buffers, visual, time, 0.88f, detail);
         poseStack.popPose();
 
         // 彗头和环绕微光按墨选形；历史轨迹由 ProjectileTrailEffects 绘制。
         float size = visual.baseSize();
         float bright = visual.brightness();
         String inkId = visual.inkId();
-        org.joml.Quaternionf billboard = entityRenderDispatcher.cameraOrientation();
         ResourceLocation head = orbTexture(inkId);
         SpellVisualPainter.flatQuad(buffers, poseStack, SpellVfx.HALO, billboard,
-                Math.max(0.30f, size * 1.25f), Math.min(0.60f, bright * 0.50f), visual.sourceRgb());
+                Math.max(0.26f, size * 1.10f), Math.min(0.38f, bright * 0.30f), visual.sourceRgb());
         SpellVisualPainter.flatQuad(buffers, poseStack, head, billboard,
-                Math.max(0.18f, size * 0.78f), Math.min(1f, bright), visual.inkRgb());
-        net.minecraft.world.phys.Vec3 motion = entity.getDeltaMovement();
-        if (motion.lengthSqr() > 1.0e-6d) {
+                Math.max(0.15f, size * 0.58f), Math.min(0.72f, bright * 0.68f), visual.inkRgb());
+        if (detail > 0.5f && motion.lengthSqr() > 1.0e-6d) {
             paintOrbitMotes(poseStack, buffers, visual, motion, billboard, head, size, bright, time);
         }
 
-        if (!visual.glyphs().isEmpty()) {
-            // 词符环独立面向相机，避免跟随主体的 220 度自转而失去可读性。
+        if (detail > 0.72f) {
             poseStack.pushPose();
-            poseStack.mulPose(entityRenderDispatcher.cameraOrientation());
-            var consumer = buffers.getBuffer(SpellGeometry.energyType());
-            float alpha = visual.brightness();
-            int rgb = visual.inkRgb();
-            SpellGeometry.runeRing(consumer, poseStack.last().pose(), visual.glyphs(),
-                    Math.max(0.12f, visual.baseSize() * 0.55f),
-                    Math.max(0.035f, visual.baseSize() * 0.10f), time * 18f, alpha * 0.9f,
-                    SpellVisualPainter.red(rgb), SpellVisualPainter.green(rgb), SpellVisualPainter.blue(rgb));
+            poseStack.mulPose(billboard);
+            SpellVisualPainter.paintWordRing(poseStack, buffers, visual.slotWords(), visual.slotInks(),
+                    visual.inkRgb(), Math.max(0.16f, size * 0.72f),
+                    Math.max(0.065f, size * 0.13f), time * 9f, bright * 0.62f, 1f);
             poseStack.popPose();
         }
     }

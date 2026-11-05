@@ -1,0 +1,8 @@
+{
+  "multipart": [
+    {"when": {"facing": "north"}, "apply": {"model": "forbidden_hex:block/life_furnace"}},
+    {"when": {"facing": "east"}, "apply": {"model": "forbidden_hex:block/life_furnace", "y": 90}},
+    {"when": {"facing": "south"}, "apply": {"model": "forbidden_hex:block/life_furnace", "y": 180}},
+    {"when": {"facing": "west"}, "apply": {"model": "forbidden_hex:block/life_furnace", "y": 270}}
+  ]
+}

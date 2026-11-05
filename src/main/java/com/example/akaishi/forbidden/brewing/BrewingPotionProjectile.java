@@ -44,6 +44,7 @@ public class BrewingPotionProjectile extends ThrowableItemProjectile {
                     state.entityInside(level(), platePos, this);
                 }
             }
+            BrewingPotionExecutor.applyWorld(data, (net.minecraft.server.level.ServerLevel) level(), hit.getLocation(), getOwner());
             if (data.delivery() == BrewingPotionData.Delivery.LINGERING) {
                 BrewingEffectCloud cloud = BrewingEntities.CLOUD.get().create(level());
                 if (cloud == null) { discard(); return; }
@@ -55,16 +56,14 @@ public class BrewingPotionProjectile extends ThrowableItemProjectile {
                 cloud.setWaitTime(10);
                 cloud.setDuration(600);
                 cloud.setRadiusPerTick(-cloud.getRadius() / cloud.getDuration());
-                for (var effect : data.effects()) {
-                    cloud.addEffect(new net.minecraft.world.effect.MobEffectInstance(effect.getEffect(),
-                            effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), !data.hideParticles()));
-                }
+                cloud.setBrewingPotion(data);
                 level().addFreshEntity(cloud);
             } else {
                 Entity direct = hit instanceof net.minecraft.world.phys.EntityHitResult entityHit ? entityHit.getEntity() : null;
                 for (LivingEntity target : level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(4, 2, 4))) {
                     double distance = distanceToSqr(target);
-                    if (target == direct || distance < 16) data.apply(target, target == direct ? 1 : 1 - Math.sqrt(distance) / 4);
+                    if (target == direct || distance < 16) BrewingPotionExecutor.applyEntity(data, target, this, getOwner(),
+                            target == direct ? 1 : 1 - Math.sqrt(distance) / 4, true);
                 }
             }
         }

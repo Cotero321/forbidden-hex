@@ -1,0 +1,24 @@
+{
+  "type": "forbidden_hex:forbidden_hex_alchemy",
+  "bottles": 1,
+  "equivalents": 1,
+  "ingredient": {
+    "item": "forbidden_hex:forbidden_hex_fine_silver_dust"
+  },
+  "mode": 0,
+  "outputs": [
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_moon_spring",
+      "max": 1,
+      "min": 1
+    },
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_moon_salt",
+      "max": 1,
+      "min": 1
+    }
+  ],
+  "process": "distilling"
+}

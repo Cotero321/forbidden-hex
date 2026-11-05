@@ -206,6 +206,27 @@ public final class SpellGeometry {
         poseStack.popPose();
     }
 
+    /** 八面晶体亮核，每个三角面补为退化四边形，固定 32 顶点。 */
+    public static void crystal(VertexConsumer consumer, PoseStack poseStack,
+            float radius, float halfHeight, float alpha, float r, float g, float b) {
+        Matrix4f matrix = poseStack.last().pose();
+        for (int i = 0; i < 4; i++) {
+            double a0 = i * Math.PI * 0.5d;
+            double a1 = (i + 1) * Math.PI * 0.5d;
+            float x0 = (float) Math.cos(a0) * radius;
+            float z0 = (float) Math.sin(a0) * radius;
+            float x1 = (float) Math.cos(a1) * radius;
+            float z1 = (float) Math.sin(a1) * radius;
+            float facet = alpha * (i % 2 == 0 ? 0.85f : 0.48f);
+            for (int sign = -1; sign <= 1; sign += 2) {
+                vertex(consumer, matrix, 0f, halfHeight * sign, 0f, 0.5f, 0f, r, g, b, alpha);
+                vertex(consumer, matrix, x0, 0f, z0, 0f, 1f, r, g, b, facet);
+                vertex(consumer, matrix, x1, 0f, z1, 1f, 1f, r, g, b, facet);
+                vertex(consumer, matrix, x1, 0f, z1, 1f, 1f, r, g, b, facet);
+            }
+        }
+    }
+
     /**
      * 柱：沿局部 +Y 的圆筒侧面 + 顶盖。
      *

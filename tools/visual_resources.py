@@ -209,6 +209,8 @@ def audit(previews=False):
         if identifier:
             if 'parent' in value:
                 reference(value['parent'], 'model', relative)
+            for override in value.get('overrides', []):
+                reference(override['model'], 'model', relative)
             textures, generated = inheritance(identifier)
             for key, texture in textures.items():
                 visited = {key}

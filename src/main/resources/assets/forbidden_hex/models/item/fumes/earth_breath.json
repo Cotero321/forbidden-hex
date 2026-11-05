@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "minecraft:item/glass_bottle",
+    "layer1": "forbidden_hex:item/forbidden_hex_fume",
+    "layer2": "forbidden_hex:item/fume_marks/earth_breath"
+  }
+}

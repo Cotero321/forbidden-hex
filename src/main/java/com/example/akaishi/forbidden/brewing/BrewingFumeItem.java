@@ -39,5 +39,11 @@ public final class BrewingFumeItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip.forbidden_hex.brewing.fume"));
+        BrewingEffectType effect = BrewingFumes.effect(kind(stack));
+        if (effect != null) {
+            tooltip.add(Component.translatable("tooltip.forbidden_hex.brewing.fume_effect",
+                    Component.translatable(effect.translationKey()), effect.cost()));
+            tooltip.add(Component.translatable(effect.translationKey() + ".description"));
+        }
     }
 }

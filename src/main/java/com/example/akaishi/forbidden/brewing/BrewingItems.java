@@ -14,6 +14,7 @@ public final class BrewingItems {
     public static RegistrySupplier<Item> FUME;
     public static RegistrySupplier<Item> POTION;
     public static RegistrySupplier<Item> TRANSMUTATION_DUST;
+    public static RegistrySupplier<Item> SLAKED_LIME_BOTTLE;
     public static RegistrySupplier<Item> REFINED_HERB_PASTE;
     public static RegistrySupplier<Item> RUNE_STONE;
     public static RegistrySupplier<Item> CHARGED_RUNE_STONE;
@@ -61,6 +62,8 @@ public final class BrewingItems {
         FUME = items.register(id("fume"), BrewingFumeItem::new);
         POTION = items.register(id("brewed_potion"), BrewingPotionItem::new);
         TRANSMUTATION_DUST = items.register(id("transmutation_dust"), () -> new Item(new Item.Properties()));
+        SLAKED_LIME_BOTTLE = items.register(id("slaked_lime_bottle"), () -> new Item(new Item.Properties()
+                .stacksTo(16).craftRemainder(net.minecraft.world.item.Items.GLASS_BOTTLE)));
         REFINED_HERB_PASTE = items.register(id("refined_herb_paste"), () -> new Item(new Item.Properties()));
         RUNE_STONE = items.register(id("rune_stone"), () -> new Item(new Item.Properties()));
         CHARGED_RUNE_STONE = items.register(id("charged_rune_stone"), () -> new Item(new Item.Properties()));
@@ -113,7 +116,8 @@ public final class BrewingItems {
     public static void addCreativeItems(net.minecraft.world.item.CreativeModeTab.Output output) {
         for (ResourceLocation fume : BrewingFumes.NON_EVIL) output.accept(BrewingFumeItem.create(fume));
         output.accept(BrewingFumeItem.create(BrewingFumes.EVIL_BREATH));
-        for (RegistrySupplier<Item> item : java.util.List.of(TRANSMUTATION_DUST, REFINED_HERB_PASTE, RUNE_STONE,
+        for (ResourceLocation fume : BrewingFumes.REFINED) output.accept(BrewingFumeItem.create(fume));
+        for (RegistrySupplier<Item> item : java.util.List.of(TRANSMUTATION_DUST, SLAKED_LIME_BOTTLE, REFINED_HERB_PASTE, RUNE_STONE,
                 CHARGED_RUNE_STONE, MANDRAKE_ROOT, HENBANE, BELLADONNA, DATURA, ACONITE, FOXGLOVE, HELLROOT,
                 COLCHICUM, YEW, ERGOT, PARASITIC_VINE, EMBER_MOSS, GLINT_WEED,
                 MANDRAKE_SEEDS, HENBANE_SEEDS, BELLADONNA_SEEDS, DATURA_SEEDS, ACONITE_SEEDS, FOXGLOVE_SEEDS,

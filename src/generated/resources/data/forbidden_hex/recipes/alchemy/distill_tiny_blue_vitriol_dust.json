@@ -1,0 +1,24 @@
+{
+  "type": "forbidden_hex:forbidden_hex_alchemy",
+  "bottles": 1,
+  "equivalents": 1,
+  "ingredient": {
+    "item": "forbidden_hex:forbidden_hex_tiny_blue_vitriol_dust"
+  },
+  "mode": 0,
+  "outputs": [
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_sulfuric_acid",
+      "max": 1,
+      "min": 1
+    },
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_copper_oxide",
+      "max": 1,
+      "min": 1
+    }
+  ],
+  "process": "distilling"
+}

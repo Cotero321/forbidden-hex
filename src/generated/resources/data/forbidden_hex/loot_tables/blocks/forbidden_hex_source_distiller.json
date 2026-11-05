@@ -1,0 +1,47 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "functions": [
+            {
+              "function": "minecraft:copy_nbt",
+              "ops": [
+                {
+                  "op": "replace",
+                  "source": "AlchemyJob",
+                  "target": "BlockEntityTag.AlchemyJob"
+                },
+                {
+                  "op": "replace",
+                  "source": "Mode",
+                  "target": "BlockEntityTag.Mode"
+                },
+                {
+                  "op": "replace",
+                  "source": "Water",
+                  "target": "BlockEntityTag.Water"
+                },
+                {
+                  "op": "replace",
+                  "source": "Credit",
+                  "target": "BlockEntityTag.Credit"
+                }
+              ],
+              "source": "block_entity"
+            }
+          ],
+          "name": "forbidden_hex:forbidden_hex_source_distiller"
+        }
+      ],
+      "rolls": 1
+    }
+  ]
+}

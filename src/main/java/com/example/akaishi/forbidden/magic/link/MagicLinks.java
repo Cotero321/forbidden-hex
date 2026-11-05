@@ -1,6 +1,6 @@
 package com.example.akaishi.forbidden.magic.link;
 
-import com.example.akaishi.forbidden.magic.MagicDamageTypes;
+import com.example.akaishi.forbidden.magic.SpellDamage;
 import com.example.akaishi.forbidden.magic.exec.MagicScheduler;
 import com.example.akaishi.forbidden.magic.visual.LinkVisualEvents;
 import com.example.akaishi.forbidden.magic.visual.SpellVisual;
@@ -72,9 +72,13 @@ public final class MagicLinks {
         long nextPulseTick;
         final long expireTick;
         final SpellVisual visual;
+        final String mainInk;
+        final String source;
+        final float powerRatio;
 
         Link(ServerLevel level, List<WeakReference<Entity>> rings, Entity caster,
-                float damagePerPulse, long nextPulseTick, long expireTick, SpellVisual visual) {
+                float damagePerPulse, long nextPulseTick, long expireTick, SpellVisual visual,
+                String mainInk, String source, float powerRatio) {
             this.level = level;
             this.rings = rings;
             this.caster = new WeakReference<>(caster);
@@ -82,6 +86,9 @@ public final class MagicLinks {
             this.nextPulseTick = nextPulseTick;
             this.expireTick = expireTick;
             this.visual = visual;
+            this.mainInk = mainInk;
+            this.source = source;
+            this.powerRatio = powerRatio;
         }
     }
 
@@ -109,7 +116,7 @@ public final class MagicLinks {
      * @param caster        施法者（可为 null）
      */
     public static int create(ServerLevel level, List<Entity> rings, float damagePerPulse,
-            int durationTicks, Entity caster, SpellVisual visual) {
+            int durationTicks, Entity caster, SpellVisual visual, String mainInk, String source, float powerRatio) {
         if (level == null || rings == null || rings.size() < MIN_RINGS || !Float.isFinite(damagePerPulse) || damagePerPulse <= 0f) {
             return 0;
         }
@@ -128,7 +135,7 @@ public final class MagicLinks {
         long now = level.getGameTime();
         // 首跳紧随施法（+1 刻）：否则按下技能后要干等整整一秒才有任何反应
         Link link = new Link(level, refs, caster, damagePerPulse,
-                now + 1L, now + Math.max(PULSE_INTERVAL_TICKS, durationTicks), visual);
+                now + 1L, now + Math.max(PULSE_INTERVAL_TICKS, durationTicks), visual, mainInk, source, powerRatio);
         LINKS.add(link);
         return refs.size();
     }
@@ -175,12 +182,12 @@ public final class MagicLinks {
             Entity previous = i == 0 ? null : alive.get(i - 1);
             long delay = (long) i * RING_DELAY_TICKS;
             if (delay == 0L) {
-                strike(link.level, caster, victim, previous, link.damagePerPulse, link.visual);
+                strike(link, caster, victim, previous);
             } else {
                 MagicScheduler.schedule(link.level, (int) delay,
                         () -> {
                             if (LINKS.contains(link)) {
-                                strike(link.level, caster, victim, previous, link.damagePerPulse, link.visual);
+                                strike(link, caster, victim, previous);
                             }
                         });
             }
@@ -188,20 +195,16 @@ public final class MagicLinks {
     }
 
     /** 只有实际受伤成功才闪电跳跃，不干预后续环的结算。 */
-    private static void strike(ServerLevel level, Entity caster, Entity victim, Entity previous,
-            float damage, SpellVisual visual) {
+    private static void strike(Link link, Entity caster, Entity victim, Entity previous) {
+        ServerLevel level = link.level;
         if (!(victim instanceof LivingEntity living) || !living.isAlive() || living.level() != level
                 || com.example.akaishi.forbidden.magic.exec.resolve.MagicResolvers.allied(caster, victim)
                 || (caster instanceof net.minecraft.world.entity.player.Player
                     && victim instanceof net.minecraft.world.entity.player.Player && !level.getServer().isPvpAllowed())) {
             return;
         }
-        boolean piercing = visual != null && ("san".equals(visual.sourceId())
-                || visual.wordIds().contains("jian") || visual.wordIds().contains("zhen"));
-        var source = visual != null && "san".equals(visual.sourceId()) ? MagicDamageTypes.psychic(level, caster)
-                : piercing ? level.damageSources().indirectMagic(caster, caster) : MagicDamageTypes.source(level, caster);
-        if (living.hurt(source, damage)) {
-            LinkVisualEvents.emit(level, visual, previous, living);
+        if (SpellDamage.hurt(living, caster, link.mainInk, link.source, link.damagePerPulse, link.powerRatio)) {
+            LinkVisualEvents.emit(level, link.visual, previous, living);
         }
     }
 

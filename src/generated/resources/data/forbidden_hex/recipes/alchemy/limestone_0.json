@@ -1,0 +1,29 @@
+{
+  "type": "forbidden_hex:forbidden_hex_alchemy",
+  "bottles": 0,
+  "equivalents": 1,
+  "ingredient": [
+    {
+      "item": "minecraft:calcite"
+    },
+    {
+      "item": "minecraft:dripstone_block"
+    }
+  ],
+  "mode": 0,
+  "outputs": [
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_limestone_dust",
+      "max": 2,
+      "min": 2
+    },
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_stone_fragment",
+      "max": 2,
+      "min": 2
+    }
+  ],
+  "process": "crushing"
+}

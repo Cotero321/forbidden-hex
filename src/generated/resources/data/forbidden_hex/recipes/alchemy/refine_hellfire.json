@@ -1,0 +1,30 @@
+{
+  "type": "forbidden_hex:forbidden_hex_alchemy",
+  "bottles": 0,
+  "equivalents": 1,
+  "ingredient": {
+    "item": "forbidden_hex:forbidden_hex_fume"
+  },
+  "mode": 0,
+  "nbt": "{forbidden_hex_fume:'forbidden_hex:heat_breath'}",
+  "outputs": [
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_fume",
+      "max": 1,
+      "min": 1,
+      "nbt": "{forbidden_hex_fume:'forbidden_hex:hellfire_breath'}"
+    },
+    {
+      "item": "minecraft:glass_bottle",
+      "max": 1,
+      "min": 1
+    }
+  ],
+  "process": "refining",
+  "reagent": {
+    "ingredient": {
+      "item": "forbidden_hex:forbidden_hex_nitric_acid"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "key": {
+    "C": {
+      "item": "minecraft:copper_ingot"
+    },
+    "F": {
+      "item": "minecraft:furnace"
+    },
+    "G": {
+      "item": "minecraft:glass"
+    }
+  },
+  "pattern": [
+    "GCG",
+    " C ",
+    "CFC"
+  ],
+  "result": {
+    "item": "forbidden_hex:forbidden_hex_distiller"
+  }
+}

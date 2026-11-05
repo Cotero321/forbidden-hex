@@ -1,0 +1,35 @@
+{
+  "type": "forbidden_hex:forbidden_hex_alchemy",
+  "bottles": 0,
+  "equivalents": 1,
+  "ingredient": [
+    {
+      "item": "forbidden_hex:forbidden_hex_sulfur_ore"
+    },
+    {
+      "item": "forbidden_hex:forbidden_hex_deepslate_sulfur_ore"
+    }
+  ],
+  "mode": 0,
+  "outputs": [
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_crude_sulfur_dust",
+      "max": 1,
+      "min": 1
+    },
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_stone_fragment",
+      "max": 1,
+      "min": 1
+    },
+    {
+      "chance": 1.0,
+      "item": "forbidden_hex:forbidden_hex_tiny_sulfur_dust",
+      "max": 1,
+      "min": 1
+    }
+  ],
+  "process": "crushing"
+}

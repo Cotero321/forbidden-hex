@@ -17,6 +17,7 @@ public final class ForbiddenVisualConfig {
     public static final ForgeConfigSpec.IntValue SPELL_DETAIL_DISTANCE;
     public static final ForgeConfigSpec.DoubleValue GLOW_STRENGTH;
     public static final ForgeConfigSpec.DoubleValue FLOW_SPEED;
+    public static final ForgeConfigSpec.BooleanValue SPELL_CAMERA_FEEDBACK;
     public static final ForgeConfigSpec.BooleanValue POST_EFFECTS;
     public static final ForgeConfigSpec.DoubleValue POST_STRENGTH;
     public static final ForgeConfigSpec.BooleanValue SPELL_SOUNDS;
@@ -31,6 +32,8 @@ public final class ForbiddenVisualConfig {
                 .define("forceVanillaRendering", false);
         ENERGY_SHADERS = builder.comment("Use local energy shaders when no shader pack is active; otherwise use vanilla emissive rendering.")
                 .define("energyShaders", true);
+        SPELL_CAMERA_FEEDBACK = builder.comment("Allow subtle nearby strong-spell camera impulses (maximum 0.3 degrees, five ticks, no screen flash).")
+                .define("spellCameraFeedback", true);
         PROJECTILE_TRAILS = builder.comment("Draw fading ribbons along actual projectile positions.")
                 .define("projectileTrails", true);
         BREWING_EFFECTS = builder.comment("Draw brewing bottle auras, impact ripples and lingering mist.")

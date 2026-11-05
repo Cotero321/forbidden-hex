@@ -107,6 +107,11 @@ minecraft {
             if (project.hasProperty('visualSceneTest')) {
                 property 'forbidden_hex.visualSceneTest', 'true'
             }
+            if (project.hasProperty('bossActionTest')) {
+                property 'forbidden_hex.bossActionTest', 'true'
+                workingDirectory project.file('build/shader-compat-run')
+                args '--quickPlaySingleplayer', 'shader_compat_world'
+            }
             if (project.hasProperty('circleSceneTest')) {
                 property 'forbidden_hex.circleSceneTest', 'true'
             }
@@ -116,7 +121,7 @@ minecraft {
             if (project.hasProperty('sanitySceneTest')) {
                 property 'forbidden_hex.sanitySceneTest', 'true'
             }
-            if (project.hasProperty('shaderCompatTest') || project.hasProperty('visualSceneTest') || project.hasProperty('circleSceneTest') || project.hasProperty('audioSceneTest') || project.hasProperty('sanitySceneTest')) {
+            if (project.hasProperty('shaderCompatTest') || project.hasProperty('visualSceneTest') || project.hasProperty('circleSceneTest') || project.hasProperty('audioSceneTest') || project.hasProperty('sanitySceneTest') || project.hasProperty('visualManualReview')) {
                 workingDirectory project.file('build/shader-compat-run')
                 args '--quickPlaySingleplayer', 'shader_compat_world'
             }
@@ -134,6 +139,7 @@ minecraft {
         // By default, the server will crash when no gametests are provided.
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
+            workingDirectory project.file('build/ore-gametest-run')
             property 'forge.enabledGameTestNamespaces', mod_id
         }
 
@@ -161,7 +167,10 @@ repositories {
     }
     maven {
         url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
-        content { includeGroup 'software.bernie.geckolib' }
+        content {
+            includeGroup 'software.bernie.geckolib'
+            includeGroup 'com.eliotlash.mclib'
+        }
     }
     if (project.hasProperty('shaderCompatTest')) {
         exclusiveContent {
@@ -184,6 +193,7 @@ dependencies {
     implementation fg.deobf("dev.architectury:architectury-forge:${architectury_version}")
     implementation fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:${geckolib_version}")
     compileOnly 'org.jetbrains:annotations:24.1.0'
+    compileOnly 'com.eliotlash.mclib:mclib:20'
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     if (project.hasProperty('shaderCompatTest')) {
         runtimeOnly fg.deobf('maven.modrinth:oculus:iQ1SwGc3')

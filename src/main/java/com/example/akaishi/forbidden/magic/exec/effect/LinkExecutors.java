@@ -81,7 +81,8 @@ public final class LinkExecutors {
             // ★v20：LINK 每跳附加主伤害基准的 10%（见 ExecSupport.primaryDamageBonus）
             float damagePerPulse = ExecSupport.power(context) + ExecSupport.primaryDamageBonus();
             return MagicLinks.create(level, ring, damagePerPulse,
-                    ExecSupport.durationTicks(context), context.caster(), SpellVisual.from(context));
+                    ExecSupport.durationTicks(context), context.caster(), SpellVisual.from(context),
+                    context.mainInkId(), context.sourceId(), com.example.akaishi.forbidden.magic.SpellDamage.powerRatio(context));
         }
     }
 }

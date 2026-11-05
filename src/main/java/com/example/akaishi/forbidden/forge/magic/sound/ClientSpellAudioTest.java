@@ -78,6 +78,7 @@ public final class ClientSpellAudioTest {
         if (!prepared) {
             prepared = true;
             verifyResources(minecraft);
+            verifyChargeMix(minecraft);
             owner = minecraft.player.getUUID();
             prepare(minecraft);
             return;
@@ -86,7 +87,7 @@ public final class ClientSpellAudioTest {
         elapsed++;
         var handler = SpellSoundHandler.INSTANCE;
         if (elapsed == 20) {
-            require(handler.activeLoops() >= 1, "Server phase did not reach client loop manager");
+            require(handler.activeLoops() == 2, "Server charge did not create source and ink layers");
             require(handler.hasPlayingLoop(), "OpenAL never activated the charge sound");
             verifiedStart = true;
             send(minecraft, SpellSoundEvent.Phase.CHANNEL);
@@ -145,8 +146,8 @@ public final class ClientSpellAudioTest {
         if (elapsed == 235) {
             require(handler.hasPlayingLoop(), "Transition probe never activated");
             localPhase(minecraft, new UUID(9L, 1L), SpellSoundEvent.Phase.CHANNEL);
-            require(handler.activeLoops() == 1 && handler.retiringLoops() == 1,
-                    "Phase switch did not overlap new and retiring loops");
+            require(handler.activeLoops() == 1 && handler.retiringLoops() == 2,
+                    "Phase switch did not retire both source and ink layers");
         }
         if (elapsed == 245) {
             require(handler.retiringLoops() == 0 && handler.hasPlayingLoop(), "Phase tail failed to retire");
@@ -156,6 +157,16 @@ public final class ClientSpellAudioTest {
         }
         if (elapsed == 255) {
             require(handler.totalVoices() <= 1 && handler.retiringLoops() == 0, "Interrupt tail leaked");
+            handler.clear();
+            for (int index = 0; index < 4; index++) localPhase(minecraft, new UUID(14L, index), SpellSoundEvent.Phase.CHANNEL);
+            localPhase(minecraft, new UUID(14L, 0L), SpellSoundEvent.Phase.RELEASE);
+            localPhase(minecraft, new UUID(14L, 1L), SpellSoundEvent.Phase.RELEASE);
+            require(handler.totalVoices() == 10, "Atomic admission probe has wrong voice count");
+            localPhase(minecraft, new UUID(14L, 2L), SpellSoundEvent.Phase.END);
+            require(handler.totalVoices() == 11, "Atomic admission probe needs exactly one free voice");
+            localPhase(minecraft, new UUID(14L, 5L), SpellSoundEvent.Phase.CHARGE);
+            require(handler.totalVoices() == 11 && handler.activeLoops() == 1,
+                    "Charge partially admitted a source or ink layer");
             handler.clear();
             for (int index = 0; index < 8; index++) {
                 UUID id = new UUID(10L, index);
@@ -175,8 +186,47 @@ public final class ClientSpellAudioTest {
             handler.clear();
             require(handler.totalVoices() == 0, "Teardown retained outgoing tails");
             restoreBudget();
-            LogUtils.getLogger().info("SPELL_AUDIO_TEST PASSED: 54 events resolved, server-to-client phases, OpenAL playback, interrupt/end, field removal, resource reload, teardown, zero-volume fade, crossfade, outgoing-tail budget=12, reload-during-fade; cast_manager=true; full_input_unlock_payment=false; multiplayer=false; start={}", verifiedStart);
+            LogUtils.getLogger().info("SPELL_AUDIO_TEST PASSED: events={}, source-ink combinations=41, shared charge envelopes, server-to-client phases, OpenAL playback, interrupt/end, field removal, resource reload, teardown, dual-layer zero-volume fade, crossfade, outgoing-tail budget=12, atomic-layer admission, reload-during-fade; cast_manager=true; full_input_unlock_payment=false; multiplayer=false; start={}", SpellSoundCatalog.events().size(), verifiedStart);
             minecraft.stop();
+        }
+    }
+
+    private static void verifyChargeMix(Minecraft minecraft) {
+        long now = minecraft.level.getGameTime();
+        int combinations = 0;
+        for (String source : SpellSoundCatalog.ids("sources")) {
+            require(SpellLoopSound.chargeGain(source, 1f, false) > SpellLoopSound.chargeGain(source, 0f, false),
+                    "Charge failed to gather energy: " + source);
+            for (String ink : SpellSoundCatalog.ids("inks")) {
+                if (ink.equals("xing") && !source.equals("san")) continue;
+                combinations++;
+                var visual = SpellVisual.assemble("hu", "instant", ink, source, 1f, 1f, 1f, List.of("hu"));
+                for (float progress : List.of(0f, 0.35f, 0.8f, 1f)) {
+                    long start = now - Math.round(progress * 100f);
+                    var event = new SpellSoundEvent(minecraft.level.dimension().location(), new UUID(13L, 1L),
+                            minecraft.player.getId(), SpellSoundEvent.Phase.CHARGE, minecraft.player.position(),
+                            start, start + 100L, visual);
+                    for (boolean inkLayer : List.of(false, true)) {
+                        var loop = new SpellLoopSound(minecraft.level, visual, null, event, inkLayer);
+                        String expected = inkLayer ? "spell.ink." + ink + ".charge" : "spell.source." + source + ".charge";
+                        require(loop.getLocation().getPath().equals(expected), "Wrong charge layer: " + expected);
+                        require(loop.resolve(minecraft.getSoundManager()) != null && loop.getSound() != SoundManager.EMPTY_SOUND,
+                                "Charge layer cannot resolve: " + expected);
+                        for (int tick = 0; tick < 8; tick++) loop.tick();
+                        float gain = SpellLoopSound.chargeGain(source, progress, inkLayer);
+                        float volume = gain * ForbiddenVisualConfig.SPELL_SOUND_VOLUME.get().floatValue();
+                        require(Float.isFinite(gain) && gain > 0f && gain < 0.25f, "Unbounded charge envelope");
+                        require(Math.abs(loop.getVolume() - volume) < 0.00001f, "Layer lost shared source envelope");
+                        require(loop.getPitch() == 1f, "Effect pitch overrode source or ink identity");
+                        loop.halt();
+                    }
+                }
+            }
+        }
+        require(combinations == 41, "Legal source-ink coverage changed");
+        for (String source : List.of("san", "life", "dark")) {
+            require(Math.abs(SpellLoopSound.chargeGain(source, 0.35f, false)
+                    - SpellLoopSound.chargeGain("white", 0.35f, false)) > 0.0001f, "Source shapes collapsed");
         }
     }
 
@@ -185,21 +235,23 @@ public final class ClientSpellAudioTest {
         long now = minecraft.level.getGameTime();
         var event = new SpellSoundEvent(minecraft.level.dimension().location(), new UUID(12L, 1L),
                 minecraft.player.getId(), SpellSoundEvent.Phase.CHARGE, minecraft.player.position(), now, now + 100L, visual);
-        var loop = new SpellLoopSound(minecraft.level, visual, null, event);
-        require(loop.resolve(minecraft.getSoundManager()) != null && loop.getSound() != SoundManager.EMPTY_SOUND,
-                "Fade probe sound could not resolve");
-        for (int tick = 0; tick < 8; tick++) loop.tick();
-        float previous = loop.getVolume();
-        float pitch = loop.getPitch();
-        loop.fade();
-        for (int tick = 0; tick < SpellLoopSound.FADE_TICKS; tick++) {
-            loop.tick();
-            require(loop.getVolume() <= previous, "Outgoing loop volume increased during fade");
-            require(loop.getPitch() == pitch, "Outgoing loop changed pitch");
-            if (tick < SpellLoopSound.FADE_TICKS - 1) require(!loop.isStopped(), "Loop stopped before fade completed");
-            previous = loop.getVolume();
+        for (boolean inkLayer : List.of(false, true)) {
+            var loop = new SpellLoopSound(minecraft.level, visual, null, event, inkLayer);
+            require(loop.resolve(minecraft.getSoundManager()) != null && loop.getSound() != SoundManager.EMPTY_SOUND,
+                    "Fade probe sound could not resolve");
+            for (int tick = 0; tick < 8; tick++) loop.tick();
+            float previous = loop.getVolume();
+            float pitch = loop.getPitch();
+            loop.fade();
+            for (int tick = 0; tick < SpellLoopSound.FADE_TICKS; tick++) {
+                loop.tick();
+                require(loop.getVolume() <= previous, "Outgoing loop volume increased during fade");
+                require(loop.getPitch() == pitch, "Outgoing loop changed pitch");
+                if (tick < SpellLoopSound.FADE_TICKS - 1) require(!loop.isStopped(), "Loop stopped before fade completed");
+                previous = loop.getVolume();
+            }
+            require(loop.isStopped() && loop.getVolume() == 0f, "Fade did not end at zero volume");
         }
-        require(loop.isStopped() && loop.getVolume() == 0f, "Fade did not end at zero volume");
     }
 
     private static void localPhase(Minecraft minecraft, UUID id, SpellSoundEvent.Phase phase) {

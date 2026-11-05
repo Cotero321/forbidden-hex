@@ -36,7 +36,7 @@ public final class AkaishiSanityDamageHandler {
         if (!(event.getEntity() instanceof Player player)) {
             return;
         }
-        if (!event.getSource().is(ModDamageTypes.PSYCHIC)) {
+        if (!event.getSource().is(ModDamageTypes.PSYCHIC_TYPES)) {
             return; // 只处理精神伤害：其余伤害类型与理智无关
         }
         event.setAmount(SanityDamageGuard.applyPsychicReduction(player, event.getAmount()));

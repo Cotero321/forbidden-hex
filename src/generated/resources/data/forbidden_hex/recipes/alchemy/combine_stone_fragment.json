@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "forbidden_hex:forbidden_hex_stone_fragment"
+    },
+    {
+      "item": "forbidden_hex:forbidden_hex_stone_fragment"
+    },
+    {
+      "item": "forbidden_hex:forbidden_hex_stone_fragment"
+    },
+    {
+      "item": "forbidden_hex:forbidden_hex_stone_fragment"
+    }
+  ],
+  "result": {
+    "item": "minecraft:cobblestone"
+  }
+}

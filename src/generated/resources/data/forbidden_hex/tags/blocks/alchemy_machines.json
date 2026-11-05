@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "forbidden_hex:forbidden_hex_manual_crusher",
+    "forbidden_hex:forbidden_hex_source_crusher",
+    "forbidden_hex:forbidden_hex_distiller",
+    "forbidden_hex:forbidden_hex_source_distiller"
+  ]
+}
