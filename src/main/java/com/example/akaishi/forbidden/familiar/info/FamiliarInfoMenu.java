@@ -146,7 +146,8 @@ public final class FamiliarInfoMenu extends AbstractContainerMenu {
     @Override public boolean clickMenuButton(Player player, int buttonId) {
         if (!stillValid(player) || familiar == null || buttonId < 0 || buttonId >= FamiliarMode.values().length) return false;
         familiar.setMode(FamiliarMode.values()[buttonId]);
-        player.displayClientMessage(Component.translatable("familiar.forbidden_hex.mode_changed", familiar.mode().id()), true);
+        player.displayClientMessage(Component.translatable("familiar.forbidden_hex.mode_changed",
+                Component.translatable(familiar.mode().translationKey())), true);
         return true;
     }
 

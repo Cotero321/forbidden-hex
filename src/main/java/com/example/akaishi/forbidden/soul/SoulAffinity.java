@@ -34,6 +34,10 @@ public enum SoulAffinity {
         return id;
     }
 
+    public String translationKey() {
+        return "soul.forbidden_hex.affinity." + id;
+    }
+
     public boolean isVirtue() {
         return virtue;
     }

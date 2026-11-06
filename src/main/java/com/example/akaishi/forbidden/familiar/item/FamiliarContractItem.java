@@ -6,6 +6,7 @@ import com.example.akaishi.forbidden.entity.AkaishiForbiddenEntities;
 import com.example.akaishi.forbidden.familiar.entity.FamiliarEntity;
 import com.example.akaishi.forbidden.familiar.info.FamiliarInfoMenu;
 import com.example.akaishi.forbidden.familiar.FamiliarRuntimeService;
+import com.example.akaishi.forbidden.soul.SoulAffinity;
 import com.example.akaishi.forbidden.transmutation.life_furnace.LifeFurnaceContent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -87,7 +88,10 @@ public class FamiliarContractItem extends Item {
             tooltip.add(Component.translatable("item.forbidden_hex.familiar_contract.level", data.level()).withStyle(ChatFormatting.GRAY));
             tooltip.add(Component.translatable("item.forbidden_hex.familiar_contract.alignment", data.alignment()).withStyle(alignmentColor(data.alignment())));
             if (!data.affinity().isBlank()) {
-                tooltip.add(Component.translatable("item.forbidden_hex.familiar_contract.affinity", data.affinity()).withStyle(ChatFormatting.LIGHT_PURPLE));
+                Component affinityName = SoulAffinity.byId(data.affinity())
+                        .map(affinity -> Component.translatable(affinity.translationKey()))
+                        .orElseGet(() -> Component.literal(data.affinity()));
+                tooltip.add(Component.translatable("item.forbidden_hex.familiar_contract.affinity", affinityName).withStyle(ChatFormatting.LIGHT_PURPLE));
             }
             tooltip.add(Component.translatable("item.forbidden_hex.familiar_contract.mode",
                     Component.translatable(data.mode().translationKey())).withStyle(ChatFormatting.GRAY));

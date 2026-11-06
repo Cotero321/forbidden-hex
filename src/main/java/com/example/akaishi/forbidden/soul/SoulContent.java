@@ -76,7 +76,8 @@ public final class SoulContent {
                 }
                 return;
             }
-            tooltip.add(Component.translatable("item.forbidden_hex.soul_crystal.affinity", data.affinity().id())
+            tooltip.add(Component.translatable("item.forbidden_hex.soul_crystal.affinity",
+                            Component.translatable(data.affinity().translationKey()))
                     .withStyle(ChatFormatting.LIGHT_PURPLE));
             tooltip.add(Component.translatable("item.forbidden_hex.soul_crystal.alignment", data.alignment())
                     .withStyle(data.alignment() < 0 ? ChatFormatting.RED : ChatFormatting.GOLD));

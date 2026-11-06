@@ -1365,5 +1365,19 @@
 "gui.forbidden_hex.source_transmutation_furnace.status.1": "Processing",
 "gui.forbidden_hex.source_transmutation_furnace.status.2": "Waiting for source energy",
 "gui.forbidden_hex.source_transmutation_furnace.status.3": "Invalid input",
-"gui.forbidden_hex.source_transmutation_furnace.status.4": "Output blocked"
+"gui.forbidden_hex.source_transmutation_furnace.status.4": "Output blocked",
+"soul.forbidden_hex.affinity.pride": "Pride",
+"soul.forbidden_hex.affinity.envy": "Envy",
+"soul.forbidden_hex.affinity.wrath": "Wrath",
+"soul.forbidden_hex.affinity.sloth": "Sloth",
+"soul.forbidden_hex.affinity.greed": "Greed",
+"soul.forbidden_hex.affinity.gluttony": "Gluttony",
+"soul.forbidden_hex.affinity.lust": "Lust",
+"soul.forbidden_hex.affinity.humility": "Humility",
+"soul.forbidden_hex.affinity.charity": "Charity",
+"soul.forbidden_hex.affinity.diligence": "Diligence",
+"soul.forbidden_hex.affinity.temperance": "Temperance",
+"soul.forbidden_hex.affinity.chastity": "Chastity",
+"soul.forbidden_hex.affinity.patience": "Patience",
+"soul.forbidden_hex.affinity.kindness": "Kindness"
 }

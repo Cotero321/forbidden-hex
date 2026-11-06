@@ -1,7 +1,9 @@
 package com.example.akaishi.forbidden.transmutation.life_furnace;
 
 import com.example.akaishi.forbidden.transmutation.LifeFurnaceRules;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -21,7 +23,12 @@ public final class BiomassItem extends Item {
         super.appendHoverText(stack, level, tooltip, flag);
         if (stack.hasTag()) {
             String type = stack.getTag().getString(LifeFurnaceRules.BIOMASS_ENTITY_TYPE_TAG);
-            if (!type.isBlank()) tooltip.add(Component.translatable("item.forbidden_hex.biomass.entity_type", type));
+            if (!type.isBlank()) {
+                ResourceLocation id = ResourceLocation.tryParse(type);
+                Component name = id != null && BuiltInRegistries.ENTITY_TYPE.containsKey(id)
+                        ? BuiltInRegistries.ENTITY_TYPE.get(id).getDescription() : Component.literal(type);
+                tooltip.add(Component.translatable("item.forbidden_hex.biomass.entity_type", name));
+            }
         }
     }
 }
